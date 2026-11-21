@@ -69,6 +69,41 @@ input:focus,select:focus,button:focus-visible,summary:focus-visible{outline:2px 
 .empty{color:var(--mute);text-align:center;padding:30px}
 .toast{position:fixed;inset-inline:0;bottom:calc(18px + env(safe-area-inset-bottom,0px));margin-inline:auto;width:max-content;max-width:90vw;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;font-size:.92rem;opacity:0;transform:translateY(10px);transition:.2s;pointer-events:none}
 .toast.show{opacity:1;transform:none}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:70px}
+.pc{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.pc.dirty{border-color:var(--warn);box-shadow:0 0 0 2px var(--warnbg)}
+.pc.is-hidden .pimg img{opacity:.45}
+.pc .sel{position:absolute;top:14px;inset-inline-start:14px;z-index:2;background:var(--card);border-radius:6px;padding:3px 4px;line-height:0;border:1px solid var(--line)}
+.pc .sel input{width:18px;height:18px;margin:0;cursor:pointer}
+.pimg{position:relative;border:0;padding:0;background:#fff;border-radius:9px;cursor:zoom-in;aspect-ratio:1;overflow:hidden;display:block;width:100%}
+.pimg img{width:100%;height:100%;object-fit:contain;display:block}
+.tg{position:absolute;bottom:6px;inset-inline-end:6px;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--chip);color:var(--ink)}
+.tg.out{background:var(--badbg);color:var(--bad)}.tg.hid{background:var(--ink);color:var(--bg);inset-inline-end:auto;inset-inline-start:6px}.tg.sale{background:var(--okbg);color:var(--ok);bottom:30px}
+.pc .pn{font-size:.88rem;font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
+.pf{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pf label{font-size:.76rem;color:var(--mute);display:block}.pf input{padding:6px 8px;margin-top:2px}
+.pt{display:flex;gap:12px;flex-wrap:wrap}.pt label{display:flex;gap:5px;align-items:center;font-size:.86rem}
+.bulk{position:fixed;inset-inline:0;bottom:calc(14px + env(safe-area-inset-bottom,0px));margin-inline:auto;width:max-content;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line);box-shadow:0 8px 28px rgba(0,0,0,.25);border-radius:14px;padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;z-index:20}
+.bulk[hidden]{display:none}
+.bulk .pct{display:flex;gap:6px}.bulk .pct input{width:74px;padding:6px 8px}
+.lb{position:fixed;inset:0;background:rgba(5,10,25,.82);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;cursor:zoom-out}
+.lb[hidden]{display:none}
+.lb img{max-width:min(92vw,720px);max-height:76vh;background:#fff;border-radius:12px;object-fit:contain}
+.lb p{color:#fff;max-width:640px;text-align:center;margin:0;font-size:.95rem}
+.lb-x{position:absolute;top:16px;inset-inline-end:16px;background:#fff;border:0;border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:1rem;color:#111}
+.ai{display:flex;flex-direction:column;gap:14px}
+.chat{min-height:240px;max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px}
+.m{max-width:86%;padding:10px 14px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.m.user{align-self:flex-start;background:var(--blue);color:var(--blue-ink);border-end-start-radius:4px}
+.m.assistant{align-self:flex-end;background:var(--chip);border-end-end-radius:4px}
+.m.err{background:var(--badbg);color:var(--bad)}
+.act{display:block;margin-top:6px;font-size:.82rem;color:var(--ok);font-weight:700}
+textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg);resize:vertical}
+textarea:focus{outline:2px solid var(--blue);outline-offset:2px}
+@media (max-width:760px){
+  .pgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .m{max-width:94%}
+}
 @media (max-width:760px){
   .ord summary{grid-template-columns:1fr auto}
   .ord summary .sub{grid-column:1/-1}
@@ -80,6 +115,7 @@ input:focus,select:focus,button:focus-visible,summary:focus-visible{outline:2px 
 <body>
 <div class="wrap" id="app"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="js/data.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 const SB_URL = 'https://yplzliqpohqehypllxdq.supabase.co';
@@ -121,10 +157,10 @@ async function enter(session) {
     return;
   }
   app.innerHTML = `<div class="bar"><img src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt=""><h1 style="font-size:1.15rem">ניהול החנות</h1><span class="sp"></span><span class="who">${esc(session.user.email)}</span><button class="btn sm" id="lo">התנתקות</button></div>
-  <div class="tabs" role="tablist"><button role="tab" data-t="orders" aria-selected="true">הזמנות</button><button role="tab" data-t="products" aria-selected="false">מוצרים</button><button role="tab" data-t="settings" aria-selected="false">הגדרות</button></div><div id="pane"></div>`;
+  <div class="tabs" role="tablist"><button role="tab" data-t="orders" aria-selected="true">הזמנות</button><button role="tab" data-t="products" aria-selected="false">מוצרים</button><button role="tab" data-t="ai" aria-selected="false">עוזר AI</button><button role="tab" data-t="settings" aria-selected="false">הגדרות</button></div><div id="pane"></div>`;
   document.getElementById('lo').onclick = () => sb.auth.signOut();
   const tabs = [...app.querySelectorAll('[data-t]')];
-  const go = t => { tabs.forEach(b => b.setAttribute('aria-selected', b.dataset.t === t)); ({ orders, products, settings }[t])(); };
+  const go = t => { tabs.forEach(b => b.setAttribute('aria-selected', b.dataset.t === t)); ({ orders, products, ai, settings }[t])(); };
   tabs.forEach(b => b.onclick = () => go(b.dataset.t));
   go('orders');
 }
@@ -161,37 +197,151 @@ async function orders() {
 }
 
 /* ---------- products ---------- */
+const IMG = {}, BASEP = {};
+try { RAW.forEach(r => { IMG[r[0]] = 'img/p/' + r[5]; BASEP[r[0]] = { price: Number(r[2]), old: Number(r[3]) || 0 }; }); } catch (e) { /* catalog file missing: no images */ }
+const LOGO = 'img/protein-stock-sports-nutrition-e-commerce-logo.webp';
+const FILTERS = { all: 'הכל', out: 'אזלו', hidden: 'מוסתרים', sale: 'במבצע', changed: 'שונה מהמחיר המקורי' };
+let pState = { q: '', f: 'all', sort: 'name', sel: new Set(), draft: {} };
+
 async function products() {
   pane().innerHTML = '<p class="empty">טוען מוצרים…</p>';
   const { data, error } = await sb.from('products').select('id,title,price,old_price,out_of_stock,hidden').order('title');
   if (error) { pane().innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
-  pane().innerHTML = `<div class="tools"><input type="search" id="q" placeholder="חיפוש מוצר…" aria-label="חיפוש מוצר"></div><p class="who" style="margin:0 0 10px">שינוי מחיר או זמינות מתעדכן באתר מיד, וההזמנות מחושבות לפי אותו מחיר.</p><div class="card plist" id="pl"></div>`;
-  const pl = document.getElementById('pl');
-  const rowHtml = p => `<div class="prow" data-id="${esc(p.id)}"><div class="nm">${esc(p.title)}</div>
-    <input type="number" step="0.01" min="0" value="${p.price}" data-k="price" aria-label="מחיר" dir="ltr">
-    <input type="number" step="0.01" min="0" value="${p.old_price}" data-k="old_price" aria-label="מחיר לפני הנחה (0 = בלי)" title="מחיר לפני הנחה (0 = בלי)" dir="ltr">
-    <label><input type="checkbox" data-k="out_of_stock"${p.out_of_stock ? ' checked' : ''}> אזל</label>
-    <label><input type="checkbox" data-k="hidden"${p.hidden ? ' checked' : ''}> מוסתר</label>
-    <button class="btn sm pri" data-save disabled>שמירה</button></div>`;
-  const paint = q => {
-    const l = data.filter(p => !q || p.title.toLowerCase().includes(q) || p.id.includes(q));
-    pl.innerHTML = l.length ? l.map(rowHtml).join('') : '<p class="empty">לא נמצאו מוצרים.</p>';
+  const S = pState; S.sel = new Set(); S.draft = {};
+  const cur = p => ({ ...p, ...(S.draft[p.id] || {}) });
+  const isChanged = p => BASEP[p.id] && (Number(p.price) !== BASEP[p.id].price || Number(p.old_price) !== BASEP[p.id].old);
+  const match = p => {
+    const q = S.q.toLowerCase();
+    if (q && !p.title.toLowerCase().includes(q) && !p.id.includes(q)) return false;
+    return S.f === 'all' || (S.f === 'out' && p.out_of_stock) || (S.f === 'hidden' && p.hidden) || (S.f === 'sale' && Number(p.old_price) > Number(p.price)) || (S.f === 'changed' && isChanged(p));
   };
-  paint('');
-  document.getElementById('q').oninput = e => paint(e.target.value.trim().toLowerCase());
-  pl.addEventListener('input', e => { const r = e.target.closest('.prow'); if (!r) return; r.classList.add('dirty'); r.querySelector('[data-save]').disabled = false; });
-  pl.addEventListener('click', async e => {
+  const sorters = { name: (a, b) => a.title.localeCompare(b.title, 'he'), low: (a, b) => a.price - b.price, high: (a, b) => b.price - a.price };
+
+  pane().innerHTML = `<div class="tools"><input type="search" id="q" placeholder="חיפוש לפי שם או מזהה…" aria-label="חיפוש מוצר" value="${esc(S.q)}">
+    <select id="so" aria-label="מיון" style="max-width:190px"><option value="name">מיון: שם</option><option value="low">מחיר: נמוך לגבוה</option><option value="high">מחיר: גבוה לנמוך</option></select></div>
+    <div class="chips" id="fc"></div><p class="who" style="margin:0 0 12px">שינוי מחיר או זמינות מתעדכן באתר מיד, וההזמנות מחושבות לפי אותו מחיר.</p>
+    <div class="pgrid" id="pg"></div><div class="bulk" id="bk" hidden></div>
+    <div class="lb" id="lb" hidden><button class="lb-x" aria-label="סגור">✕</button><img alt=""><p></p></div>`;
+  document.getElementById('so').value = S.sort;
+
+  const countFor = k => data.filter(p => { const f = S.f, q = S.q; S.f = k; S.q = ''; const m = match(p); S.f = f; S.q = q; return m; }).length;
+  const chips = () => {
+    document.getElementById('fc').innerHTML = Object.entries(FILTERS).map(([k, v]) => `<button class="chip" data-f="${k}" aria-pressed="${k === S.f}">${v} (${countFor(k)})</button>`).join('');
+  };
+  const card = p0 => {
+    const p = cur(p0), dirty = !!S.draft[p.id];
+    const sale = Number(p.old_price) > Number(p.price);
+    return `<article class="pc${dirty ? ' dirty' : ''}${p.hidden ? ' is-hidden' : ''}" data-id="${esc(p.id)}">
+      <label class="sel"><input type="checkbox" data-sel${S.sel.has(p.id) ? ' checked' : ''} aria-label="בחירה"></label>
+      <button type="button" class="pimg" data-zoom aria-label="הגדלת תמונה"><img src="${esc(IMG[p.id] || LOGO)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${LOGO}'">
+        ${p.out_of_stock ? '<span class="tg out">אזל</span>' : ''}${p.hidden ? '<span class="tg hid">מוסתר</span>' : ''}${sale ? '<span class="tg sale">מבצע</span>' : ''}</button>
+      <div class="pn" title="${esc(p.title)}">${esc(p.title)}</div>
+      <div class="pf"><label>מחיר<input type="number" step="0.01" min="0" value="${p.price}" data-k="price" dir="ltr"></label>
+      <label>לפני הנחה<input type="number" step="0.01" min="0" value="${p.old_price}" data-k="old_price" dir="ltr" title="0 = בלי הנחה"></label></div>
+      <div class="pt"><label><input type="checkbox" data-k="out_of_stock"${p.out_of_stock ? ' checked' : ''}> אזל</label><label><input type="checkbox" data-k="hidden"${p.hidden ? ' checked' : ''}> מוסתר</label></div>
+      <button class="btn sm pri" data-save${dirty ? '' : ' disabled'}>שמירה</button></article>`;
+  };
+  const list = () => data.filter(match).sort((a, b) => sorters[S.sort](cur(a), cur(b)));
+  const bulk = () => {
+    const b = document.getElementById('bk'), n = S.sel.size; b.hidden = !n;
+    if (!n) return;
+    b.innerHTML = `<b>${n} נבחרו</b><button class="btn sm" data-b="out">סמן אזל</button><button class="btn sm" data-b="in">החזר למלאי</button><button class="btn sm" data-b="hide">הסתר</button><button class="btn sm" data-b="show">הצג</button>
+      <span class="pct"><input type="number" id="pc" step="0.5" placeholder="%" aria-label="אחוז שינוי מחיר" dir="ltr"><button class="btn sm pri" data-b="pct">שינוי מחיר</button></span><button class="btn sm" data-b="all">בחר את כל המוצגים</button><button class="btn sm" data-b="none">ביטול</button>`;
+  };
+  const draw = () => { chips(); const l = list(); document.getElementById('pg').innerHTML = l.length ? l.map(card).join('') : '<p class="empty">לא נמצאו מוצרים.</p>'; bulk(); };
+  draw();
+
+  const root = pane();
+  root.querySelector('#q').oninput = e => { S.q = e.target.value.trim(); draw(); };
+  root.querySelector('#so').onchange = e => { S.sort = e.target.value; draw(); };
+  root.querySelector('#fc').onclick = e => { const b = e.target.closest('[data-f]'); if (b) { S.f = b.dataset.f; draw(); } };
+  const pg = root.querySelector('#pg');
+  pg.addEventListener('input', e => {
+    const c = e.target.closest('.pc'); if (!c) return;
+    if (e.target.matches('[data-sel]')) { e.target.checked ? S.sel.add(c.dataset.id) : S.sel.delete(c.dataset.id); bulk(); return; }
+    const k = e.target.dataset.k; if (!k) return;
+    const d = S.draft[c.dataset.id] = S.draft[c.dataset.id] || {};
+    d[k] = e.target.type === 'checkbox' ? e.target.checked : (e.target.value === '' ? 0 : parseFloat(e.target.value));
+    c.classList.add('dirty'); c.querySelector('[data-save]').disabled = false;
+  });
+  pg.addEventListener('click', async e => {
+    const c = e.target.closest('.pc'); if (!c) return;
+    const p = data.find(x => x.id === c.dataset.id);
+    if (e.target.closest('[data-zoom]')) {
+      const lb = root.querySelector('#lb'); lb.querySelector('img').src = IMG[p.id] || LOGO; lb.querySelector('p').textContent = p.title; lb.hidden = false; return;
+    }
     const b = e.target.closest('[data-save]'); if (!b) return;
-    const r = b.closest('.prow'); const p = data.find(x => x.id === r.dataset.id);
-    const val = k => r.querySelector(`[data-k="${k}"]`);
-    const price = parseFloat(val('price').value), old = parseFloat(val('old_price').value) || 0;
-    if (!(price >= 0)) { toast('מחיר לא תקין'); return; }
-    const patch = { price, old_price: old, out_of_stock: val('out_of_stock').checked, hidden: val('hidden').checked };
+    const d = S.draft[p.id] || {}; const m = cur(p);
+    if (!(m.price >= 0) || !(m.old_price >= 0)) { toast('מחיר לא תקין'); return; }
+    const patch = { price: m.price, old_price: m.old_price || 0, out_of_stock: !!m.out_of_stock, hidden: !!m.hidden };
     b.disabled = true;
     const { error } = await sb.from('products').update(patch).eq('id', p.id);
     if (error) { b.disabled = false; toast('השמירה נכשלה: ' + error.message); return; }
-    Object.assign(p, patch); r.classList.remove('dirty'); toast('נשמר');
+    Object.assign(p, patch); delete S.draft[p.id]; toast('נשמר'); draw();
   });
+  const lb = root.querySelector('#lb'); lb.onclick = () => { lb.hidden = true; };
+  root.querySelector('#bk').addEventListener('click', async e => {
+    const b = e.target.closest('[data-b]'); if (!b) return;
+    const op = b.dataset.b, ids = [...S.sel];
+    if (op === 'none') { S.sel.clear(); draw(); return; }
+    if (op === 'all') { list().forEach(p => S.sel.add(p.id)); draw(); return; }
+    b.disabled = true; let err = null;
+    if (op === 'pct') {
+      const pct = parseFloat(document.getElementById('pc').value);
+      if (!isFinite(pct) || pct <= -90 || pct > 300) { toast('הזינו אחוז תקין (למשל 5 או -10)'); b.disabled = false; return; }
+      const rs = await Promise.all(ids.map(id => { const p = data.find(x => x.id === id); const np = Math.round(Number(p.price) * (1 + pct / 100) * 100) / 100; return sb.from('products').update({ price: np }).eq('id', id).then(r => { if (!r.error) { p.price = np; delete (S.draft[id] || {}).price; } return r; }); }));
+      err = (rs.find(r => r.error) || {}).error;
+    } else {
+      const patch = { out: { out_of_stock: true }, in: { out_of_stock: false }, hide: { hidden: true }, show: { hidden: false } }[op];
+      const r = await sb.from('products').update(patch).in('id', ids); err = r.error;
+      if (!err) ids.forEach(id => { Object.assign(data.find(x => x.id === id), patch); if (S.draft[id]) Object.keys(patch).forEach(k => delete S.draft[id][k]); });
+    }
+    toast(err ? 'השמירה נכשלה: ' + err.message : `עודכנו ${ids.length} מוצרים`);
+    S.sel.clear(); Object.keys(S.draft).forEach(k => { if (!Object.keys(S.draft[k]).length) delete S.draft[k]; }); draw();
+  });
+}
+
+/* ---------- AI assistant ---------- */
+let chatHist = [];
+const AI_ERR = {
+  not_configured: 'העוזר עדיין לא מחובר. צריך להוסיף את המפתח ANTHROPIC_API_KEY ב-Supabase (Edge Functions ← Secrets).',
+  bad_key: 'המפתח של Anthropic לא תקין. בדקו את הסוד ANTHROPIC_API_KEY ב-Supabase.',
+  no_credit: 'נגמרו הקרדיטים בחשבון ה-API של Anthropic. צריך להוסיף קרדיט ב-console.anthropic.com ← Billing.',
+  ai_rate_limited: 'יותר מדי בקשות ל-Anthropic ברגע זה. נסו שוב בעוד דקה.',
+  rate_limited: 'הגעתם למגבלת השימוש השעתית. נסו שוב מאוחר יותר.',
+  forbidden: 'אין לך הרשאה להשתמש בעוזר.',
+  unauthorized: 'ההתחברות פגה. התנתקו והתחברו שוב.'
+};
+async function ai() {
+  const EX = ['הסתר את כל המוצרים שאזלו', 'העלה ב-5% את המחירים של כל מוצרי Monster', 'הראה לי את ההזמנות הממתינות', 'משלוח חינם מעל 349 שקלים', 'אילו מוצרים נמצאים במבצע?'];
+  pane().innerHTML = `<div class="card ai"><div class="chat" id="chat" aria-live="polite"></div>
+    <div class="chips" id="ex">${EX.map(t => `<button class="chip" type="button">${esc(t)}</button>`).join('')}</div>
+    <form id="af"><textarea id="ap" rows="3" maxlength="4000" placeholder="כתבו כל בקשה בעברית. למשל: הורד ב-10% את כל חטיפי Warrior…"></textarea>
+    <div class="row2"><button class="btn pri" id="as">שליחה</button><button class="btn" type="button" id="ac">שיחה חדשה</button><span class="who">כל בקשה נחשבת בחשבון ה-API של Anthropic שחיברתם. השינויים מתעדכנים בחנות מיד.</span></div></form></div>`;
+  const chat = document.getElementById('chat'), ta = document.getElementById('ap'), sendBtn = document.getElementById('as');
+  const paint = () => {
+    chat.innerHTML = chatHist.length ? chatHist.map(m => `<div class="m ${m.role}${m.err ? ' err' : ''}"><div class="mt">${esc(m.text)}</div>${(m.actions || []).map(a => `<span class="act">✓ ${esc(a)}</span>`).join('')}</div>`).join('') : '<p class="empty">מה לעשות בחנות? אפשר לשנות מחירים, מלאי והסתרה, לראות הזמנות ולעדכן משלוח.</p>';
+    chat.scrollTop = chat.scrollHeight;
+  };
+  paint();
+  const send = async text => {
+    text = text.trim(); if (!text) return;
+    chatHist.push({ role: 'user', text }); ta.value = ''; sendBtn.disabled = true;
+    chatHist.push({ role: 'assistant', text: 'עובד על זה…', pending: true }); paint();
+    let out = null, code = null;
+    try {
+      const r = await sb.functions.invoke('admin-assistant', { body: { messages: chatHist.filter(m => !m.pending && !m.err).map(m => ({ role: m.role, content: m.text })) } });
+      if (r.error) { try { out = await r.error.context.json(); } catch (e) { out = {}; } code = out.error || 'ai_error'; } else out = r.data;
+    } catch (e) { code = 'network'; out = {}; }
+    chatHist = chatHist.filter(m => !m.pending);
+    if (code) chatHist.push({ role: 'assistant', err: true, text: AI_ERR[code] || (code === 'network' ? 'אין חיבור לשרת. נסו שוב.' : 'משהו השתבש' + (out && out.detail ? ': ' + out.detail : '.')), actions: out.actions });
+    else chatHist.push({ role: 'assistant', text: out.reply || 'בוצע.', actions: out.actions });
+    sendBtn.disabled = false; paint();
+  };
+  document.getElementById('af').onsubmit = e => { e.preventDefault(); send(ta.value); };
+  ta.onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(ta.value); } };
+  document.getElementById('ac').onclick = () => { chatHist = []; paint(); };
+  document.getElementById('ex').onclick = e => { const b = e.target.closest('.chip'); if (b) { ta.value = b.textContent; ta.focus(); } };
 }
 
 /* ---------- settings ---------- */
