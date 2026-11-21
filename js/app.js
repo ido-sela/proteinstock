@@ -244,7 +244,7 @@ function applyLive(){
   if(tb){ if(topbarDefault === null) topbarDefault = tb.innerHTML; if(LIVE.banner) tb.textContent = LIVE.banner; else tb.innerHTML = topbarDefault; }
   Cart.items = Cart.items.filter(i => byId(i.id)); Cart.render();
   LIVE.ready = true; window.__liveReady = true;
-  if(!rerenderQueued){ rerenderQueued = true; requestAnimationFrame(() => { rerenderQueued = false; if(window.__rerender) window.__rerender(); if(window.__adminRefresh) window.__adminRefresh(); }); }
+  if(!rerenderQueued){ rerenderQueued = true; setTimeout(() => { rerenderQueued = false; if(window.__rerender) window.__rerender(); if(window.__adminRefresh) window.__adminRefresh(); }); }
 }
 
 const DIAG = [];
@@ -257,8 +257,25 @@ async function initLive(){
     document.body.append(f);
   }
 }
+/* On the hosted site, prices, stock and visibility come from the Supabase `products` table (the same table the server charges from). */
+async function remoteCatalog(){
+  try{
+    const r = await fetch(PS_CONFIG.supabaseUrl + '/rest/v1/products?select=id,price,old_price,out_of_stock', {headers:{apikey:PS_CONFIG.anonKey}});
+    if(!r.ok) return;
+    const rows = await r.json();
+    if(!Array.isArray(rows) || !rows.length) return;
+    const m = new Map(rows.map(x => [x.id, x]));
+    for(let i = BASE.length - 1; i >= 0; i--){
+      const p = BASE[i], x = m.get(p.id);
+      if(!x){ BASE.splice(i, 1); continue; }   // hidden (or removed) in the table
+      p.price = Number(x.price); p.old = Number(x.old_price) || 0; p.out = !!x.out_of_stock;
+      p.sale = p.old > p.price; p.pct = p.sale ? Math.round((1 - p.price / p.old) * 100) : 0;
+    }
+    applyLive();
+  }catch(e){}
+}
 async function initLive2(){
-  if(!window.claude || !claude.use){ DIAG.push('הדף לא נפתח בתוך claude.ai, לכן אין חיבור. פתחו את הקישור מתוך הדפדפן כשאתם מחוברים.'); return; }
+  if(!window.claude || !claude.use){ await remoteCatalog(); DIAG.push('הדף לא נפתח בתוך claude.ai, לכן אין חיבור. פתחו את הקישור מתוך הדפדפן כשאתם מחוברים.'); return; }
   let db, user;
   try{ db = await claude.use('db'); user = await claude.use('user'); }catch(e){ DIAG.push('טעינת החיבור נכשלה'); return; }
   if(!db){ DIAG.push('אין גישה למאגר. צריך להיות מחובר לחשבון claude.ai.'); return; }
