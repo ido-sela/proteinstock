@@ -249,9 +249,14 @@ async function remoteCatalog(){
       p.img = 'img/protein-stock-sports-nutrition-e-commerce-logo.webp';
       apply(p, x, true); BASE.push(p);
     });
+    try{   // storefront texts edited in the admin (top bar)
+      const cr = await fetch(PS_CONFIG.supabaseUrl + '/rest/v1/site_settings?select=value&key=eq.content', {headers:{apikey:PS_CONFIG.anonKey}});
+      if(cr.ok){ const c = await cr.json(); LIVE.banner = (c[0] && c[0].value && typeof c[0].value.topbar === 'string') ? c[0].value.topbar : ''; }
+    }catch(e){}
     applyLive();
   }catch(e){}
-}async function initLive2(){
+}
+async function initLive2(){
   if(!window.claude || !claude.use){ await remoteCatalog(); DIAG.push('הדף לא נפתח בתוך claude.ai, לכן אין חיבור. פתחו את הקישור מתוך הדפדפן כשאתם מחוברים.'); return; }
   let db, user;
   try{ db = await claude.use('db'); user = await claude.use('user'); }catch(e){ DIAG.push('טעינת החיבור נכשלה'); return; }

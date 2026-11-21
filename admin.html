@@ -167,7 +167,7 @@ function closeNav() { const n = document.getElementById('nav'), b = document.get
 /* Page header inside the panel: icon + title on the start side, actions on the end side. */
 function setBar(key, title, actions) {
   const pb = document.getElementById('pb'), panel = document.getElementById('panel'); if (!pb) return;
-  panel.classList.remove('gray');
+  panel.classList.remove('gray'); document.getElementById('pane').classList.remove('wide');
   pb.innerHTML = `<button class="burger" id="burger" aria-label="תפריט">☰</button><span class="pb-i">${ICO[key] || ''}</span><span class="pb-t" id="pb-t">${esc(title)}</span><span class="pb-s"></span><span class="pb-a">${actions || ''}</span>`;
   document.getElementById('burger').onclick = () => { document.getElementById('nav').classList.add('open'); document.getElementById('nbd').classList.add('open'); };
   panel.scrollTop = 0;
@@ -240,7 +240,7 @@ async function orders() {
   draw();
 }
 
-/* ---------- AI assistant ---------- */
+/* ---------- AI assistant with live site preview ---------- */
 let chatHist = [];
 const AI_ERR = {
   not_configured: 'העוזר עדיין לא מחובר. צריך להוסיף את המפתח ANTHROPIC_API_KEY ב-Supabase (Edge Functions ← Secrets).',
@@ -251,21 +251,51 @@ const AI_ERR = {
   forbidden: 'אין לך הרשאה להשתמש בעוזר.',
   unauthorized: 'ההתחברות פגה. התנתקו והתחברו שוב.'
 };
+const PV_PAGES = [['index.html', 'דף הבית'], ['products.html', 'כל המוצרים'], ['brands.html', 'מותגים'], ['why.html', 'למה פרוטאין סטוק'], ['contact.html', 'צור קשר']];
+const PV_PHONE = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="8" height="15" rx="2"/><path d="M9 15h2"/></svg>';
+const PV_REFRESH = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10a6 6 0 1 1-1.8-4.3M16 3.5V6h-2.5"/></svg>';
+const PV_OPEN = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3.5h5.5V9M16.5 3.5L9 11M8 5H4.5v10.5H15V12"/></svg>';
+
 async function ai() {
-  setBar('ai', 'עוזר AI');
-  const EX = ['הסתר את כל המוצרים שאזלו', 'העלה ב-5% את המחירים של כל מוצרי Monster', 'הראה לי את ההזמנות הממתינות', 'משלוח חינם מעל 349 שקלים', 'אילו מוצרים נמצאים במבצע?'];
-  pane().innerHTML = `<div class="card ai"><div class="chat" id="chat" aria-live="polite"></div>
-    <div class="chips" id="ex">${EX.map(t => `<button class="chip" type="button">${esc(t)}</button>`).join('')}</div>
-    <form id="af"><textarea id="ap" rows="3" maxlength="4000" placeholder="כתבו כל בקשה בעברית. למשל: הורד ב-10% את כל חטיפי Warrior…"></textarea>
-    <div class="row2"><button class="btn pri" id="as">שליחה</button><button class="btn" type="button" id="ac">שיחה חדשה</button><span class="who">כל בקשה נחשבת בחשבון ה-API של Anthropic שחיברתם. השינויים מתעדכנים בחנות מיד.</span></div></form></div>`;
-  const chat = document.getElementById('chat'), ta = document.getElementById('ap'), sendBtn = document.getElementById('as');
+  setBar('ai', 'עוזר AI', '<button class="btn" id="ai-new">שיחה חדשה</button>');
+  const host = pane(); host.classList.add('wide');
+  const EX = ['הסתר את כל המוצרים שאזלו', 'העלה ב-5% את המחירים של כל מוצרי Monster', 'שנה את הסרגל העליון ל"משלוח חינם עד סוף השבוע"', 'הראה לי את ההזמנות הממתינות', 'אילו מוצרים נמצאים במבצע?'];
+  host.innerHTML = `<div class="ai-split">
+    <section class="pv" aria-label="תצוגה מקדימה של האתר"><div class="pv-bar"><select id="pv-page" aria-label="עמוד לתצוגה">${PV_PAGES.map(([u, n]) => `<option value="${u}">${n}</option>`).join('')}</select><span class="pv-s"></span>
+      <button class="ib" id="pv-d" aria-pressed="false" aria-label="תצוגת נייד" title="תצוגת נייד">${PV_PHONE}</button><button class="ib" id="pv-r" aria-label="רענון" title="רענון">${PV_REFRESH}</button><a class="ib" id="pv-o" href="index.html" target="_blank" rel="noopener" aria-label="פתיחה בלשונית חדשה" title="פתיחה בלשונית חדשה">${PV_OPEN}</a></div>
+      <div class="pv-stage"><div class="pv-frame" id="pv-frame"><iframe id="pv-if" title="האתר" src="index.html"></iframe><div class="pv-busy" id="pv-busy" hidden>מתעדכן…</div></div></div></section>
+    <section class="chatp"><div class="chat" id="chat" aria-live="polite"></div><div class="chips" id="ex">${EX.map(t => `<button class="chip" type="button">${esc(t)}</button>`).join('')}</div>
+      <form id="af" class="comp"><textarea id="ap" rows="2" maxlength="4000" placeholder="כתבו כל בקשה בעברית…"></textarea><div class="comp-r"><span class="who">הבקשות נחשבות בחשבון ה-API שחיברתם</span><button class="btn pri" id="as">שליחה</button></div></form></section></div>`;
+  const $ = s => host.querySelector(s);
+  const f = $('#pv-if'), busy = $('#pv-busy'), sel = $('#pv-page'), openA = $('#pv-o');
+
+  /* ---- live preview ---- */
+  let keepY = 0;
+  const sync = () => {
+    try {
+      const file = f.contentWindow.location.pathname.split('/').pop() || 'index.html';
+      const q = f.contentWindow.location.search;
+      let o = [...sel.options].find(x => x.value === file);
+      if (!o) { sel.insertAdjacentHTML('beforeend', `<option value="${esc(file)}">${file === 'product.html' ? 'עמוד מוצר' : esc(file)}</option>`); o = sel.lastElementChild; }
+      sel.value = file; openA.href = file + q;
+    } catch (e) { /* cross-origin: ignore */ }
+  };
+  f.onload = () => { busy.hidden = true; sync(); try { f.contentWindow.scrollTo(0, keepY); } catch (e) { /* ignore */ } keepY = 0; };
+  const reload = () => { try { keepY = f.contentWindow.scrollY; } catch (e) { keepY = 0; } busy.hidden = false; try { f.contentWindow.location.reload(); } catch (e) { f.src = f.src; } };
+  const go = url => { keepY = 0; busy.hidden = false; try { f.contentWindow.location.replace(url); } catch (e) { f.src = url; } };
+  sel.onchange = () => go(sel.value);
+  $('#pv-r').onclick = reload;
+  $('#pv-d').onclick = e => { const on = $('#pv-frame').classList.toggle('mobile'); e.currentTarget.setAttribute('aria-pressed', on); };
+
+  /* ---- chat ---- */
+  const chat = $('#chat'), ta = $('#ap'), sendBtn = $('#as');
   const paint = () => {
-    chat.innerHTML = chatHist.length ? chatHist.map(m => `<div class="m ${m.role}${m.err ? ' err' : ''}"><div class="mt">${esc(m.text)}</div>${(m.actions || []).map(a => `<span class="act">✓ ${esc(a)}</span>`).join('')}</div>`).join('') : '<p class="empty">מה לעשות בחנות? אפשר לשנות מחירים, מלאי והסתרה, לראות הזמנות ולעדכן משלוח.</p>';
+    chat.innerHTML = chatHist.length ? chatHist.map(m => `<div class="m ${m.role}${m.err ? ' err' : ''}"><div class="mt">${esc(m.text)}</div>${(m.actions || []).map(a => `<span class="act">✓ ${esc(a)}</span>`).join('')}</div>`).join('') : '<p class="empty">מה לעשות בחנות? אפשר לשנות מחירים, מלאי וסטטוס, לעדכן את הסרגל העליון והמשלוח, ולראות הזמנות. כל שינוי מופיע באתר משמאל מיד.</p>';
     chat.scrollTop = chat.scrollHeight;
   };
   paint();
   const send = async text => {
-    text = text.trim(); if (!text) return;
+    text = text.trim(); if (!text || sendBtn.disabled) return;
     chatHist.push({ role: 'user', text }); ta.value = ''; sendBtn.disabled = true;
     chatHist.push({ role: 'assistant', text: 'עובד על זה…', pending: true }); paint();
     let out = null, code = null;
@@ -277,11 +307,17 @@ async function ai() {
     if (code) chatHist.push({ role: 'assistant', err: true, text: AI_ERR[code] || (code === 'network' ? 'אין חיבור לשרת. נסו שוב.' : 'משהו השתבש' + (out && out.detail ? ': ' + out.detail : '.')), actions: out.actions });
     else chatHist.push({ role: 'assistant', text: out.reply || 'בוצע.', actions: out.actions });
     sendBtn.disabled = false; paint();
+    if ((out.actions || []).length) {   // something changed: show it in the preview
+      const t = out.touched || [];
+      if (t.length === 1) go('product.html?id=' + encodeURIComponent(t[0]));
+      else if (t.length > 1) go('products.html');
+      else reload();
+    }
   };
-  document.getElementById('af').onsubmit = e => { e.preventDefault(); send(ta.value); };
-  ta.onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(ta.value); } };
-  document.getElementById('ac').onclick = () => { chatHist = []; paint(); };
-  document.getElementById('ex').onclick = e => { const b = e.target.closest('.chip'); if (b) { ta.value = b.textContent; ta.focus(); } };
+  $('#af').onsubmit = e => { e.preventDefault(); send(ta.value); };
+  ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(ta.value); } };
+  $('#ex').onclick = e => { const b = e.target.closest('.chip'); if (b) { ta.value = b.textContent; ta.focus(); } };
+  document.getElementById('ai-new').onclick = () => { chatHist = []; paint(); };
   if (window.__pendingAsk) { const q = window.__pendingAsk; window.__pendingAsk = null; send(q); }
 }
 
@@ -292,13 +328,19 @@ async function settings() {
   const { data, error } = await sb.from('site_settings').select('key,value');
   if (error) { pane().innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
   const get = k => (data.find(r => r.key === k) || {}).value || {};
-  const ship = get('shipping'), pay = get('payment');
+  const ship = get('shipping'), pay = get('payment'), content = get('content');
   pane().innerHTML = `<div class="card" style="display:grid;gap:22px"><div><h2 style="font-size:1.05rem;margin-bottom:10px">משלוח</h2>
     <div class="grid2"><div class="field"><label for="fo">משלוח חינם מעל (₪)</label><input type="number" id="fo" min="0" step="1" value="${Number(ship.free_over) || 0}" dir="ltr"></div>
     <div class="field"><label for="ff">דמי משלוח מתחת לסכום (₪)</label><input type="number" id="ff" min="0" step="0.5" value="${Number(ship.fee) || 0}" dir="ltr"></div></div>
     <p class="who" style="margin:8px 0 0">הסכום מחושב בשרת בעת ביצוע ההזמנה. הטקסטים באתר (למשל "משלוח חינם מעל ₪299") נשארים כפי שהם.</p>
     <button class="btn pri" id="ss" style="margin-top:12px">שמירת הגדרות משלוח</button></div>
+    <div><h2 style="font-size:1.05rem;margin-bottom:10px">סרגל עליון באתר</h2><div class="field" style="max-width:560px"><label for="tb">טקסט (ריק = ברירת המחדל)</label><input type="text" id="tb" maxlength="160" value="${esc(content.topbar || '')}"></div><button class="btn pri" id="tbs" style="margin-top:12px">שמירת הסרגל</button></div>
     <div><h2 style="font-size:1.05rem;margin-bottom:6px">סליקה</h2><p style="margin:0">${pay.enabled ? `פעילה — ספק: <b>${esc(pay.provider)}</b>` : 'לא מחוברת. הזמנות נשמרות כ"ממתינה לתשלום" והלקוח מקבל מספר הזמנה וקישור לוואטסאפ.'}</p></div></div>`;
+  document.getElementById('tbs').onclick = async e => {
+    const topbar = document.getElementById('tb').value.trim().slice(0, 160); e.target.disabled = true;
+    const { error } = await sb.from('site_settings').update({ value: { ...content, topbar } }).eq('key', 'content');
+    e.target.disabled = false; toast(error ? 'השמירה נכשלה: ' + error.message : 'נשמר');
+  };
   document.getElementById('ss').onclick = async e => {
     const free_over = parseFloat(document.getElementById('fo').value) || 0, fee = parseFloat(document.getElementById('ff').value) || 0;
     if (free_over < 0 || fee < 0) { toast('ערך לא תקין'); return; }

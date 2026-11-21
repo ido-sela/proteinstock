@@ -162,3 +162,31 @@ input[type=email],input[type=text],input[type=number],input[type=search],input[t
 .sp-dlg h2{margin:0 0 8px;font-size:15px}.sp-dlg p{margin:0 0 16px;color:var(--mute)}
 .sp-dlg-f{display:flex;gap:8px;justify-content:flex-start}
 [hidden]{display:none!important}
+
+/* AI tab: chat + live site preview */
+.sh-main.wide{padding:2px 12px 12px;max-width:none}
+.sh-main.wide>*{max-width:none}
+.ai-split{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:12px;height:calc(100vh - 56px - 16px)}
+.pv{display:flex;flex-direction:column;min-height:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fafafa}
+.pv-bar{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fff;border-bottom:1px solid var(--line)}
+.pv-bar select{width:auto;min-width:170px}
+.pv-s{flex:1}
+.pv-bar a.ib{text-decoration:none}
+.pv-stage{flex:1;min-height:0;display:flex;justify-content:center;padding:12px;overflow:auto;background-image:radial-gradient(#d6d6d6 1px,transparent 1px);background-size:14px 14px}
+.pv-frame{position:relative;width:100%;height:100%;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px var(--line),0 4px 18px rgba(0,0,0,.08);transition:width .2s}
+.pv-frame.mobile{width:390px;max-width:100%}
+.pv-frame iframe{width:100%;height:100%;border:0;display:block;background:#fff}
+.pv-busy{position:absolute;top:10px;inset-inline-start:10px;background:#1a1a1a;color:#fff;border-radius:999px;padding:3px 12px;font-size:12px;pointer-events:none}
+.chatp{display:flex;flex-direction:column;min-height:0;border:1px solid var(--line);border-radius:12px;background:#fff}
+.chatp .chat{flex:1;min-height:0;max-height:none;overflow-y:auto;padding:14px;gap:12px}
+.chatp .m{max-width:94%;line-height:1.55;border-radius:14px;padding:8px 12px}
+.chatp .m.user{align-self:flex-start;background:var(--chip);color:var(--ink);border-radius:14px}
+.chatp .m.assistant{align-self:flex-start;background:var(--row);color:var(--ink)}
+.chatp .m.err{background:var(--badbg);color:var(--bad)}
+.chatp .act{color:var(--ok);font-weight:550}
+.chatp .chips{padding:0 14px 8px;margin:0}
+.chatp .chip{font-size:12px;padding:3px 10px}
+.comp{border-top:1px solid var(--line);padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
+.comp textarea{min-height:0;border-radius:12px;resize:none}
+.comp-r{display:flex;align-items:center;gap:10px}.comp-r .who{flex:1;color:var(--mute);font-size:12px}
+@media (max-width:1000px){.ai-split{grid-template-columns:1fr;height:auto}.pv{height:70vh}.chatp{height:75vh}}
