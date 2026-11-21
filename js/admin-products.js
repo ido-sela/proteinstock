@@ -5,7 +5,7 @@ const SP_STATUS = { active: 'פעיל', draft: 'טיוטה', archived: 'בארכ
 const SP_STATUS_HINT = { active: 'המוצר מוצג בחנות וניתן להזמין אותו.', draft: 'המוצר מוסתר מהחנות עד שתהפכו אותו לפעיל.', archived: 'המוצר מוסתר מהחנות ונשמר בארכיון.' };
 const SP_PAGE = 50;
 const SP_LOGO = 'img/protein-stock-sports-nutrition-e-commerce-logo.webp';
-const SP = { rows: [], tab: 'all', q: '', sort: 'title', page: 0, sel: new Set() };
+const SP = { rows: [], tab: 'all', q: '', sort: 'title', page: 0, sel: new Set(), cat: '', vendor: '' };
 const SP_BUILT = {};
 try { RAW.map(build).forEach(p => { SP_BUILT[p.id] = p; }); } catch (e) { /* no built-in catalog */ }
 
@@ -43,7 +43,7 @@ async function products() {
 /* ---------- list ---------- */
 function spVisible() {
   const q = SP.q.toLowerCase();
-  const l = SP.rows.filter(p => (SP.tab === 'all' || p.status === SP.tab) &&
+  const l = SP.rows.filter(p => (SP.tab === 'all' || p.status === SP.tab) && (!SP.cat || p.category === SP.cat) && (!SP.vendor || p.vendor === SP.vendor) &&
     (!q || [p.title, p.id, p.vendor, p.sku, spCat(p.category), (p.tags || []).join(' ')].some(v => String(v || '').toLowerCase().includes(q))));
   const by = { title: (a, b) => a.title.localeCompare(b.title, 'he'), updated: (a, b) => String(b.updated_at).localeCompare(String(a.updated_at)), low: (a, b) => a.price - b.price, high: (a, b) => b.price - a.price };
   return l.sort(by[SP.sort]);
@@ -52,23 +52,46 @@ const spInv = p => p.quantity != null
   ? (p.quantity > 0 ? `${p.quantity} במלאי` : '<span class="neg">אזל מהמלאי</span>')
   : (p.out_of_stock ? '<span class="neg">אזל מהמלאי</span>' : '<span class="mute">המלאי לא במעקב</span>');
 
+const SPI = {
+  filter: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 5.5h14M6 10h8M8.5 14.5h3"/></svg>',
+  sort: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4M7 4L4 7M7 4l3 3M13 4v12M13 16l-3-3M13 16l3-3"/></svg>'
+};
+const SP_SORTS = { title: 'שם', updated: 'עודכן לאחרונה', low: 'מחיר: מהנמוך לגבוה', high: 'מחיר: מהגבוה לנמוך' };
+let spPopBound = false;
+
 function spList() {
   const R = pane(); const need = SP.rows.filter(p => p.virtual).length;
-  R.innerHTML = `<div class="sp-head"><h1>מוצרים</h1><span class="grow"></span><button class="btn" id="sp-exp">ייצוא</button><button class="btn pri" id="sp-add">הוספת מוצר</button></div>
-    ${need ? `<div class="sp-banner"><span>ל-${need} מוצרים עדיין לא נשמרו פרטי הקטלוג המלאים (שם מלא, תמונה, מותג, קטגוריה ותגיות). ייבוא חד-פעמי יאפשר לערוך אותם כאן ויציג אותם נכון בחנות.</span><button class="btn pri" id="sp-imp">ייבוא פרטי הקטלוג</button></div>` : ''}
-    <div class="sp-card"><div class="sp-tabbar"><div class="tb" id="sp-tb"></div><div class="tools"><input type="search" id="sp-q" placeholder="חיפוש מוצרים" aria-label="חיפוש מוצרים" value="${esc(SP.q)}">
-      <select id="sp-so" aria-label="מיון"><option value="title">מיון: שם</option><option value="updated">עודכן לאחרונה</option><option value="low">מחיר: נמוך לגבוה</option><option value="high">מחיר: גבוה לנמוך</option></select></div></div>
+  setBar('products', 'מוצרים', '<button class="btn" id="sp-exp">ייצוא</button><button class="btn pri" id="sp-add">הוספת מוצר</button>');
+  document.getElementById('sp-add').onclick = () => spEdit(null);
+  document.getElementById('sp-exp').onclick = spExport;
+  if (!SP.rows.length) {
+    R.innerHTML = '<div class="sp-card"><div class="sp-zero"><h2>הוסיפו את המוצרים שלכם</h2><p>התחילו למלא את החנות במוצרים שהלקוחות שלכם יאהבו</p><div class="acts"><button class="btn pri" id="sp-add2">הוספת מוצר</button></div></div></div>';
+    R.querySelector('#sp-add2').onclick = () => spEdit(null);
+    return;
+  }
+  const cats = (typeof CATS !== 'undefined' ? CATS : []);
+  const vendors = [...new Set(SP.rows.map(p => p.vendor).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  R.innerHTML = `${need ? `<div class="sp-banner"><span>ל-${need} מוצרים עדיין לא נשמרו פרטי הקטלוג המלאים (שם מלא, תמונה, מותג, קטגוריה ותגיות). ייבוא חד-פעמי יאפשר לערוך אותם כאן ויציג אותם נכון בחנות.</span><button class="btn pri" id="sp-imp">ייבוא פרטי הקטלוג</button></div>` : ''}
+    <div class="sp-card"><div class="sp-tabbar"><div class="tb" id="sp-tb"></div>
+      <button class="ib" id="sp-bs" aria-label="חיפוש" title="חיפוש" aria-pressed="${!!SP.q}">${ICO.search}</button>
+      <button class="ib" id="sp-bf" aria-label="סינון" title="סינון">${SPI.filter}</button>
+      <button class="ib" id="sp-bo" aria-label="מיון" title="מיון">${SPI.sort}</button>
+      <div class="pop" id="pop-f" hidden><h3>קטגוריה</h3><select id="f-cat" aria-label="קטגוריה"><option value="">הכול</option>${cats.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select>
+        <h3>ספק</h3><select id="f-ven" aria-label="ספק"><option value="">הכול</option>${vendors.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select><button class="btn sm link" id="f-clr">ניקוי סינון</button></div>
+      <div class="pop" id="pop-o" hidden><h3>מיון לפי</h3>${Object.entries(SP_SORTS).map(([k, v]) => `<label class="o"><input type="radio" name="so" value="${k}"${SP.sort === k ? ' checked' : ''}> ${v}</label>`).join('')}</div></div>
+      <div class="sp-search" id="sp-sr"${SP.q ? '' : ' hidden'}><input type="search" id="sp-q" placeholder="חיפוש מוצרים" aria-label="חיפוש מוצרים" value="${esc(SP.q)}"></div>
       <div id="sp-sb"></div><div class="sp-tw"><table class="sp-table"><thead><tr><th class="c"><input type="checkbox" id="sp-all" aria-label="בחירת הכול"></th><th>מוצר</th><th>סטטוס</th><th class="hm">מלאי</th><th class="hm">קטגוריה</th><th class="hm">ספק</th><th class="num">מחיר</th></tr></thead><tbody id="sp-tbody"></tbody></table></div><div class="sp-foot" id="sp-ft"></div></div>`;
-  R.querySelector('#sp-so').value = SP.sort;
+  R.querySelector('#f-cat').value = SP.cat; R.querySelector('#f-ven').value = SP.vendor;
   const draw = () => {
     const all = spVisible(), pages = Math.max(1, Math.ceil(all.length / SP_PAGE)); SP.page = Math.min(SP.page, pages - 1);
     const view = all.slice(SP.page * SP_PAGE, (SP.page + 1) * SP_PAGE);
     const cnt = t => t === 'all' ? SP.rows.length : SP.rows.filter(p => p.status === t).length;
-    R.querySelector('#sp-tb').innerHTML = [['all', 'הכול'], ['active', 'פעיל'], ['draft', 'טיוטה'], ['archived', 'בארכיון']].map(([k, v]) => `<button data-tab="${k}" aria-selected="${k === SP.tab}">${v} (${cnt(k)})</button>`).join('');
+    R.querySelector('#sp-tb').innerHTML = [['all', 'הכול'], ['active', 'פעיל'], ['draft', 'טיוטה'], ['archived', 'בארכיון']].map(([k, v]) => `<button data-tab="${k}" aria-selected="${k === SP.tab}">${v}${k === 'all' ? '' : ' ' + cnt(k)}</button>`).join('');
+    R.querySelector('#sp-bf').setAttribute('aria-pressed', !!(SP.cat || SP.vendor));
     R.querySelector('#sp-tbody').innerHTML = view.length ? view.map(p => `<tr data-id="${esc(p.id)}" class="${SP.sel.has(p.id) ? 'sel' : ''}"><td class="c"><input type="checkbox" data-sel aria-label="בחירה"${SP.sel.has(p.id) ? ' checked' : ''}></td>
       <td><div class="pr"><img class="th" src="${esc(p.image || SP_LOGO)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${SP_LOGO}'"><span>${esc(p.title)}</span></div></td>
       <td><span class="sp-b ${esc(p.status)}">${SP_STATUS[p.status] || esc(p.status)}</span></td><td class="hm">${spInv(p)}</td><td class="hm">${esc(spCat(p.category))}</td><td class="hm">${esc(p.vendor || '')}</td><td class="num">${money(p.price)}</td></tr>`).join('')
-      : `<tr><td colspan="7" class="sp-empty">${SP.rows.length ? 'לא נמצאו מוצרים שמתאימים לחיפוש.' : 'עדיין אין מוצרים. הוסיפו את המוצר הראשון.'}</td></tr>`;
+      : `<tr><td colspan="7" class="sp-empty">לא נמצאו מוצרים שמתאימים לחיפוש או לסינון.</td></tr>`;
     const allBox = R.querySelector('#sp-all'); const onPage = view.filter(p => SP.sel.has(p.id)).length;
     allBox.checked = view.length > 0 && onPage === view.length; allBox.indeterminate = onPage > 0 && onPage < view.length;
     const n = SP.sel.size;
@@ -76,11 +99,18 @@ function spList() {
     R.querySelector('#sp-ft').innerHTML = all.length > SP_PAGE ? `<button class="btn sm" id="sp-pv" ${SP.page ? '' : 'disabled'} aria-label="הקודם">›</button><span>${SP.page * SP_PAGE + 1}–${Math.min(all.length, (SP.page + 1) * SP_PAGE)} מתוך ${all.length}</span><button class="btn sm" id="sp-nx" ${SP.page < pages - 1 ? '' : 'disabled'} aria-label="הבא">‹</button>` : `<span>${all.length} מוצרים</span>`;
   };
   draw();
-  R.querySelector('#sp-add').onclick = () => spEdit(null);
-  R.querySelector('#sp-exp').onclick = spExport;
   const imp = R.querySelector('#sp-imp'); if (imp) imp.onclick = () => spImport(imp);
-  R.querySelector('#sp-q').oninput = e => { SP.q = e.target.value.trim(); SP.page = 0; draw(); };
-  R.querySelector('#sp-so').onchange = e => { SP.sort = e.target.value; draw(); };
+  const pops = () => R.querySelectorAll('.pop');
+  const toggle = id => { const p = R.querySelector(id); const was = p.hidden; pops().forEach(x => { x.hidden = true; }); p.hidden = !was; };
+  R.querySelector('#sp-bs').onclick = () => { const s = R.querySelector('#sp-sr'); s.hidden = !s.hidden; if (!s.hidden) R.querySelector('#sp-q').focus(); };
+  R.querySelector('#sp-bf').onclick = () => toggle('#pop-f');
+  R.querySelector('#sp-bo').onclick = () => toggle('#pop-o');
+  if (!spPopBound) { spPopBound = true; document.addEventListener('click', e => { if (!e.target.closest('.pop,.ib')) document.querySelectorAll('.pop').forEach(p => { p.hidden = true; }); }); }
+  R.querySelector('#f-cat').onchange = e => { SP.cat = e.target.value; SP.page = 0; draw(); };
+  R.querySelector('#f-ven').onchange = e => { SP.vendor = e.target.value; SP.page = 0; draw(); };
+  R.querySelector('#f-clr').onclick = () => { SP.cat = ''; SP.vendor = ''; R.querySelector('#f-cat').value = ''; R.querySelector('#f-ven').value = ''; SP.page = 0; draw(); };
+  R.querySelector('#pop-o').onchange = e => { SP.sort = e.target.value; draw(); R.querySelector('#pop-o').hidden = true; };
+  R.querySelector('#sp-q').oninput = e => { SP.q = e.target.value.trim(); SP.page = 0; R.querySelector('#sp-bs').setAttribute('aria-pressed', !!SP.q); draw(); };
   R.querySelector('#sp-tb').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { SP.tab = b.dataset.tab; SP.page = 0; draw(); } };
   R.querySelector('#sp-ft').onclick = e => { if (e.target.closest('#sp-pv')) { SP.page--; draw(); } if (e.target.closest('#sp-nx')) { SP.page++; draw(); } };
   R.querySelector('#sp-all').onchange = e => {
@@ -144,9 +174,11 @@ function spEdit(row) {
   const F = form(row); let orig = JSON.stringify(F); if (row && row.virtual) orig = '';   // an unimported product always counts as unsaved
   const R = pane();
   const vendors = [...new Set(SP.rows.map(p => p.vendor).filter(Boolean))];
-  R.innerHTML = `<button class="sp-back" id="e-back">→ מוצרים</button>
-    <div class="sp-head"><h1 id="e-h">${esc(F.title || 'מוצר חדש')}</h1><span class="sp-b ${esc(F.status)}" id="e-badge">${SP_STATUS[F.status]}</span></div>
-    <div class="sp-bar" id="e-bar" hidden><b>שינויים שלא נשמרו</b><button class="btn" id="e-discard">ביטול שינויים</button><button class="btn pri" id="e-save">שמירה</button></div>
+  document.getElementById('panel').classList.add('gray');
+  document.getElementById('pb').innerHTML = `<button class="burger" id="burger" aria-label="תפריט">☰</button><button class="pb-back" id="e-back" aria-label="חזרה למוצרים">→</button><span class="pb-i">${ICO.products}</span><span class="pb-t" id="e-h"></span><span class="sp-b" id="e-badge"></span><span class="pb-s"></span>
+    <div class="sp-bar" id="e-bar" hidden><b>שינויים שלא נשמרו</b><button class="btn" id="e-discard">ביטול שינויים</button><button class="btn pri" id="e-save">שמירה</button></div>`;
+  document.getElementById('burger').onclick = () => { document.getElementById('nav').classList.add('open'); document.getElementById('nbd').classList.add('open'); };
+  R.innerHTML = `
     <div class="sp-grid"><div>
       <div class="sp-card sp-pad"><label class="fld"><span>כותרת</span><input type="text" id="e-title" maxlength="300" placeholder="למשל: חטיף חלבון בטעם שוקולד | 12 יחידות"></label>
         <label class="fld"><span>תיאור</span><textarea id="e-desc" maxlength="5000" placeholder="תיאור המוצר שיוצג בעמוד המוצר"></textarea></label></div>
@@ -161,7 +193,7 @@ function spEdit(row) {
         <label class="fld"><span>ספק / מותג</span><input type="text" id="e-vendor" list="e-vl" maxlength="80"><datalist id="e-vl">${vendors.map(v => `<option value="${esc(v)}">`).join('')}</datalist></label>
         <label class="fld"><span>תגיות</span><input type="text" id="e-tag" maxlength="40" placeholder="הקלידו ולחצו Enter"></label><div class="tagbox" id="e-tags"></div></div>
     </div></div>${isNew ? '' : '<div class="sp-del"><button class="btn danger" id="e-del">מחיקת מוצר</button></div>'}`;
-  const $ = s => R.querySelector(s);
+  const $ = s => document.querySelector(s);
   const bind = (sel, key, num) => { const el = $(sel); el.value = F[key]; el.oninput = () => { F[key] = el.value; touch(); }; };
   const touch = () => {
     $('#e-h').textContent = F.title.trim() || 'מוצר חדש';
@@ -240,7 +272,7 @@ function spEdit(row) {
     const saved = spNorm(res.data); const i = SP.rows.findIndex(p => p.id === id);
     if (i >= 0) SP.rows[i] = saved; else SP.rows.push(saved);
     isNew = false; orig = JSON.stringify(F); touch(); toast('המוצר נשמר');
-    if (!R.querySelector('#e-del')) R.insertAdjacentHTML('beforeend', '<div class="sp-del"><button class="btn danger" id="e-del">מחיקת מוצר</button></div>');
+    if (!document.querySelector('#e-del')) R.insertAdjacentHTML('beforeend', '<div class="sp-del"><button class="btn danger" id="e-del">מחיקת מוצר</button></div>');
     wireDel();
   };
   const wireDel = () => {
