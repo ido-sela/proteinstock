@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>כל המוצרים — פרוטאין סטוק</title>
+<meta name="description" content="קטלוג מלא: חטיפי חלבון, עוגיות חלבון, משקאות חלבון, משקאות אנרגיה, שיבולת שועל וקריאטין.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main id="main">
+  <div class="page-head"><div class="wrap"><div class="crumbs"><a href="index.html">בית</a> / <span id="crumb">מוצרים</span></div><h1 id="title">כל המוצרים</h1><p id="sub" style="color:var(--muted);margin-top:6px"></p></div></div>
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="chips" id="chips" role="group" aria-label="קטגוריות"></div>
+      <div class="tools">
+        <input type="search" id="q" placeholder="חיפוש…" aria-label="חיפוש">
+        <select id="brand" aria-label="מותג"><option value="">כל המותגים</option></select>
+        <select id="sort" aria-label="מיון"><option value="def">מיון: ברירת מחדל</option><option value="pa">מחיר: נמוך לגבוה</option><option value="pd">מחיר: גבוה לנמוך</option><option value="pr">הכי הרבה חלבון</option></select>
+        <label><input type="checkbox" id="stock"> במלאי בלבד</label>
+        <label><input type="checkbox" id="p20"> 20+ גרם חלבון</label>
+      </div>
+    </div>
+    <p class="count" id="count" aria-live="polite"></p>
+    <div class="grid" id="grid" style="margin-bottom:80px"></div>
+  </div>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+layout('products');
+const P=new URLSearchParams(location.search);
+const st={cat:P.get('cat')||'',q:P.get('q')||'',brand:P.get('brand')||'',sort:'def',stock:false,p20:false};
+const $=id=>document.getElementById(id);
+$('chips').innerHTML=[{id:'',name:'הכל'},...CATS].map(c=>`<button class="chip-btn" data-c="${c.id}">${c.name}</button>`).join('');
+const brands=[...new Set(PRODUCTS.map(p=>p.brand).filter(Boolean))].sort();
+$('brand').innerHTML+=brands.map(b=>`<option>${esc(b)}</option>`).join('');
+$('q').value=st.q; $('brand').value=st.brand;
+function render(){
+  let l=PRODUCTS.filter(p=>(!st.cat||p.cat===st.cat)&&(!st.brand||p.brand===st.brand)&&(!st.stock||!p.out)&&(!st.p20||p.protein>=20)&&(!st.q||(p.title+' '+p.brand+' '+catName(p.cat)).toLowerCase().includes(st.q.toLowerCase())));
+  if(st.sort==='pa') l.sort((a,b)=>a.price-b.price); else if(st.sort==='pd') l.sort((a,b)=>b.price-a.price); else if(st.sort==='pr') l.sort((a,b)=>b.protein-a.protein);
+  else l.sort((a,b)=>a.out-b.out);
+  document.querySelectorAll('.chip-btn').forEach(b=>b.classList.toggle('on',b.dataset.c===st.cat));
+  const name=st.cat?catName(st.cat):(st.brand||'כל המוצרים');
+  $('title').textContent=name; $('crumb').textContent=name; document.title=name+' — פרוטאין סטוק';
+  $('count').textContent=l.length?`${l.length} מוצרים`:'';
+  $('grid').innerHTML=l.length?l.map(card).join(''):'<div class="empty" style="grid-column:1/-1"><p style="font-size:2.4rem">🔍</p><p>לא נמצאו מוצרים. נסו לשנות את הסינון.</p></div>';
+}
+$('chips').onclick=e=>{const b=e.target.closest('[data-c]');if(b){st.cat=b.dataset.c;render();}};
+$('q').oninput=e=>{st.q=e.target.value;render();};
+$('brand').onchange=e=>{st.brand=e.target.value;render();};
+$('sort').onchange=e=>{st.sort=e.target.value;render();};
+$('stock').onchange=e=>{st.stock=e.target.checked;render();};
+$('p20').onchange=e=>{st.p20=e.target.checked;render();};
+render(); window.__rerender=render; if(window.__liveReady) render();
+</script>
+</body>
+</html>

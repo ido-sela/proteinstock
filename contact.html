@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>צור קשר — פרוטאין סטוק</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main id="main">
+<div class="page-head"><div class="wrap"><div class="crumbs"><a href="index.html">בית</a> / צור קשר</div><h1>דברו איתנו</h1><p style="color:var(--muted);margin-top:6px">שאלה על מוצר, הזמנה עסקית או משלוח? נחזור אליכם בהקדם.</p></div></div>
+<div class="wrap contact-grid">
+  <div class="info">
+    <div class="info-item"><span class="ic">📞</span><div><b>טלפון</b><a href="tel:0556650400">0556650400</a></div></div>
+    <div class="info-item"><span class="ic">💬</span><div><b>וואטסאפ</b><a href="https://wa.me/972556650400" target="_blank" rel="noopener">שלחו הודעה</a></div></div>
+    <div class="info-item"><span class="ic">✉️</span><div><b>אימייל</b><a href="mailto:info@proteinstock.co.il">info@proteinstock.co.il</a></div></div>
+    <div class="info-item"><span class="ic">📍</span><div><b>כתובת</b>שדרות הראשונים 20, ראשון לציון</div></div>
+    <div class="info-item"><span class="ic">🕘</span><div><b>שעות פעילות</b>א׳–ה׳ 09:00–16:00 · ו׳–שבת סגור</div></div>
+  </div>
+  <form class="card" id="f">
+    <label>שם מלא<input name="name" required autocomplete="name"></label>
+    <label>טלפון<input name="phone" type="tel" required autocomplete="tel"></label>
+    <label>אימייל<input name="email" type="email" autocomplete="email"></label>
+    <label>הודעה<textarea name="msg" rows="5" required></textarea></label>
+    <button class="btn btn-primary" type="submit">שליחה בוואטסאפ</button>
+    <p style="font-size:.85rem;color:var(--muted)">ההודעה תיפתח בוואטסאפ של החנות, מוכנה לשליחה.</p>
+  </form>
+</div>
+</main>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+layout('contact');
+document.getElementById('f').onsubmit=e=>{e.preventDefault();const d=new FormData(e.target);
+const t=`פנייה מהאתר%0Aשם: ${encodeURIComponent(d.get('name'))}%0Aטלפון: ${encodeURIComponent(d.get('phone'))}%0Aאימייל: ${encodeURIComponent(d.get('email')||'-')}%0A${encodeURIComponent(d.get('msg'))}`;
+window.open(`https://wa.me/${SITE.wa}?text=${t}`,'_blank','noopener');};
+</script>
+</body>
+</html>
