@@ -5,47 +5,6 @@ const SITE = { phone:'0556650400', wa:'972556650400', email:'info@proteinstock.c
 const PS_CONFIG = { supabaseUrl:'https://yplzliqpohqehypllxdq.supabase.co', anonKey:'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };
 const ORDER_ERR = { unavailable:'חלק מהמוצרים כבר לא זמינים — רעננו את הדף ונסו שוב', rate_limited:'יותר מדי הזמנות בזמן קצר, נסו שוב בעוד כמה דקות', invalid_phone:'מספר הטלפון אינו תקין', invalid_name:'נא למלא שם מלא' };
 
-const CATS = [
-  {id:'protein-snacks', name:'חטיפי חלבון', icon:'🍫', desc:'Snickers, Mars, Warrior, Muscle Moose ועוד — מושלם אחרי אימון או בכל רגע ביום.'},
-  {id:'protein-cookies', name:'עוגיות חלבון', icon:'🍪', desc:'עוגיות רכות ואפויות של Snickers ו-Mars עם 15 גרם חלבון.'},
-  {id:'protein-beverages', name:'משקאות חלבון', icon:'🥤', desc:'משקאות חלבון מוכנים לשתייה — עד 50 גרם חלבון בבקבוק.'},
-  {id:'energy-drinks', name:'משקאות אנרגיה', icon:'⚡', desc:'מארזי Monster במגוון טעמים — אנרגיה ומיקוד לכל אימון.'},
-  {id:'protein-fortified-oatmeal', name:'שיבולת שועל עם חלבון', icon:'🥣', desc:'דייסות Critical Oats — ארוחת בוקר עם 23 גרם חלבון.'},
-  {id:'protein-powders', name:'אבקות חלבון', icon:'💪', desc:'אבקות חלבון צלול לבניית שריר והתאוששות מהירה.'},
-  {id:'protein-health-snacks', name:'חטיפי בריאות עם חלבון', icon:'🌱', desc:'נשנושים אורגניים וטבעוניים עשירים בחלבון.'},
-  {id:'creatine-and-nutritional-supplements', name:'קריאטין ותוספי תזונה', icon:'🧪', desc:'גומי קריאטין וכל מה שתומך בביצועים.'}
-];
-const catName = id => (CATS.find(c=>c.id===id)||{}).name || '';
-
-const BRANDS = [
-  ['Monster',/monster/i],['Snickers',/snickers|סניקרס/i],['Mars',/\bmars\b|מרס/i],['Warrior',/warrior/i],
-  ['Muscle Moose',/muscle moose/i],['Applied Nutrition',/applied nutrition/i],['UFIT',/ufit/i],
-  ['ProPud',/propud/i],['Profusion',/profusion/i],['Hubba Bubba',/hubba bubba/i],['M&M\'s',/m&ms?/i]
-];
-
-function build(r){
-  const [id,title,price,old,tagStr,img]=r;
-  const parts=title.split('|').map(s=>s.trim());
-  const rawTags=tagStr.split(',').filter(Boolean);
-  const out=rawTags.includes('אזל');
-  const tags=rawTags.filter(t=>t!=='אזל');
-  let brand=''; for(const [n,re] of BRANDS){ if(re.test(title)){brand=n;break;} }
-  // Snickers/Mars title ordering: first match wins; "Mars" suffix on Snickers items handled by order
-  if(/snickers|סניקרס/i.test(title)) brand='Snickers';
-  const pm=title.match(/(\d+(?:\.\d+)?)\s*גרם חלבון/); const protein=pm?parseFloat(pm[1]):0;
-  let cat='protein-snacks';
-  if(/monster/i.test(title)) cat='energy-drinks';
-  else if(/^משקה חלבון/.test(title)) cat='protein-beverages';
-  else if(/^עוגיית/.test(title)) cat='protein-cookies';
-  else if(/^דייסת/.test(title)) cat='protein-fortified-oatmeal';
-  else if(/קריאטין/.test(title)) cat='creatine-and-nutritional-supplements';
-  else if(/^אבקת/.test(title)) cat='protein-powders';
-  else if(/profusion/i.test(title)) cat='protein-health-snacks';
-  const name=parts[0];
-  const rest=parts.slice(1).filter(p=>p.toLowerCase()!==brand.toLowerCase());
-  return {id,title,name,rest,price,old,tags,img:'img/p/'+img,out,brand,protein,cat,
-    sale:old>price, pct:old>price?Math.round((1-price/old)*100):0};
-}
 const PRODUCTS = RAW.map(build);
 const byId = id => PRODUCTS.find(p=>p.id===id);
 
@@ -257,24 +216,42 @@ async function initLive(){
     document.body.append(f);
   }
 }
-/* On the hosted site, prices, stock and visibility come from the Supabase `products` table (the same table the server charges from). */
+/* On the hosted site the catalog comes from the Supabase `products` table (the same table the server charges from):
+   prices, stock, status, title, vendor, category, tags, photo and description. Products added in the admin appear here too.
+   If the request fails the built-in catalog (data.js) is used. */
 async function remoteCatalog(){
   try{
-    const r = await fetch(PS_CONFIG.supabaseUrl + '/rest/v1/products?select=id,price,old_price,out_of_stock', {headers:{apikey:PS_CONFIG.anonKey}});
+    const r = await fetch(PS_CONFIG.supabaseUrl + '/rest/v1/products?select=id,title,description,price,old_price,out_of_stock,vendor,category,tags,image', {headers:{apikey:PS_CONFIG.anonKey}});
     if(!r.ok) return;
     const rows = await r.json();
     if(!Array.isArray(rows) || !rows.length) return;
     const m = new Map(rows.map(x => [x.id, x]));
-    for(let i = BASE.length - 1; i >= 0; i--){
-      const p = BASE[i], x = m.get(p.id);
-      if(!x){ BASE.splice(i, 1); continue; }   // hidden (or removed) in the table
+    const apply = (p, x, isNew) => {
+      const full = isNew || !!x.image;   // existing products only take text/organisation fields after the admin imported or edited them (their DB title was shortened when first seeded)
+      if(full && x.title){ const b = build([p.id, x.title, 0, 0, '', 'x']); p.title = b.title; p.name = b.name; p.rest = b.rest; p.protein = b.protein; }
       p.price = Number(x.price); p.old = Number(x.old_price) || 0; p.out = !!x.out_of_stock;
       p.sale = p.old > p.price; p.pct = p.sale ? Math.round((1 - p.price / p.old) * 100) : 0;
+      if(full && x.vendor) p.brand = x.vendor;
+      if(full && x.category && CATS.some(c => c.id === x.category)) p.cat = x.category;
+      if(full && Array.isArray(x.tags) && x.tags.length) p.tags = x.tags.filter(t => t !== 'אזל');
+      if(x.image) p.img = x.image;
+      p.desc = x.description || '';
+    };
+    for(let i = BASE.length - 1; i >= 0; i--){
+      const x = m.get(BASE[i].id);
+      if(!x){ BASE.splice(i, 1); continue; }   // draft, archived or deleted
+      apply(BASE[i], x);
     }
+    const have = new Set(BASE.map(p => p.id));
+    rows.forEach(x => {
+      if(have.has(x.id)) return;
+      const p = build([x.id, x.title || 'מוצר חדש', 0, 0, '', 'x']);
+      p.img = 'img/protein-stock-sports-nutrition-e-commerce-logo.webp';
+      apply(p, x, true); BASE.push(p);
+    });
     applyLive();
   }catch(e){}
-}
-async function initLive2(){
+}async function initLive2(){
   if(!window.claude || !claude.use){ await remoteCatalog(); DIAG.push('הדף לא נפתח בתוך claude.ai, לכן אין חיבור. פתחו את הקישור מתוך הדפדפן כשאתם מחוברים.'); return; }
   let db, user;
   try{ db = await claude.use('db'); user = await claude.use('user'); }catch(e){ DIAG.push('טעינת החיבור נכשלה'); return; }
