@@ -182,12 +182,12 @@ async function enter(session) {
     return;
   }
   document.body.classList.add('sh');
-  const items = [['orders', 'הזמנות'], ['products', 'מוצרים'], ['ai', 'עוזר AI']];
+  const items = [['ai', 'בנייה עם AI'], ['orders', 'הזמנות'], ['products', 'מוצרים']];
   const mail = session.user.email;
   app.innerHTML = `<div class="sh-body"><aside class="sh-nav" id="nav" aria-label="ניווט">
     <div class="sh-logo"><img src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt=""><b>פרוטאין סטוק</b></div>
     <div class="sh-search">${ICO.search}<input id="gs" type="search" placeholder="חיפוש מוצרים" aria-label="חיפוש מוצרים" autocomplete="off"><kbd>Ctrl K</kbd></div>
-    ${items.map(([k, v], i) => `<button class="nv" data-t="${k}" aria-selected="${i === 0}">${ICO[k]}${v}</button>`).join('')}
+    ${items.map(([k, v], i) => `<button class="nv" data-t="${k}" aria-selected="${k === 'orders'}">${ICO[k]}${v}</button>`).join('')}
     <div class="lbl">ערוצי מכירה</div>
     <a class="nv" href="/" target="_blank" rel="noopener">${ICO.store}החנות המקוונת</a>
     <div class="grow"></div>
@@ -257,7 +257,7 @@ const PV_REFRESH = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" s
 const PV_OPEN = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3.5h5.5V9M16.5 3.5L9 11M8 5H4.5v10.5H15V12"/></svg>';
 
 async function ai() {
-  setBar('ai', 'עוזר AI', '<button class="btn" id="ai-new">שיחה חדשה</button>');
+  setBar('ai', 'בנייה עם AI', '<button class="btn" id="ai-new">שיחה חדשה</button>');
   const host = pane(); host.classList.add('wide');
   const EX = ['הסתר את כל המוצרים שאזלו', 'העלה ב-5% את המחירים של כל מוצרי Monster', 'שנה את הסרגל העליון ל"משלוח חינם עד סוף השבוע"', 'הראה לי את ההזמנות הממתינות', 'אילו מוצרים נמצאים במבצע?'];
   host.innerHTML = `<div class="ai-split">
