@@ -578,3 +578,35 @@ async function initAdmin(){
   window.__adminRefresh = () => { if(panel.hidden) return; if(current === 'products') renderRows(false); if(current === 'home') renderHome(); if(current === 'site') syncBanner(); if(current === 'pay') fillPay(); };
   window.__payChanged = () => { if(!panel.hidden && current === 'pay') fillPay(); if(!panel.hidden && current === 'home') renderHome(); };
 }
+
+/* ---------- live search dropdown ---------- */
+function initSearchDD(){
+  const form=document.querySelector('.hsearch'); if(!form) return;
+  const inp=form.querySelector('input'); const box=document.createElement('div');
+  box.className='sdd'; box.hidden=true; box.setAttribute('role','listbox'); form.appendChild(box);
+  inp.setAttribute('autocomplete','off');
+  let hits=[], act=-1;
+  const close=()=>{ box.hidden=true; act=-1; };
+  const mark=()=>box.querySelectorAll('.sdd-i').forEach((el,i)=>el.classList.toggle('on',i===act));
+  const draw=()=>{
+    const q=inp.value.trim().toLowerCase(); if(!q){ close(); return; }
+    const words=q.split(/\s+/);
+    hits=PRODUCTS.filter(p=>{ const t=((p.title||p.name||'')+' '+(p.brand||'')+' '+catName(p.cat)+' '+(p.tags||[]).join(' ')).toLowerCase(); return words.every(w=>t.includes(w)); });
+    act=-1;
+    box.innerHTML = hits.length
+      ? hits.slice(0,6).map(p=>`<a class="sdd-i" role="option" href="product.html?id=${encodeURIComponent(p.id)}"><img src="${p.img}" alt="" width="40" height="40"><span class="sdd-t">${esc(p.title||p.name)}<small>${esc(p.brand||'')}</small></span><b>${money(p.price)}</b></a>`).join('') + (hits.length>6?`<a class="sdd-all" href="products.html?q=${encodeURIComponent(inp.value.trim())}">הצגת כל ${hits.length} התוצאות</a>`:'')
+      : '<div class="sdd-none">לא נמצאו מוצרים. נסו מילה אחרת.</div>';
+    box.hidden=false;
+  };
+  inp.addEventListener('input',draw);
+  inp.addEventListener('focus',draw);
+  inp.addEventListener('keydown',e=>{
+    const n=Math.min(hits.length,6);
+    if(e.key==='ArrowDown'&&!box.hidden&&n){ e.preventDefault(); act=(act+1)%n; mark(); }
+    else if(e.key==='ArrowUp'&&!box.hidden&&n){ e.preventDefault(); act=(act-1+n)%n; mark(); }
+    else if(e.key==='Enter'&&act>=0&&hits[act]){ e.preventDefault(); location.href='product.html?id='+encodeURIComponent(hits[act].id); }
+    else if(e.key==='Escape'){ close(); inp.blur(); }
+  });
+  document.addEventListener('click',e=>{ if(!form.contains(e.target)) close(); });
+}
+setTimeout(initSearchDD,0);
