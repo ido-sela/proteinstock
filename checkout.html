@@ -61,7 +61,7 @@ function buildForm() {
       ${field('name', 'שם מלא', { ac: 'name', v: v.name })}
       ${field('address', 'כתובת מלאה (רחוב, מספר בית, דירה ועיר)', { ac: 'street-address', v: v.address })}
       ${field('phone', 'נייד', { type: 'tel', mode: 'tel', ac: 'tel', dir: 'ltr', v: v.phone })}
-      ${field('email', 'דוא"ל (לאישור הזמנה וקבלה, לא חובה)', { type: 'email', mode: 'email', ac: 'email', dir: 'ltr', v: v.email })}
+      ${field('email', 'דוא"ל (לאישור הזמנה וקבלה)', { type: 'email', mode: 'email', ac: 'email', dir: 'ltr', v: v.email })}
       <div class="ck-fl ta"><textarea id="f-notes" rows="3" maxlength="300" placeholder=" ">${esc(note())}</textarea><label for="f-notes">הערות להזמנה (לא חובה)</label></div>
       <label class="ck-check"><input type="checkbox" id="f-keep"${kept ? ' checked' : ''}><span>שמור מידע זה לפעם הבאה (במכשיר הזה בלבד)</span></label>
     </section>
@@ -101,12 +101,12 @@ function refresh() {
   if (!busy) document.getElementById('ck-go-t').textContent = 'לתשלום עכשיו · ' + money(s.total);
 }
 
-const E = { email: 'כתובת האימייל אינה תקינה', name: 'נא להזין שם מלא', address: 'נא להזין כתובת מלאה, כולל עיר', phone: 'נא להזין מספר טלפון תקין', terms: 'יש לאשר את התנאים כדי להמשיך' };
+const E = { email: 'נא להזין כתובת דוא"ל תקינה', name: 'נא להזין שם מלא', address: 'נא להזין כתובת מלאה, כולל עיר', phone: 'נא להזין מספר טלפון תקין', terms: 'יש לאשר את התנאים כדי להמשיך' };
 const ORDER = ['name', 'address', 'phone', 'email', 'terms'];
 function check() {
   const val = id => (document.getElementById('f-' + id).value || '').trim();
   const bad = {};
-  if (val('email') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))) bad.email = 1;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))) bad.email = 1;
   if (val('name').length < 2) bad.name = 1;
   if (val('address').length < 6) bad.address = 1;
   if (!/^[0-9+\-\s()]{7,20}$/.test(val('phone')) || val('phone').replace(/\D/g, '').length < 9) bad.phone = 1;
@@ -120,7 +120,7 @@ function check() {
   return !first;
 }
 
-const ERR = { ...ORDER_ERR, invalid_email: 'כתובת האימייל אינה תקינה', invalid_items: 'העגלה אינה תקינה, רעננו את הדף', rate_limited: 'יותר מדי הזמנות בזמן קצר. נסו שוב בעוד כמה דקות.', unavailable: 'חלק מהמוצרים כבר לא זמינים. חזרו לעגלה כדי לעדכן.' };
+const ERR = { ...ORDER_ERR, invalid_email: 'נא להזין כתובת דוא"ל תקינה', invalid_items: 'העגלה אינה תקינה, רעננו את הדף', rate_limited: 'יותר מדי הזמנות בזמן קצר. נסו שוב בעוד כמה דקות.', unavailable: 'חלק מהמוצרים כבר לא זמינים. חזרו לעגלה כדי לעדכן.' };
 
 async function submit(e) {
   e.preventDefault();
