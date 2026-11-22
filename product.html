@@ -25,6 +25,13 @@ function parseSpecs(p){
   const fl=flavor?flavor.split(/\s+-\s+|\s+(?=[A-Z]{2,}\s+[A-Z]{2,})/)[0].trim():'';
   return {unit, weight:w?w[1]+' '+w[2]:'', flavor:fl};
 }
+function familyKey(p){ const m=p.title.split('|')[0].match(/^(.*?)\s*בטעם\s/); return m?(p.brand+'|'+m[1].replace(/\s+/g,' ').trim().toLowerCase()):''; }
+function variantsHtml(p){
+  const k=familyKey(p); if(!k) return '';
+  const sib=PRODUCTS.filter(x=>familyKey(x)===k);
+  if(sib.length<2) return '';
+  return `<div class="variants"><span class="vlabel">בחירת טעם:</span><div class="vlist">${sib.map(x=>`<a href="product?id=${x.id}" class="vopt${x.id===p.id?' on':''}${x.out?' out':''}" ${x.id===p.id?'aria-current="true"':''}>${esc((parseSpecs(x).flavor||x.name).split(/\s+—\s+/)[0].replace(/\s*\([^)]*\)/g,'').trim())}${x.out?' (אזל)':''}</a>`).join('')}</div></div>`;
+}
 function productSpecs(p){
   const s=parseSpecs(p), out=[];
   if(p.protein) out.push([p.protein+' גרם','חלבון ליחידה']);
@@ -49,10 +56,19 @@ function productDetails(p){
 </script>
 <script>
 layout('products');
-const PID=new URLSearchParams(location.search).get('id');
+const QS=new URLSearchParams(location.search);
+let PID=QS.get('id');
+function bySlug(slug){   // old site links: /product/<product-name-with-dashes>
+  const norm=t=>t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+  const w=norm(decodeURIComponent(slug)).split(' ').filter(Boolean); if(!w.length) return null;
+  let best=null,score=0;
+  for(const x of PRODUCTS){ const t=' '+norm(x.title)+' '; const sc=w.filter(q=>t.includes(' '+q+' ')).length/w.length; if(sc>score){score=sc;best=x;} }
+  return score>=0.6?best:null;
+}
 const host=document.getElementById('pp');
 let giveUp=false; setTimeout(()=>{ giveUp=true; if(!byId(PID)) draw(); },4000);
 function draw(){
+if(!PID&&QS.get('slug')){ const m=bySlug(QS.get('slug')); if(m){ PID=m.id; history.replaceState(null,'','product?id='+m.id); } }
 const p=byId(PID);
 const relSec=document.querySelector('section');
 if(!p&&!window.__liveReady&&!giveUp){ host.innerHTML='<div class="empty"><p style="padding:60px 0">טוען מוצר…</p></div>'; if(relSec) relSec.hidden=true; return; }
@@ -68,11 +84,12 @@ else{
   <div class="ptags" style="position:static;flex-direction:row;flex-wrap:wrap;margin-bottom:12px">${p.sale?`<span class="tag sale">${p.pct}%- הנחה</span>`:''}${p.tags.map(t=>`<span class="tag green">${esc(t)}</span>`).join('')}</div>
   <div class="price">${money(p.price)}${p.sale?`<s>${money(p.old)}</s>`:''}</div><p class="vat">המחיר כולל מע"מ</p>
   ${p.out?'<div class="stock-out">המוצר אזל מהמלאי כרגע. <a href="contact" style="text-decoration:underline">צרו קשר ונעדכן כשיחזור</a></div>':''}
+  ${variantsHtml(p)}
   <div class="specs">${specs.map(s=>`<div class="spec"><b>${esc(s[0])}</b><span>${s[1]}</span></div>`).join('')}</div>
   <div class="buy"><div class="qty"><button id="m" aria-label="הפחת">−</button><span id="n">1</span><button id="pl" aria-label="הוסף">+</button></div>
   <button class="btn btn-primary" id="buy" ${p.out?'disabled':''} style="flex:1;min-width:200px">הוספה לעגלה</button></div>
   <ul class="perks"><li>משלוחים לכל הארץ — חינם מעל ${money(SITE.freeShip)}</li><li>מותג מקורי, טריות מובטחת</li><li>מידע על כשרות מופיע על האריזה</li></ul>
-  <div class="desc"><h2>פרטי המוצר</h2><table class="spec-t"><tbody>${productDetails(p).map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table>${p.desc?`<p style="margin-top:10px;white-space:pre-line">${esc(p.desc)}</p>`:''}<div class="note-box"><h3>חשוב לדעת</h3><ul><li>התמונה להמחשה בלבד. עיצוב האריזה עשוי להשתנות בין סדרות ייצור.</li><li>המידע המחייב לגבי ערכים תזונתיים, רכיבים, אלרגנים, תאריך תפוגה וכשרות הוא המידע המופיע על גבי האריזה. יש לעיין בו לפני הצריכה.</li><li>הערכים המוצגים בעמוד הם ליחידה אחת (חטיף / פחית / בקבוק), אלא אם צוין אחרת.</li></ul></div></div></div></div>`;
+  <div class="desc"><h2>פרטי המוצר</h2><table class="spec-t"><tbody>${productDetails(p).map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table>${p.desc?`<p style="margin-top:10px;white-space:pre-line">${esc(p.desc)}</p>`:''}<div class="note-box"><h3>חשוב לדעת</h3><ul><li>התמונה להמחשה בלבד. עיצוב האריזה עשוי להשתנות בין סדרות ייצור.</li></ul><p class="disc">*המידע המופיע באתר בנוגע למרכיבי המוצר וערכיו התזונתיים נמסר לנוחותכם בלבד. ייתכנו טעויות, אי-התאמות או שינויים בעקבות עדכוני יצרן, והנתונים המחייבים הם אלה המופיעים על גבי אריזת המוצר. יש לקרוא את התווית לפני השימוש, במיוחד במקרה של רגישות או אלרגיה.</p></div></div></div></div>`;
   document.getElementById('m').onclick=()=>{qty=Math.max(1,qty-1);n.textContent=qty;};
   document.getElementById('pl').onclick=()=>{qty=Math.min(20,qty+1);n.textContent=qty;};
   document.getElementById('buy').onclick=()=>{Cart.add(p.id,qty);Cart.open();};

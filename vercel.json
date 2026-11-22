@@ -3,19 +3,60 @@
   "headers": [
     {
       "source": "/(robots|llms).txt",
-      "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ]
     },
     {
       "source": "/img/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        }
       ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/category/:slug",
+      "destination": "/products?cat=:slug",
+      "permanent": true
+    },
+    {
+      "source": "/product/:slug",
+      "destination": "/product?slug=:slug",
+      "permanent": true
+    },
+    {
+      "source": "/newsletter",
+      "destination": "/#news",
+      "permanent": true
+    },
+    {
+      "source": "/business-wholesale",
+      "destination": "/contact",
+      "permanent": true
     }
   ]
 }

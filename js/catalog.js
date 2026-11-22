@@ -11,6 +11,7 @@ const CATS = [
 ];
 /* Sugar per unit (grams) for products whose title doesn't state it. A title containing "X גרם סוכר" takes priority. */
 const SUGAR = {'57yf4w':2};
+const inCat = (p, id) => p.cat===id || (p.cats||[]).includes(id);
 const catName = id => (CATS.find(c=>c.id===id)||{}).name || '';
 
 const BRANDS = [
@@ -38,8 +39,10 @@ function build(r){
   else if(/קריאטין/.test(title)) cat='creatine-and-nutritional-supplements';
   else if(/^אבקת/.test(title)) cat='protein-powders';
   else if(/profusion/i.test(title)) cat='protein-health-snacks';
+  const cats=[];   // extra categories a product also appears in (besides cat)
+  if(/warrior raw/i.test(title)) cats.push('protein-health-snacks');
   const name=parts[0];
   const rest=parts.slice(1).filter(p=>p.toLowerCase()!==brand.toLowerCase());
-  return {id,title,name,rest,price,old,tags,img:'img/p/'+img,out,brand,protein,sugar,cat,
+  return {id,title,name,rest,price,old,tags,img:'img/p/'+img,out,brand,protein,sugar,cat,cats,
     sale:old>price, pct:old>price?Math.round((1-price/old)*100):0};
 }
