@@ -21,7 +21,7 @@
 <script>
 const host = document.getElementById('ck');
 const FKEY = 'ps_checkout';
-const FIELDS = ['email', 'name', 'address', 'phone'];
+const FIELDS = ['name', 'address', 'phone', 'email'];
 const readStore = st => { try { return JSON.parse(st.getItem(FKEY) || '{}'); } catch (e) { return {}; } };
 const load = () => ({ ...readStore(sessionStorage), ...readStore(localStorage) });
 const save = () => {
@@ -57,13 +57,12 @@ function buildForm() {
   const v = load(), s = summary(), kept = !!Object.keys(readStore(localStorage)).length;
   host.innerHTML = `<div class="ck-grid">
   <form id="ckf" class="ck-form" novalidate autocomplete="on">
-    <section><h2>פרטי קשר</h2>
-      ${field('email', 'דואר אלקטרוני (לאישור הזמנה וקבלה)', { type: 'email', mode: 'email', ac: 'email', dir: 'ltr', v: v.email })}
-    </section>
-    <section><h2>משלוח</h2>
+    <section><h2>פרטי משלוח</h2>
       ${field('name', 'שם מלא', { ac: 'name', v: v.name })}
       ${field('address', 'כתובת מלאה (רחוב, מספר בית, דירה ועיר)', { ac: 'street-address', v: v.address })}
-      ${field('phone', 'טלפון נייד', { type: 'tel', mode: 'tel', ac: 'tel', dir: 'ltr', v: v.phone })}
+      ${field('phone', 'נייד', { type: 'tel', mode: 'tel', ac: 'tel', dir: 'ltr', v: v.phone })}
+      ${field('email', 'דוא"ל (לאישור הזמנה וקבלה, לא חובה)', { type: 'email', mode: 'email', ac: 'email', dir: 'ltr', v: v.email })}
+      <div class="ck-fl ta"><textarea id="f-notes" rows="3" maxlength="300" placeholder=" ">${esc(note())}</textarea><label for="f-notes">הערות להזמנה (לא חובה)</label></div>
       <label class="ck-check"><input type="checkbox" id="f-keep"${kept ? ' checked' : ''}><span>שמור מידע זה לפעם הבאה (במכשיר הזה בלבד)</span></label>
     </section>
     <section><h3>שיטת משלוח</h3>
@@ -85,6 +84,7 @@ function buildForm() {
   document.getElementById('ck-tg').onclick = e => { const o = document.getElementById('ck-sb').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', o); };
   const form = document.getElementById('ckf');
   form.addEventListener('input', save);
+  form.addEventListener('input', e => { if (e.target.id === 'f-notes') { try { sessionStorage.setItem('ps_note', e.target.value.slice(0, 300)); } catch (x) { /* ignore */ } } });
   form.addEventListener('change', save);
   form.addEventListener('submit', submit);
 }
@@ -102,7 +102,7 @@ function refresh() {
 }
 
 const E = { email: 'כתובת האימייל אינה תקינה', name: 'נא להזין שם מלא', address: 'נא להזין כתובת מלאה, כולל עיר', phone: 'נא להזין מספר טלפון תקין', terms: 'יש לאשר את התנאים כדי להמשיך' };
-const ORDER = ['email', 'name', 'address', 'phone', 'terms'];
+const ORDER = ['name', 'address', 'phone', 'email', 'terms'];
 function check() {
   const val = id => (document.getElementById('f-' + id).value || '').trim();
   const bad = {};
@@ -128,7 +128,7 @@ async function submit(e) {
   const val = id => (document.getElementById('f-' + id).value || '').trim();
   const name = val('name');
   const address = val('address');
-  const body = { name, phone: val('phone'), email: val('email'), address, notes: note(), items: Cart.items.map(i => ({ id: i.id, qty: i.q })) };
+  const body = { name, phone: val('phone'), email: val('email'), address, notes: val('notes'), items: Cart.items.map(i => ({ id: i.id, qty: i.q })) };
   const btn = document.getElementById('ck-go'), t = document.getElementById('ck-go-t'), err = document.getElementById('ck-err');
   busy = true; btn.disabled = true; t.textContent = 'שולחים…'; err.hidden = true;
   let res, d = {};

@@ -700,3 +700,9 @@ footer a:hover{color:#6cb8f2}
 /* drawer footer */
 .d-foot .btn{width:100%;margin-top:8px}
 .ct .ct-list,.ck-form section{padding:0;margin:0}
+
+.ck-fl textarea{width:100%;min-height:92px;padding:26px 14px 8px;border:1px solid #cfcfcf;border-radius:10px;font:inherit;font-size:15px;color:#303030;background:#fff;resize:vertical;transition:border-color .12s,box-shadow .12s}
+.ck-fl textarea:hover{border-color:#8a8a8a}
+.ck-fl textarea:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.ck-fl.ta label{top:20px}
+.ck-fl textarea:focus+label,.ck-fl textarea:not(:placeholder-shown)+label{top:13px;font-size:12px}
