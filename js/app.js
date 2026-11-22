@@ -66,7 +66,8 @@ const Cart = {
     const msg=encodeURIComponent(`שלום, ביצעתי הזמנה באתר. מספר הזמנה: ${d.order_number} · סה"כ ${money(d.total)}${name?' · '+name:''}`);
     const pay=typeof d.payment_url==='string'&&d.payment_url.startsWith('https://')?d.payment_url:'';
     document.getElementById('d-foot').style.display='none';
-    document.getElementById('d-body').innerHTML=`<div class="d-empty"><p style="font-size:2.4rem">✅</p><p><b>ההזמנה נקלטה</b></p><p>מספר הזמנה: <b dir="ltr">${esc(d.order_number)}</b></p><p>סה"כ ${money(d.total)}</p>${pay?`<p style="margin-top:14px"><a class="btn btn-primary" href="${esc(pay)}">לתשלום מאובטח</a></p>`:'<p style="margin-top:8px">נחזור אליכם בהקדם לאישור ותשלום.</p>'}<p style="margin-top:12px"><a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="https://wa.me/${SITE.wa}?text=${msg}">שלחו לנו בוואטסאפ</a></p></div>`;
+    document.getElementById('d-body').innerHTML=`<div class="d-empty"><p style="font-size:2.4rem">✅</p><p><b>ההזמנה נקלטה</b></p><p>מספר הזמנה: <b dir="ltr">${esc(d.order_number)}</b></p><p>סה"כ ${money(d.total)}</p>${pay?`<p style="margin-top:14px">מעבירים אתכם לדף תשלום מאובטח…</p><p style="margin-top:10px"><a class="btn btn-primary" href="${esc(pay)}">לתשלום מאובטח</a></p>`:'<p style="margin-top:8px">נחזור אליכם בהקדם לאישור ותשלום.</p>'}<p style="margin-top:12px"><a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="https://wa.me/${SITE.wa}?text=${msg}">שלחו לנו בוואטסאפ</a></p></div>`;
+    if(pay) setTimeout(()=>{ location.href=pay; },1200);
   },
   orderWa(name){
     let m='שלום, אשמח להזמין מפרוטאין סטוק:%0A';
