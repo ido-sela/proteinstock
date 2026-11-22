@@ -30,7 +30,7 @@ function variantsHtml(p){
   const k=familyKey(p); if(!k) return '';
   const sib=PRODUCTS.filter(x=>familyKey(x)===k);
   if(sib.length<2) return '';
-  return `<div class="variants"><span class="vlabel">בחירת טעם:</span><div class="vlist">${sib.map(x=>`<a href="product?id=${x.id}" class="vopt${x.id===p.id?' on':''}${x.out?' out':''}" ${x.id===p.id?'aria-current="true"':''}>${esc((parseSpecs(x).flavor||x.name).split(/\s+—\s+/)[0].replace(/\s*\([^)]*\)/g,'').trim())}${x.out?' (אזל)':''}</a>`).join('')}</div></div>`;
+  return `<div class="variants"><span class="vlabel">בחירת טעם:</span><div class="vlist">${sib.map(x=>`<a href="product?id=${x.id}" class="vopt${x.id===p.id?' on':''}${x.out?' out':''}" ${x.id===p.id?'aria-current="true"':''}>${esc(flavorShort(x))}${x.out?' (אזל)':''}</a>`).join('')}</div></div>`;
 }
 /* Mixed packs (old site: "הרכב המארז"): for oat porridge the customer can split the 12 units between flavors.
    Same product id and price; the chosen mix is saved on the cart line and sent with the order notes. */
