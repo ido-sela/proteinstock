@@ -204,3 +204,4 @@ input[type=email],input[type=text],input[type=number],input[type=search],input[t
 .sh-back{display:flex;align-items:center;gap:6px;margin:0 0 10px;padding:6px 10px;border-radius:8px;background:var(--pill);color:#fff;font-size:13px;font-weight:600;text-decoration:none}
 .sh-back:hover{background:#4a4a4a}
 .sh-back svg{width:14px;height:14px;flex:none}
+#em:placeholder-shown{direction:rtl;text-align:right!important}

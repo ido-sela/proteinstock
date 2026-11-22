@@ -636,6 +636,7 @@ footer a:hover{color:#6cb8f2}
 .ck-f input,.ck-f textarea{width:100%;border:1px solid #ececec;border-radius:8px;padding:0 14px;height:50px;font:inherit;font-size:15px;color:#1f1f1f;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.06);transition:border-color .12s,box-shadow .12s}
 .ck-f textarea{height:auto;min-height:92px;padding:12px 14px;resize:vertical}
 .ck-f input::placeholder,.ck-f textarea::placeholder{color:#a3a3a3}
+input[type=tel]:placeholder-shown,input[type=email]:placeholder-shown{direction:rtl;text-align:right}
 .ck-f input:focus,.ck-f textarea:focus{outline:0;border-color:#111;box-shadow:0 0 0 1px #111}
 .ck-f input.bad{border-color:var(--danger);box-shadow:0 0 0 1px var(--danger)}
 .ck-e{display:block;color:var(--danger);font-size:.85rem}
