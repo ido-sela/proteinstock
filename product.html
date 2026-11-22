@@ -43,7 +43,7 @@ else{
   <div class="buy"><div class="qty"><button id="m" aria-label="הפחת">−</button><span id="n">1</span><button id="pl" aria-label="הוסף">+</button></div>
   <button class="btn btn-primary" id="buy" ${p.out?'disabled':''} style="flex:1;min-width:200px">הוספה לעגלה</button></div>
   <ul class="perks"><li>משלוחים לכל הארץ — חינם מעל ${money(SITE.freeShip)}</li><li>מותג מקורי, טריות מובטחת</li><li>מידע על כשרות מופיע על האריזה</li></ul>
-  <div class="desc"><h2>פרטי המוצר</h2><p>${esc(p.title.replace(/\s*\|\s*/g,' · '))}</p>${p.desc?`<p style="margin-top:10px;white-space:pre-line">${esc(p.desc)}</p>`:'}</div></div></div>`;
+  <div class="desc"><h2>פרטי המוצר</h2><p>${esc(p.title.replace(/\s*\|\s*/g,' · '))}</p>${p.desc?`<p style="margin-top:10px;white-space:pre-line">${esc(p.desc)}</p>`:''}</div></div></div>`;
   document.getElementById('m').onclick=()=>{qty=Math.max(1,qty-1);n.textContent=qty;};
   document.getElementById('pl').onclick=()=>{qty=Math.min(20,qty+1);n.textContent=qty;};
   document.getElementById('buy').onclick=()=>{Cart.add(p.id,qty);Cart.open();};
