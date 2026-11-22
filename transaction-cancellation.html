@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ביטול עסקה — פרוטאין סטוק</title>
+<meta name="description" content="ביטול עסקה והחזרת מוצר בפרוטאין סטוק: טופס ביטול, דוא"ל או WhatsApp.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main id="main">
+<div class="page-head"><div class="wrap"><div class="crumbs"><a href="/">בית</a> / ביטול עסקה</div><h1>ביטול עסקה</h1></div></div>
+<div class="wrap"><div class="prose">
+<p>לביטול עסקה והחזרת מוצר מלאו את הטופס ונחזור אליכם. ניתן למסור הודעת ביטול גם בדוא"ל <a href="mailto:info@proteinstock.co.il">info@proteinstock.co.il</a> או בטלפון / WhatsApp במספר <a href="tel:0556650400">055-6650400</a>. תנאי הביטול מפורטים ב<a href="return-policy">מדיניות ההחזרות</a>.</p>
+<form id="cxl" class="cxl-form" novalidate>
+  <label>שם מלא<input id="cx-name" required autocomplete="name"></label>
+  <label>טלפון<input id="cx-phone" type="tel" required autocomplete="tel" dir="ltr"></label>
+  <label>מספר הזמנה<input id="cx-order" dir="ltr" placeholder="PS..."></label>
+  <label>סיבת הביטול (לא חובה)<textarea id="cx-why" rows="3"></textarea></label>
+  <div class="cxl-actions"><button type="submit" class="btn btn-primary" data-via="wa">שליחת הודעת ביטול ב-WhatsApp</button><button type="submit" class="btn btn-outline" data-via="mail">שליחה בדוא"ל</button></div>
+  <p class="cxl-err" id="cx-err" hidden>נא למלא שם וטלפון.</p>
+</form>
+<nav class="legal-nav" aria-label="מסמכים משפטיים"><a href="terms">תנאי שימוש</a> · <a href="privacy">מדיניות פרטיות</a> · <a href="shipping-policy">מדיניות משלוחים</a> · <a href="return-policy">מדיניות החזרות</a> · <a href="transaction-cancellation">ביטול עסקה</a> · <a href="accessibility">נגישות</a></nav>
+</div></div>
+</main>
+<script src="js/data.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/app.js"></script>
+<script>layout('');</script>
+<script>
+(function(){
+  var f = document.getElementById('cxl'), via = 'wa';
+  f.querySelectorAll('[data-via]').forEach(function(b){ b.onclick = function(){ via = b.dataset.via; }; });
+  f.onsubmit = function(e){
+    e.preventDefault();
+    var v = function(id){ return document.getElementById(id).value.trim(); };
+    if (!v('cx-name') || !v('cx-phone')) { document.getElementById('cx-err').hidden = false; return; }
+    document.getElementById('cx-err').hidden = true;
+    var msg = 'הודעת ביטול עסקה\nשם: ' + v('cx-name') + '\nטלפון: ' + v('cx-phone') + (v('cx-order') ? '\nמספר הזמנה: ' + v('cx-order') : '') + (v('cx-why') ? '\nסיבה: ' + v('cx-why') : '');
+    location.href = via === 'wa' ? 'https://wa.me/972556650400?text=' + encodeURIComponent(msg)
+      : 'mailto:info@proteinstock.co.il?subject=' + encodeURIComponent('ביטול עסקה' + (v('cx-order') ? ' ' + v('cx-order') : '')) + '&body=' + encodeURIComponent(msg);
+  };
+})();
+</script>
+</body>
+</html>

@@ -744,3 +744,13 @@ input[type=tel]:placeholder-shown,input[type=email]:placeholder-shown{direction:
 .ck-radio.sel .ck-dot{border:5px solid #111}
 .ck-radio[hidden],.ck-addr[hidden],#ck-pick[hidden]{display:none}
 .ck-addr{display:grid;gap:18px}
+/* legal pages */
+.prose h3{font-size:var(--t-md,1.1rem);margin:22px 0 8px}
+.prose a{color:var(--blue);text-decoration:underline}
+.legal-nav{margin-top:40px;padding-top:18px;border-top:1px solid var(--line,#e5e7eb);font-size:14px;color:var(--muted);line-height:2}
+.cxl-form{display:grid;gap:14px;max-width:520px;margin:24px 0 8px}
+.cxl-form label{display:grid;gap:6px;font-weight:600;font-size:14px}
+.cxl-form input,.cxl-form textarea{font:inherit;font-weight:400;padding:11px 12px;border:1px solid var(--line,#d1d5db);border-radius:var(--r,8px);background:#fff}
+.cxl-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.cxl-actions .btn{text-decoration:none}
+.cxl-err{color:#b91c1c;font-size:14px;margin:0}
