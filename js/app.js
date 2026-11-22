@@ -191,6 +191,7 @@ const DIAG = [];
 async function initLive(){
   loadShipping();
   try{ await initLive2(); }catch(e){ DIAG.push('שגיאה: ' + (e && e.message || e)); }
+  if(!window.__liveReady && !(window.claude && claude.use)){ window.__liveReady = true; Cart.items = Cart.stored.filter(i => byId(i.id)); Cart.render(); if(window.__rerender) window.__rerender(); }   // backend unreachable: stop showing 'loading'
   if(location.hash === '#admin' && !document.getElementById('adm-fab')){
     const f = mk('button', {class:'adm-fab', id:'adm-fab', type:'button', text:'ניהול האתר'});
     f.onclick = () => { f.textContent = DIAG.length ? DIAG.join(' | ') : 'לא ידוע למה הניהול לא נטען.'; f.style.maxWidth = 'min(420px,calc(100vw - 24px))'; f.style.borderRadius = '18px'; f.style.textAlign = 'start'; };
