@@ -14,6 +14,7 @@
 <section class="sec-soft"><div class="wrap"><div class="sec-head"><h2>אולי יעניין אותך גם</h2></div><div class="grid" id="rel"></div></div></section></main>
 <script src="js/data.js"></script>
 <script src="js/catalog.js"></script>
+<script src="js/info.js"></script>
 <script src="js/app.js"></script>
 <script>
 /* Product specs, parsed from the title ("| 57 גרם | 20 גרם חלבון | 12 יחידות במארז | Brand"). */
@@ -48,10 +49,25 @@ function packHtml(p){
   const o=packOptions(p); if(!o.length) return '';
   return `<div class="variants"><span class="vlabel">הרכב המארז: <b id="pack-cur">${esc(o[0])}</b></span><div class="vlist" id="pack">${o.map((x,i)=>`<button type="button" class="vopt${i?'':' on'}" data-pack="${i}">${esc(x)}</button>`).join('')}</div></div>`;
 }
+function sugarOf(p){ if(p.sugar!=null) return p.sugar; const i=infoOf(p.id); return i&&i.n&&i.n.sugar!=null?i.n.sugar:null; }
+function infoHtml(p){
+  const i=infoOf(p.id); if(!i) return '';
+  const fmt=v=>String(v);
+  const rows=i.n?NUT_ROWS.filter(r=>i.n[r[0]]!=null).map(r=>`<tr><th>${r[1]}</th><td>${fmt(i.n[r[0]])} ${r[2]}</td></tr>`).join(''):'';
+  let h='';
+  if(rows) h+=`<h3 class="info-h">ערכים תזונתיים ${esc(i.per||'')}</h3><table class="spec-t"><tbody>${rows}</tbody></table>`;
+  if(i.contains&&i.contains.length) h+=`<h3 class="info-h">אלרגנים</h3><p><b>מכיל:</b> ${i.contains.join(', ')}</p>`;
+  else if(i.contains) h+=`<h3 class="info-h">אלרגנים</h3><p>ללא אלרגנים מוצהרים.</p>`;
+  if(i.may&&i.may.length) h+=`<p><b>עלול להכיל:</b> ${i.may.join(', ')}</p>`;
+  if(i.ingr) h+=`<h3 class="info-h">רכיבים</h3><p>${esc(i.ingr)}</p>`;
+  if(i.warn&&i.warn.length) h+=`<div class="warn-box">${i.warn.map(w=>`<p>⚠️ ${esc(w)}</p>`).join('')}</div>`;
+  if(i.note) h+=`<p class="info-note">${esc(i.note)}</p>`;
+  return `<div class="info">${h}</div>`;
+}
 function productSpecs(p){
   const s=parseSpecs(p), out=[];
   if(p.protein) out.push([p.protein+' גרם','חלבון ליחידה']);
-  if(p.sugar!=null) out.push([p.sugar+' גרם','סוכר ליחידה']);
+  { const sg=sugarOf(p); if(sg!=null) out.push([sg+' גרם','סוכר ליחידה']); }
   if(s.weight) out.push([s.weight,'משקל / נפח ליחידה']);
   if(s.unit) out.push([s.unit,'יחידות במארז']);
   if(p.brand) out.push([p.brand,'מותג']);
@@ -65,7 +81,7 @@ function productDetails(p){
   if(s.weight) out.push(['משקל / נפח ליחידה',s.weight]);
   if(s.unit) out.push(['יחידות במארז',s.unit]);
   if(p.protein) out.push(['חלבון ליחידה',p.protein+' גרם']);
-  if(p.sugar!=null) out.push(['סוכר ליחידה',p.sugar+' גרם']);
+  { const sg=sugarOf(p); if(sg!=null) out.push(['סוכר ליחידה',sg+' גרם']); }
   if(p.tags.length) out.push(['מאפיינים',p.tags.join(', ')]);
   return out;
 }
@@ -105,7 +121,7 @@ else{
   <div class="buy"><div class="qty"><button id="m" aria-label="הפחת">−</button><span id="n">1</span><button id="pl" aria-label="הוסף">+</button></div>
   <button class="btn btn-primary" id="buy" ${p.out?'disabled':''} style="flex:1;min-width:200px">הוספה לעגלה</button></div>
   <ul class="perks"><li>משלוחים לכל הארץ — חינם מעל ${money(SITE.freeShip)}</li><li>מותג מקורי, טריות מובטחת</li><li>מידע על כשרות מופיע על האריזה</li></ul>
-  <div class="desc"><h2>פרטי המוצר</h2><table class="spec-t"><tbody>${productDetails(p).map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table>${p.desc?`<p style="margin-top:10px;white-space:pre-line">${esc(p.desc)}</p>`:''}<div class="note-box"><h3>חשוב לדעת</h3><ul><li>התמונה להמחשה בלבד. עיצוב האריזה עשוי להשתנות בין סדרות ייצור.</li></ul><p class="disc">*המידע המופיע באתר בנוגע למרכיבי המוצר וערכיו התזונתיים נמסר לנוחותכם בלבד. ייתכנו טעויות, אי-התאמות או שינויים בעקבות עדכוני יצרן, והנתונים המחייבים הם אלה המופיעים על גבי אריזת המוצר. יש לקרוא את התווית לפני השימוש, במיוחד במקרה של רגישות או אלרגיה.</p></div></div></div></div>`;
+  <div class="desc"><h2>פרטי המוצר</h2><table class="spec-t"><tbody>${productDetails(p).map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table>${infoHtml(p)}${p.desc?`<p style="margin-top:10px;white-space:pre-line">${esc(p.desc)}</p>`:''}<div class="note-box"><h3>חשוב לדעת</h3><ul><li>התמונה להמחשה בלבד. עיצוב האריזה עשוי להשתנות בין סדרות ייצור.</li></ul><p class="disc">*המידע המופיע באתר בנוגע למרכיבי המוצר וערכיו התזונתיים נמסר לנוחותכם בלבד. ייתכנו טעויות, אי-התאמות או שינויים בעקבות עדכוני יצרן, והנתונים המחייבים הם אלה המופיעים על גבי אריזת המוצר. יש לקרוא את התווית לפני השימוש, במיוחד במקרה של רגישות או אלרגיה.</p></div></div></div></div>`;
   document.getElementById('m').onclick=()=>{qty=Math.max(1,qty-1);n.textContent=qty;};
   document.getElementById('pl').onclick=()=>{qty=Math.min(20,qty+1);n.textContent=qty;};
   const packs=packOptions(p); let pack=0;
