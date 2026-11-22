@@ -16,7 +16,10 @@
 - [מותגים](https://proteinstock.co.il/brands.html): כל המותגים שבחנות
 - [למה פרוטאין סטוק](https://proteinstock.co.il/why.html): על החנות ועל היתרונות שלה
 - [צור קשר](https://proteinstock.co.il/contact.html): טלפון, וואטסאפ, מייל וכתובת
-- [מדיניות, תקנון ופרטיות](https://proteinstock.co.il/policies.html): משלוחים, החזרות, פרטיות, תנאי שימוש והצהרת נגישות
+- [משלוחים והחזרות](https://proteinstock.co.il/policies.html): מדיניות משלוחים וסיכום ביטול עסקה
+- [תנאי שימוש ורכישה](https://proteinstock.co.il/terms.html): הזמנות, מחירים, משלוחים, ביטול עסקה והחזרות
+- [מדיניות פרטיות](https://proteinstock.co.il/privacy.html): איזה מידע נאסף, שימוש, שיתוף וזכויות
+- [הצהרת נגישות](https://proteinstock.co.il/accessibility.html): התאמות נגישות ודרכי פנייה
 
 ## קטגוריות
 

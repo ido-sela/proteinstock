@@ -544,3 +544,9 @@ footer a:hover{color:#6cb8f2}
 .sdd-t .n{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .sdd-i .sdd-t small{display:block}
 .sdd-i{max-width:100%}
+
+.prose ul{padding-inline-start:22px;margin:0 0 14px;display:grid;gap:6px}
+.prose li{line-height:1.7}
+.legal-date{color:var(--muted);font-size:14px}
+.legal-note{font-size:12.5px;color:var(--muted);margin:2px 0 8px;line-height:1.5}
+.legal-note a{color:var(--blue);text-decoration:underline}
