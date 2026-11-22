@@ -220,7 +220,47 @@ async function enter(session) {
   tabs.forEach(b => b.onclick = () => go(b.dataset.t));
   document.getElementById('aib').onsubmit = e => { e.preventDefault(); const i = document.getElementById('aib-in'); const v = i.value.trim(); if (!v) return; i.value = ''; window.__pendingAsk = v; go('ai'); };
   const gs = document.getElementById('gs');
-  gs.onkeydown = e => { if (e.key === 'Enter') { SP.q = gs.value.trim(); SP.tab = 'all'; SP.page = 0; gs.value = ''; gs.blur(); go('products'); } else if (e.key === 'Escape') { gs.value = ''; gs.blur(); } };
+  /* ---- global search with a results dropdown ---- */
+  const gsBox = document.createElement('div'); gsBox.className = 'gs-dd'; gsBox.id = 'gs-dd'; gsBox.hidden = true; gsBox.setAttribute('role', 'listbox'); gs.parentNode.appendChild(gsBox);
+  let gsRows = [], gsLoaded = 0, gsHits = [], gsAct = -1;
+  const gsLoad = async () => {
+    if (Date.now() - gsLoaded < 30000 && gsRows.length) return;
+    const { data } = await sb.from('products').select(SP_COLS).order('title');
+    if (data) { gsRows = data.map(spNorm); gsLoaded = Date.now(); }
+  };
+  const gsClose = () => { gsBox.hidden = true; gsAct = -1; };
+  const gsDraw = () => {
+    const q = gs.value.trim().toLowerCase();
+    if (!q) { gsClose(); return; }
+    gsHits = gsRows.filter(p => [p.title, p.id, p.vendor, p.sku, spCat(p.category), (p.tags || []).join(' ')].some(v => String(v || '').toLowerCase().includes(q)));
+    gsAct = -1;
+    gsBox.innerHTML = gsHits.length
+      ? gsHits.slice(0, 8).map((p, i) => `<div class="gs-i" role="option" data-i="${i}"><img src="${esc(p.image || SP_LOGO)}" alt="" onerror="this.onerror=null;this.src='${SP_LOGO}'"><span class="gs-t">${esc(p.title)}</span><span class="gs-p">${money(p.price)}</span></div>`).join('') + (gsHits.length > 8 ? `<div class="gs-all" data-all="1">הצגת כל ${gsHits.length} התוצאות</div>` : '')
+      : '<div class="gs-none">לא נמצאו מוצרים</div>';
+    gsBox.hidden = false;
+  };
+  const gsMark = () => gsBox.querySelectorAll('.gs-i').forEach((el, i) => el.classList.toggle('on', i === gsAct));
+  const gsOpen = p => {
+    gs.value = ''; gs.blur(); gsClose(); closeNav();
+    tabs.forEach(b => b.setAttribute('aria-selected', b.dataset.t === 'products')); document.getElementById('aib').hidden = false;
+    SP.rows = gsRows.slice(); SP.sel = new Set(); SP.page = 0; spEdit(p);
+  };
+  const gsAll = () => { SP.q = gs.value.trim(); SP.tab = 'all'; SP.page = 0; gs.value = ''; gs.blur(); gsClose(); go('products'); };
+  gs.onfocus = gsLoad;
+  gs.oninput = async () => { await gsLoad(); gsDraw(); };
+  gsBox.onmousedown = e => {
+    e.preventDefault();
+    if (e.target.closest('[data-all]')) { gsAll(); return; }
+    const it = e.target.closest('.gs-i'); if (it) gsOpen(gsHits[+it.dataset.i]);
+  };
+  gs.onblur = () => setTimeout(gsClose, 120);
+  gs.onkeydown = e => {
+    const n = Math.min(gsHits.length, 8);
+    if (e.key === 'ArrowDown' && !gsBox.hidden && n) { e.preventDefault(); gsAct = (gsAct + 1) % n; gsMark(); }
+    else if (e.key === 'ArrowUp' && !gsBox.hidden && n) { e.preventDefault(); gsAct = (gsAct - 1 + n) % n; gsMark(); }
+    else if (e.key === 'Enter') { if (gsAct >= 0 && gsHits[gsAct]) gsOpen(gsHits[gsAct]); else gsAll(); }
+    else if (e.key === 'Escape') { gs.value = ''; gs.blur(); gsClose(); }
+  };
   window.onkeydown = e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); closeNav(); gs.focus(); } };
   go('orders');
 }

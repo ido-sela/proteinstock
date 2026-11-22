@@ -190,3 +190,13 @@ input[type=email],input[type=text],input[type=number],input[type=search],input[t
 .comp textarea{min-height:0;border-radius:12px;resize:none}
 .comp-r{display:flex;align-items:center;gap:10px}.comp-r .who{flex:1;color:var(--mute);font-size:12px}
 @media (max-width:1000px){.ai-split{grid-template-columns:1fr;height:auto}.pv{height:70vh}.chatp{height:75vh}}
+
+.gs-dd{position:absolute;inset-inline:0;top:calc(100% + 6px);background:#fff;color:#303030;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.28);z-index:60;overflow:hidden;max-height:70vh;overflow-y:auto}
+.gs-i{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer;font-size:13px}
+.gs-i:hover,.gs-i.on{background:var(--row)}
+.gs-i img{width:32px;height:32px;border-radius:6px;object-fit:cover;border:1px solid var(--line);background:#fff;flex:none}
+.gs-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gs-p{color:#616161;flex:none}
+.gs-all{padding:9px 12px;font-size:13px;color:#005bd3;cursor:pointer;border-top:1px solid var(--line)}
+.gs-all:hover{background:var(--row)}
+.gs-none{padding:12px;font-size:13px;color:#616161}
