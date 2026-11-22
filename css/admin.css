@@ -200,3 +200,7 @@ input[type=email],input[type=text],input[type=number],input[type=search],input[t
 .gs-all{padding:9px 12px;font-size:13px;color:#005bd3;cursor:pointer;border-top:1px solid var(--line)}
 .gs-all:hover{background:var(--row)}
 .gs-none{padding:12px;font-size:13px;color:#616161}
+.sh-logo{text-decoration:none}
+.sh-back{display:flex;align-items:center;gap:6px;margin:0 0 10px;padding:6px 10px;border-radius:8px;background:var(--pill);color:#fff;font-size:13px;font-weight:600;text-decoration:none}
+.sh-back:hover{background:#4a4a4a}
+.sh-back svg{width:14px;height:14px;flex:none}
