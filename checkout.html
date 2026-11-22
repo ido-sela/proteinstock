@@ -21,7 +21,7 @@
 <script>
 const host = document.getElementById('ck');
 const FKEY = 'ps_checkout';
-const FIELDS = ['email', 'first', 'last', 'street', 'apt', 'city', 'zip', 'phone'];
+const FIELDS = ['email', 'first', 'last', 'address', 'phone'];
 const readStore = st => { try { return JSON.parse(st.getItem(FKEY) || '{}'); } catch (e) { return {}; } };
 const load = () => ({ ...readStore(sessionStorage), ...readStore(localStorage) });
 const save = () => {
@@ -61,11 +61,8 @@ function buildForm() {
       ${field('email', 'דואר אלקטרוני (לאישור הזמנה וקבלה)', { type: 'email', mode: 'email', ac: 'email', dir: 'ltr', v: v.email })}
     </section>
     <section><h2>משלוח</h2>
-      <div class="ck-fl sel"><input id="f-country" value="ישראל" disabled aria-label="מדינה"><label for="f-country">מדינה / אזור</label></div>
       <div class="ck-2">${field('first', 'שם פרטי', { ac: 'given-name', v: v.first })}${field('last', 'שם משפחה', { ac: 'family-name', v: v.last })}</div>
-      ${field('street', 'כתובת (רחוב ומספר בית)', { ac: 'address-line1', v: v.street })}
-      ${field('apt', 'בניין, קומה, דירה, הוראות הגעה (לא חובה)', { ac: 'address-line2', v: v.apt })}
-      <div class="ck-2">${field('city', 'עיר', { ac: 'address-level2', v: v.city })}${field('zip', 'מיקוד (לא חובה)', { mode: 'numeric', ac: 'postal-code', dir: 'ltr', max: 10, v: v.zip })}</div>
+      ${field('address', 'כתובת מלאה (רחוב, מספר בית, דירה ועיר)', { ac: 'street-address', v: v.address })}
       ${field('phone', 'טלפון נייד', { type: 'tel', mode: 'tel', ac: 'tel', dir: 'ltr', v: v.phone })}
       <label class="ck-check"><input type="checkbox" id="f-keep"${kept ? ' checked' : ''}><span>שמור מידע זה לפעם הבאה (במכשיר הזה בלבד)</span></label>
     </section>
@@ -104,16 +101,15 @@ function refresh() {
   if (!busy) document.getElementById('ck-go-t').textContent = 'לתשלום עכשיו · ' + money(s.total);
 }
 
-const E = { email: 'כתובת האימייל אינה תקינה', first: 'נא להזין שם פרטי', last: 'נא להזין שם משפחה', street: 'נא להזין כתובת', city: 'נא להזין עיר', phone: 'נא להזין מספר טלפון תקין', terms: 'יש לאשר את התנאים כדי להמשיך' };
-const ORDER = ['email', 'first', 'last', 'street', 'city', 'phone', 'terms'];
+const E = { email: 'כתובת האימייל אינה תקינה', first: 'נא להזין שם פרטי', last: 'נא להזין שם משפחה', address: 'נא להזין כתובת מלאה, כולל עיר', phone: 'נא להזין מספר טלפון תקין', terms: 'יש לאשר את התנאים כדי להמשיך' };
+const ORDER = ['email', 'first', 'last', 'address', 'phone', 'terms'];
 function check() {
   const val = id => (document.getElementById('f-' + id).value || '').trim();
   const bad = {};
   if (val('email') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))) bad.email = 1;
   if (val('first').length < 2) bad.first = 1;
   if (val('last').length < 1) bad.last = 1;
-  if (val('street').length < 3) bad.street = 1;
-  if (val('city').length < 2) bad.city = 1;
+  if (val('address').length < 6) bad.address = 1;
   if (!/^[0-9+\-\s()]{7,20}$/.test(val('phone')) || val('phone').replace(/\D/g, '').length < 9) bad.phone = 1;
   if (!document.getElementById('f-terms').checked) bad.terms = 1;
   ORDER.forEach(k => {
@@ -132,7 +128,7 @@ async function submit(e) {
   if (busy || !check()) return;
   const val = id => (document.getElementById('f-' + id).value || '').trim();
   const name = (val('first') + ' ' + val('last')).trim();
-  const address = [val('street'), val('apt'), val('city') + (val('zip') ? ' ' + val('zip') : '')].filter(Boolean).join(', ');
+  const address = val('address');
   const body = { name, phone: val('phone'), email: val('email'), address, notes: note(), items: Cart.items.map(i => ({ id: i.id, qty: i.q })) };
   const btn = document.getElementById('ck-go'), t = document.getElementById('ck-go-t'), err = document.getElementById('ck-err');
   busy = true; btn.disabled = true; t.textContent = 'שולחים…'; err.hidden = true;
