@@ -16,20 +16,20 @@ const W = {
 };
 
 /* shared family data */
-const SNICKERS_LS = {contains:[A.milk, A.soy, A.peanut], may:[A.nuts, A.egg, A.gluten], warn:[W.lax, W.collagen], note:'ממותק בממתיקים (מלטיטול).'};
-const MARS_LS = {contains:[A.milk, A.barley, A.gluten], may:[A.peanut, A.nuts, A.egg, A.soy], warn:[W.lax, W.collagen], note:'ממותק בממתיקים (מלטיטול).'};
-const HP_COOKIE = {contains:[A.wheat, A.gluten, A.soy, A.milk], may:[A.nuts], note:'עוגייה אפויה עשירה בחלבון (חלבון חיטה, אפונה וסויה).'};
-const RAW = {contains:[A.milk, A.oats, A.gluten, A.soy], may:[A.egg, A.nuts, A.peanut, A.sesame], warn:[W.lax, W.gelatine], note:'מבוסס שיבולת שועל, עשיר בסיבים. ממותק בממתיקים.'};
-const CRUNCH = {contains:[A.milk, A.soy, A.barley, A.gluten], may:[A.nuts, A.egg, A.peanut], warn:[W.lax, W.collagen], note:'חטיף רב-שכבתי פריך. ממותק בממתיקים (מלטיטול).'};
-const MONSTER_ZERO = {contains:[], warn:[W.caf], note:'ללא סוכר, עם ממתיקים. ללא אלרגנים מוצהרים. כמות הקפאין מופיעה על הפחית.'};
-const MONSTER_SUGAR = {contains:[], warn:[W.caf], note:'מכיל סוכר וממתיקים. ללא אלרגנים מוצהרים.'};
-const UFIT = {contains:[A.milk], warn:[W.lactose], note:'ללא תוספת סוכר (מכיל סוכרי חלב טבעיים). ללא שומן כמעט. מתאים לצמחונים. לאחר פתיחה לשמור בקירור ולשתות תוך 24 שעות.'};
-const APPLIED_SHAKE = {contains:[A.milk], warn:[W.lactose], note:'ללא תוספת סוכר, דל שומן, ממותק בסוכרלוז. לאחר פתיחה לשמור בקירור ולשתות תוך 24 שעות.'};
-const OATS = {contains:[A.oats, A.gluten, A.milk, A.soy], may:[A.sesame, A.nuts], note:'שיבולת שועל מלאה אורגנית עם חלבון מי גבינה ו-MCT. מכינים עם 150 מ״ל מים רותחים או חלב וממתינים 2–3 דקות. מתאים לצמחונים, בעל הכשר חלאל.'};
-const APPLIED_CRUNCH = {contains:[A.milk, A.wheat, A.gluten, A.soy], may:[A.peanut, A.nuts, A.sulph], note:'ממותק בממתיקים (מלטיטול). מתאים לצמחונים, בעל הכשר חלאל.'};
-const GUMMIES = {contains:[], warn:['מנה: 4 סוכריות ביום (3 גרם קריאטין מונוהידראט). אין לחרוג מהמנה המומלצת.'], note:'ללא אלרגנים נפוצים (מיוצר במפעל שמטפל גם בחלב, סויה, ביצים, דגים וגלוטן). טבעוני, ללא גלוטן, בעל הכשר חלאל. רכיבים: קריאטין מונוהידראט, סוכר, סירופ גלוקוז, מים, פקטין, חומרי טעם, ציפוי (MCT, שעוות קרנאובה).'};
-const DINKY = {contains:[A.milk, A.soy, A.wheat, A.gluten], may:[A.nuts, A.peanut], note:'חטיף חלבון קטן (35 גרם) דל סוכר ועשיר בסיבים.'};
-const PROPUD = {contains:[A.milk, A.soy], may:[A.egg, A.nuts, A.sesame, A.wheat], warn:[W.lax, W.phe], note:'ללא תוספת סוכר וללא שמן דקלים. ממותק בממתיקים.'};
+const SNICKERS_LS = {ben:['הטעם האייקוני של סניקרס – בוטנים, קרמל ושוקולד','חלבון חלב איכותי לתמיכה בבניית שריר והתאוששות'], contains:[A.milk, A.soy, A.peanut], may:[A.nuts, A.egg, A.gluten], warn:[W.lax, W.collagen], note:'ממותק בממתיקים (מלטיטול).'};
+const MARS_LS = {ben:['הטעם הקלאסי של מארס – שכבת קרמל בציפוי שוקולד','חלבון חלב איכותי לתמיכה בבניית שריר והתאוששות'], contains:[A.milk, A.barley, A.gluten], may:[A.peanut, A.nuts, A.egg, A.soy], warn:[W.lax, W.collagen], note:'ממותק בממתיקים (מלטיטול).'};
+const HP_COOKIE = {ben:['עוגייה רכה ואפויה עם שבבי שוקולד','חטיף מתוק עם הרבה יותר חלבון מעוגייה רגילה'], contains:[A.wheat, A.gluten, A.soy, A.milk], may:[A.nuts], note:'עוגייה אפויה עשירה בחלבון (חלבון חיטה, אפונה וסויה).'};
+const RAW = {ben:['על בסיס שיבולת שועל – אנרגיה הדרגתית לאורך זמן','מרקם רך ואפוי של פלאפג׳ק'], contains:[A.milk, A.oats, A.gluten, A.soy], may:[A.egg, A.nuts, A.peanut, A.sesame], warn:[W.lax, W.gelatine], note:'מבוסס שיבולת שועל, עשיר בסיבים. ממותק בממתיקים.'};
+const CRUNCH = {ben:['שלוש שכבות: קרמל, פריכיות ושוקולד','חלבון חלב איכותי לתמיכה בבניית שריר והתאוששות'], contains:[A.milk, A.soy, A.barley, A.gluten], may:[A.nuts, A.egg, A.peanut], warn:[W.lax, W.collagen], note:'חטיף רב-שכבתי פריך. ממותק בממתיקים (מלטיטול).'};
+const MONSTER_ZERO = {ben:['ללא סוכר','תערובת האנרגיה של מונסטר – קפאין, טאורין וויטמיני B'], contains:[], warn:[W.caf], note:'ללא סוכר, עם ממתיקים. ללא אלרגנים מוצהרים. כמות הקפאין מופיעה על הפחית.'};
+const MONSTER_SUGAR = {ben:['תערובת האנרגיה של מונסטר – קפאין, טאורין וויטמיני B'], contains:[], warn:[W.caf], note:'מכיל סוכר וממתיקים. ללא אלרגנים מוצהרים.'};
+const UFIT = {ben:['ללא תוספת סוכר וכמעט ללא שומן','מוכן לשתייה – בלי שייקר ובלי הכנה','עם ויטמינים C, D ו-E'], contains:[A.milk], warn:[W.lactose], note:'ללא תוספת סוכר (מכיל סוכרי חלב טבעיים). ללא שומן כמעט. מתאים לצמחונים. לאחר פתיחה לשמור בקירור ולשתות תוך 24 שעות.'};
+const APPLIED_SHAKE = {ben:['ללא תוספת סוכר ודל שומן','מוכן לשתייה – בלי שייקר ובלי הכנה','חלבון חלב איכותי לבניית שריר והתאוששות אחרי אימון'], contains:[A.milk], warn:[W.lactose], note:'ללא תוספת סוכר, דל שומן, ממותק בסוכרלוז. לאחר פתיחה לשמור בקירור ולשתות תוך 24 שעות.'};
+const OATS = {ben:['עשויה 100% שיבולת שועל מלאה אורגנית','חלבון מי גבינה איכותי (ISO-XP) לתמיכה בבניית שריר והתאוששות','מוכנה תוך 2 דקות בלבד – עם מים רותחים או חלב','פחמימות מורכבות לשחרור אנרגיה הדרגתי לאורך הבוקר'], contains:[A.oats, A.gluten, A.milk, A.soy], may:[A.sesame, A.nuts], note:'שיבולת שועל מלאה אורגנית עם חלבון מי גבינה ו-MCT. מכינים עם 150 מ״ל מים רותחים או חלב וממתינים 2–3 דקות. מתאים לצמחונים, בעל הכשר חלאל.'};
+const APPLIED_CRUNCH = {ben:['שלוש שכבות: בסיס פריך, קרמל רך וציפוי שוקולד בלגי','מתאים לצמחונים'], contains:[A.milk, A.wheat, A.gluten, A.soy], may:[A.peanut, A.nuts, A.sulph], note:'ממותק בממתיקים (מלטיטול). מתאים לצמחונים, בעל הכשר חלאל.'};
+const GUMMIES = {ben:['בלי אבקה ובלי שייקר – פשוט לועסים','טבעוני וללא גלוטן','תומך בביצועים באימונים קצרים ועצימים'], contains:[], warn:['מנה: 4 סוכריות ביום (3 גרם קריאטין מונוהידראט). אין לחרוג מהמנה המומלצת.'], note:'ללא אלרגנים נפוצים (מיוצר במפעל שמטפל גם בחלב, סויה, ביצים, דגים וגלוטן). טבעוני, ללא גלוטן, בעל הכשר חלאל. רכיבים: קריאטין מונוהידראט, סוכר, סירופ גלוקוז, מים, פקטין, חומרי טעם, ציפוי (MCT, שעוות קרנאובה).'};
+const DINKY = {ben:['גודל קטן ונוח – 35 גרם בלבד','חטיף מתוק בלי להתפשר על הדיאטה'], contains:[A.milk, A.soy, A.wheat, A.gluten], may:[A.nuts, A.peanut], note:'חטיף חלבון קטן (35 גרם) דל סוכר ועשיר בסיבים.'};
+const PROPUD = {ben:['ללא תוספת סוכר וללא שמן דקלים'], contains:[A.milk, A.soy], may:[A.egg, A.nuts, A.sesame, A.wheat], warn:[W.lax, W.phe], note:'ללא תוספת סוכר וללא שמן דקלים. ממותק בממתיקים.'};
 
 return {
   /* Snickers Hi Protein Low Sugar 57g */
@@ -44,15 +44,15 @@ return {
   'glj0p8': {...MARS_LS, contains:[A.milk, A.soy, A.barley, A.gluten], may:[A.nuts, A.egg, A.peanut], per:'לחטיף (57 גרם)', n:{kcal:196, fat:7.7, sat:4.6, carb:18, sugar:1.7, protein:18, salt:0.39}},
   '0k7r7a': {...MARS_LS, per:'לחטיף (57 גרם)', n:{kcal:201, fat:7.8, sat:4.6, carb:22, sugar:1.8, protein:18, salt:0.27}},
   /* M&M's Hi Protein 51g */
-  'wu794d': {contains:[A.milk, A.soy], may:[A.peanut, A.nuts, A.egg, A.wheat, A.barley, A.oats], warn:[W.collagen], per:'לחטיף (51 גרם)', n:{kcal:192, fat:6.3, sat:3.7, carb:19, sugar:13, protein:15, salt:0.34}, note:'עם פתיתי M&M׳s מיני אמיתיים בציפוי שוקולד חלב.'},
+  'wu794d': {ben:['עם פתיתי M&M׳s מיני אמיתיים','ציפוי שוקולד חלב'], contains:[A.milk, A.soy], may:[A.peanut, A.nuts, A.egg, A.wheat, A.barley, A.oats], warn:[W.collagen], per:'לחטיף (51 גרם)', n:{kcal:192, fat:6.3, sat:3.7, carb:19, sugar:13, protein:15, salt:0.34}, note:'עם פתיתי M&M׳s מיני אמיתיים בציפוי שוקולד חלב.'},
   /* Hi Protein cookies 60g */
   'frraw9': {...HP_COOKIE, contains:[A.wheat, A.gluten, A.soy, A.milk, A.peanut], per:'לעוגייה (60 גרם)', n:{kcal:249, fat:9.3, sat:2.5, carb:25, sugar:13, protein:15, salt:0.42}},
   'hfygfs': {...HP_COOKIE, contains:[A.wheat, A.gluten, A.soy, A.milk, A.peanut], per:'לעוגייה (60 גרם)', n:{protein:15}},
   'x06j8d': {...HP_COOKIE, per:'לעוגייה (60 גרם)', n:{kcal:233, fat:7.2, sat:2.1, carb:25, sugar:14, protein:15}},
   '5g4sp7': {...HP_COOKIE, per:'לעוגייה (60 גרם)', n:{protein:15}},
   /* Hi Protein milk drinks 250ml */
-  '4v4i0n': {contains:[A.milk, A.barley, A.gluten], warn:[W.lactose], per:'לבקבוק (250 מ״ל)', n:{kcal:158, fat:3, sat:2, carb:12, sugar:12, protein:20, salt:0.5}, note:'משקה חלב עשיר בחלבון בטעם מארס.'},
-  'n01acm': {contains:[A.milk], warn:[W.lactose], per:'לבקבוק (250 מ״ל)', n:{protein:20}, note:'משקה חלב עשיר בחלבון (חלב מופחת שומן, תרכיז חלבון חלב ומי גבינה) בטעם סניקרס.'},
+  '4v4i0n': {ben:['הטעם של מארס במשקה חלב','מוכן לשתייה – בלי שייקר ובלי הכנה'], contains:[A.milk, A.barley, A.gluten], warn:[W.lactose], per:'לבקבוק (250 מ״ל)', n:{kcal:158, fat:3, sat:2, carb:12, sugar:12, protein:20, salt:0.5}, note:'משקה חלב עשיר בחלבון בטעם מארס.'},
+  'n01acm': {ben:['הטעם של סניקרס במשקה חלב','מוכן לשתייה – בלי שייקר ובלי הכנה'], contains:[A.milk], warn:[W.lactose], per:'לבקבוק (250 מ״ל)', n:{protein:20}, note:'משקה חלב עשיר בחלבון (חלב מופחת שומן, תרכיז חלבון חלב ומי גבינה) בטעם סניקרס.'},
   /* Warrior RAW 75g */
   'tt5tk9': {...RAW, per:'לחטיף (75 גרם)', n:{kcal:249, fat:3.8, sat:1.4, carb:20.9, sugar:3.7, fiber:7.6, protein:20.1, salt:0.23}},
   'ysom9e': {...RAW, contains:[A.milk, A.oats, A.gluten, A.soy, A.peanut], per:'לחטיף (75 גרם)', n:{kcal:262, fat:5.6, sat:1.6, carb:20.6, sugar:3.7, fiber:6.8, protein:20.1, salt:0.18}},
@@ -100,14 +100,14 @@ return {
   'rrivbm': {...APPLIED_SHAKE, per:'לבקבוק (500 מ״ל)', n:{protein:42}, ingr:'תרכיז חלבון חלב (62%), מים, חלב רזה (10%), אבקת קקאו מופחתת שומן (0.9%), מייצבים (קרגינן, גלאן), מווסת חומציות (טריסודיום ציטרט), חומרי טעם, ממתיק (סוכרלוז).'},
   'hk1dvq': {...APPLIED_SHAKE, per:'לבקבוק (500 מ״ל)', n:{protein:42}, ingr:'תרכיז חלבון חלב (65%), מים, חלב רזה (7.5%), חומרי טעם, מייצבים (קרגינן, גלאן), מווסת חומציות (טריסודיום ציטרט), צבע (בטא קרוטן), ממתיק (סוכרלוז).'},
   /* Critical Oats 60g pots */
-  '1zv6tk': {...OATS, per:'לגביע (60 גרם)', n:{kcal:238, fat:6.4, sat:3.1, carb:23, sugar:1.4, fiber:3.9, protein:23}},
-  'qtkqxx': {...OATS, per:'לגביע (60 גרם)', n:{protein:23}},
+  '1zv6tk': {...OATS, per:'לגביע (60 גרם)', n:{kcal:238, fat:6.4, sat:3.1, mct:2.4, carb:23, sugar:1.4, fiber:3.9, protein:23}},
+  'qtkqxx': {...OATS, ben:['100% שיבולת שועל מלאה אורגנית','חתיכות עוגיות אמיתיות בטעם עוגיות ושמנת','חלבון מי גבינה איכותי (ISO-XP) לתמיכה בבניית שריר והתאוששות','מוכנה תוך 2 דקות בלבד – עם מים רותחים או חלב','פחמימות מורכבות לשחרור אנרגיה הדרגתי לאורך הבוקר'], per:'לגביע (60 גרם)', n:{kcal:238, protein:23, carb:23, sugar:1.4, fat:6.4, sat:3.1, mct:2.4, fiber:3.9, salt:0.54, bcaa:4.4}},
   '9eoguz': {...OATS, per:'לגביע (60 גרם)', n:{protein:23}},
   /* Applied Nutrition bars */
   'dyh8uv': {...APPLIED_CRUNCH, per:'לחטיף (62 גרם)', n:{kcal:195, fat:5.8, sugar:1.8, protein:21}},
   'z6ei7d': {...APPLIED_CRUNCH, per:'לחטיף (62 גרם)', n:{sugar:1.8, protein:21}},
   'vlmmh5': {...APPLIED_CRUNCH, contains:[A.milk, A.wheat, A.gluten, A.soy, A.peanut], per:'לחטיף (65 גרם)', n:{sugar:1.8, protein:21}},
-  'w7pq7z': {contains:[A.wheat, A.gluten, A.milk, A.soy], per:'לחטיף (45 גרם)', n:{kcal:140, sugar:1, protein:12}, note:'חטיף חלבון דל קלוריות עם ויטמינים מוספים. ממותק בממתיקים. מתאים לצמחונים, בעל הכשר חלאל.'},
+  'w7pq7z': {ben:['עם ויטמינים מוספים','מתאים לצמחונים'], contains:[A.wheat, A.gluten, A.milk, A.soy], per:'לחטיף (45 גרם)', n:{kcal:140, sugar:1, protein:12}, note:'חטיף חלבון דל קלוריות עם ויטמינים מוספים. ממותק בממתיקים. מתאים לצמחונים, בעל הכשר חלאל.'},
   /* Creatine gummies */
   'alw8g4': {...GUMMIES, per:'למנה (4 סוכריות)', n:{creatine:3}},
   'df1gcx': {...GUMMIES, per:'למנה (4 סוכריות)', n:{creatine:3}},
@@ -123,5 +123,5 @@ return {
 };
 })();
 
-const NUT_ROWS = [['kcal','אנרגיה','קק״ל'],['protein','חלבון','גרם'],['carb','פחמימות','גרם'],['sugar','מתוכן סוכרים','גרם'],['fat','שומנים','גרם'],['sat','מתוכם שומן רווי','גרם'],['fiber','סיבים תזונתיים','גרם'],['salt','מלח','גרם'],['caf','קפאין','מ״ג'],['creatine','קריאטין מונוהידראט','גרם']];
+const NUT_ROWS = [['kcal','אנרגיה','קק״ל'],['protein','חלבון','גרם'],['carb','פחמימות','גרם'],['sugar','מתוכן סוכרים','גרם'],['fat','שומנים','גרם'],['sat','מתוכם שומן רווי','גרם'],['fiber','סיבים תזונתיים','גרם'],['salt','מלח','גרם'],['mct','שמן MCT','גרם'],['bcaa','BCAA','גרם'],['caf','קפאין','מ״ג'],['creatine','קריאטין מונוהידראט','גרם']];
 const infoOf = id => INFO[id] || null;
