@@ -98,6 +98,7 @@ function productSpecs(p){
   const s=parseSpecs(p), out=[];
   if(p.protein) out.push([p.protein+' גרם','חלבון ליחידה']);
   { const sg=sugarOf(p); if(sg!=null) out.push([sg+' גרם','סוכר ליחידה']); }
+  { const i=infoOf(p.id); if(i&&i.n&&i.n.kcal) out.push([i.n.kcal+' קק״ל','קלוריות ליחידה']); }
   if(s.weight) out.push([s.weight,'משקל / נפח ליחידה']);
   if(s.unit) out.push([s.unit,'יחידות במארז']);
   if(p.brand) out.push([p.brand,'מותג']);
