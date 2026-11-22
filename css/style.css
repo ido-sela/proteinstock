@@ -709,3 +709,11 @@ footer a:hover{color:#6cb8f2}
 .ck-steps .ck-step{padding:0;margin:0}
 
 .ck-bag .ck-bagn{top:8px;inset-inline-start:2px;line-height:18px;font-size:.68rem}
+
+.ck-methods{display:grid;gap:10px}
+.ck-radio{border:1px solid #dcdcdc;box-shadow:none;background:#fff}
+.ck-radio .ck-dot{border:2px solid #b5b5b5}
+.ck-radio.sel{border-color:#111;box-shadow:0 0 0 1px #111}
+.ck-radio.sel .ck-dot{border:5px solid #111}
+.ck-radio[hidden],.ck-addr[hidden],#ck-pick[hidden]{display:none}
+.ck-addr{display:grid;gap:18px}

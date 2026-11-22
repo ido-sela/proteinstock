@@ -21,7 +21,7 @@
 <script>
 const host = document.getElementById('ck');
 const FKEY = 'ps_checkout';
-const FIELDS = ['name', 'phone', 'email', 'address'];
+const FIELDS = ['name', 'phone', 'email', 'address', 'apt'];
 const VAT = 0.18;   // Israeli VAT; prices already include it
 const readStore = st => { try { return JSON.parse(st.getItem(FKEY) || '{}'); } catch (e) { return {}; } };
 const load = () => ({ ...readStore(sessionStorage), ...readStore(localStorage) });
@@ -34,7 +34,7 @@ const save = () => {
   } catch (e) { /* ignore */ }
 };
 const note = () => { try { return sessionStorage.getItem('ps_note') || ''; } catch (e) { return ''; } };
-let busy = false, built = false, openStep = 1, giveUp = false;
+let busy = false, built = false, openStep = 1, giveUp = false, method = 'shipping';
 setTimeout(() => { giveUp = true; if (!built) buildForm(); }, 4000);
 const pending = () => Cart.stored.length > Cart.items.filter(i => byId(i.id)).length && !window.__liveReady && !giveUp;
 
@@ -46,10 +46,10 @@ const I = {
   chev: '<svg class="ck-chev" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l5 5 5-5"/></svg>'
 };
 
-const field = (id, label, opts = {}) => `<div class="ck-f"><label for="f-${id}">${label} <i>*</i></label><input id="f-${id}" type="${opts.type || 'text'}"${opts.ph ? ` placeholder="${esc(opts.ph)}"` : ''}${opts.mode ? ` inputmode="${opts.mode}"` : ''}${opts.ac ? ` autocomplete="${opts.ac}"` : ''}${opts.dir ? ` dir="${opts.dir}"` : ''} value="${esc(opts.v || '')}"><small class="ck-e" id="e-${id}"></small></div>`;
+const field = (id, label, opts = {}) => `<div class="ck-f"><label for="f-${id}">${label}${opts.opt ? '' : ' <i>*</i>'}</label><input id="f-${id}" type="${opts.type || 'text'}"${opts.ph ? ` placeholder="${esc(opts.ph)}"` : ''}${opts.mode ? ` inputmode="${opts.mode}"` : ''}${opts.ac ? ` autocomplete="${opts.ac}"` : ''}${opts.dir ? ` dir="${opts.dir}"` : ''} value="${esc(opts.v || '')}"><small class="ck-e" id="e-${id}"></small></div>`;
 
 function totals() {
-  const sub = Cart.total(), ship = shipCost(sub), total = sub + ship;
+  const sub = Cart.total(), ship = method === 'pickup' ? 0 : shipCost(sub), total = sub + ship;
   return { sub, ship, total, vat: Math.round(total * VAT / (1 + VAT) * 100) / 100 };
 }
 function itemsHtml() {
@@ -77,8 +77,15 @@ function buildForm() {
       <label class="ck-check"><input type="checkbox" id="f-keep"${kept ? ' checked' : ''}><span>שמור מידע זה לפעם הבאה (במכשיר הזה בלבד)</span></label>
       <button type="button" class="ck-next" data-next="1">הבא</button>`)}
     ${step(2, 'ship', 'שיטת משלוח', I.truck, `
-      ${field('address', 'כתובת מלאה', { ph: 'רחוב, מספר בית, דירה ועיר', ac: 'street-address', v: v.address })}
-      <label class="ck-radio"><input type="radio" name="ship" checked><span class="ck-dot" aria-hidden="true"></span><span class="ck-rt"><b>משלוח עד הבית</b><small>זמן האספקה המדויק יאושר בעת אישור ההזמנה</small></span><em id="ck-shiprow">${t.ship ? money(t.ship) : 'חינם'}</em></label>
+      <div class="ck-methods" role="radiogroup" aria-label="שיטת משלוח">
+        <label class="ck-radio sel" data-m="shipping"><input type="radio" name="ship" value="shipping" checked><span class="ck-dot" aria-hidden="true"></span><span class="ck-rt"><b>משלוח עד הבית</b><small id="ck-shipnote"></small></span><em id="ck-shiprow"></em></label>
+        <label class="ck-radio" data-m="pickup" id="ck-pickopt"><input type="radio" name="ship" value="pickup"><span class="ck-dot" aria-hidden="true"></span><span class="ck-rt"><b>איסוף עצמי</b><small>${esc(SITE.address)}</small></span><em>חינם</em></label>
+      </div>
+      <div id="ck-addr" class="ck-addr">
+        ${field('address', 'כתובת מלאה', { ph: 'רחוב, מספר בית ועיר', ac: 'street-address', v: v.address })}
+        ${field('apt', 'פרטים נוספים לשליח', { opt: true, ph: 'מספר דירה, קומה, קוד לבניין, הוראות הגעה (לא חובה)', ac: 'address-line2', v: v.apt })}
+      </div>
+      <div id="ck-pick" class="ck-paybox" hidden><p><b>איסוף עצמי מהחנות</b></p><p>${esc(SITE.address)}</p><p class="ck-small">נעדכן אתכם כשההזמנה מוכנה לאיסוף. שעות פעילות: א׳–ה׳ 09:00–16:00.</p></div>
       <div class="ck-f"><label for="f-notes">הערות להזמנה</label><textarea id="f-notes" rows="3" maxlength="300" placeholder="למשל: להתקשר לפני ההגעה">${esc(note())}</textarea></div>
       <button type="button" class="ck-next" data-next="2">הבא</button>`)}
     ${step(3, 'pay', 'תשלום', I.card, `
@@ -108,7 +115,28 @@ function buildForm() {
     const n = e.target.closest('[data-next]'); if (n) { const k = +n.dataset.next; if (validate(k)) openAt(k + 1); }
   });
   document.getElementById('f-terms').addEventListener('change', e => { document.getElementById('ck-go').disabled = !e.target.checked || busy; document.getElementById('e-terms').textContent = ''; });
+  form.addEventListener('change', e => { if (e.target.name === 'ship') setMethod(e.target.value); });
+  setMethod(method, true);
   paintLines(); paintBag();
+}
+
+function setMethod(m, silent) {
+  if (m === 'pickup' && SHIP.pickup === false) m = 'shipping';
+  method = m;
+  document.querySelectorAll('.ck-radio').forEach(l => { const on = l.dataset.m === m; l.classList.toggle('sel', on); l.querySelector('input').checked = on; });
+  const a = document.getElementById('ck-addr'), pk = document.getElementById('ck-pick');
+  if (a) a.hidden = m === 'pickup';
+  if (pk) pk.hidden = m !== 'pickup';
+  paintShipLabels();
+  if (!silent) refresh();
+  paintLines();
+}
+function paintShipLabels() {
+  const c = shipCost(Cart.total());
+  const row = document.getElementById('ck-shiprow'); if (row) row.textContent = c ? money(c) : 'חינם';
+  const nt = document.getElementById('ck-shipnote'); if (nt) nt.textContent = SHIP.free_over > 0 ? ('חינם בהזמנה מעל ' + money(SHIP.free_over) + ' · זמן האספקה יאושר בעת אישור ההזמנה') : 'זמן האספקה יאושר בעת אישור ההזמנה';
+  const po = document.getElementById('ck-pickopt'); if (po) po.hidden = SHIP.pickup === false;
+  if (SHIP.pickup === false && method === 'pickup') method = 'shipping';
 }
 
 function openAt(n) {
@@ -121,7 +149,7 @@ const val = id => { const el = document.getElementById('f-' + id); return el ? (
 function paintLines() {
   const set = (k, t) => { const el = document.getElementById('ln-' + k); if (el) el.textContent = t; };
   set('contact', openStep !== 1 && val('name') && val('phone') ? `${val('name')} · ${val('phone')}` : '');
-  set('ship', openStep !== 2 && val('address') ? val('address') : '');
+  set('ship', openStep !== 2 ? (method === 'pickup' ? 'איסוף עצמי' : val('address')) : '');
 }
 function paintBag() { const n = Cart.count(); const b = document.getElementById('ck-bagn'); if (b) { b.textContent = n; b.style.display = n ? 'grid' : 'none'; } }
 
@@ -135,12 +163,12 @@ function refresh() {
   document.getElementById('s-vat').textContent = money(t.vat);
   document.getElementById('s-ship').textContent = t.ship ? money(t.ship) : 'חינם';
   document.getElementById('s-tot').textContent = money(t.total);
-  document.getElementById('ck-shiprow').textContent = t.ship ? money(t.ship) : 'חינם';
+  paintShipLabels();
   paintBag();
 }
 
 const E = { name: 'נא להזין שם מלא', phone: 'נא להזין מספר טלפון תקין', email: 'נא להזין כתובת דוא"ל תקינה', address: 'נא להזין כתובת מלאה, כולל עיר' };
-const STEP_FIELDS = { 1: ['name', 'phone', 'email'], 2: ['address'] };
+const STEP_FIELDS = { 1: ['name', 'phone', 'email'] };
 function bad(k) {
   if (k === 'name') return val('name').length < 2;
   if (k === 'phone') return !/^[0-9+\-\s()]{7,20}$/.test(val('phone')) || val('phone').replace(/\D/g, '').length < 9;
@@ -149,7 +177,7 @@ function bad(k) {
   return false;
 }
 function validate(n) {
-  const keys = STEP_FIELDS[n] || []; let first = null;
+  const keys = n === 2 ? (method === 'pickup' ? [] : ['address']) : (STEP_FIELDS[n] || []); let first = null;
   keys.forEach(k => { const b = bad(k); document.getElementById('e-' + k).textContent = b ? E[k] : ''; document.getElementById('f-' + k).classList.toggle('bad', b); if (b && !first) first = k; });
   if (first) document.getElementById('f-' + first).focus();
   return !first;
@@ -162,7 +190,7 @@ async function submit(e) {
   if (busy) return;
   if (!document.getElementById('f-terms').checked) { document.getElementById('e-terms').textContent = 'יש לאשר את התנאים כדי להמשיך'; return; }
   for (const n of [1, 2]) { if (!validate(n)) { openAt(n); return; } }
-  const body = { name: val('name'), phone: val('phone'), email: val('email'), address: val('address'), notes: val('notes'), items: Cart.items.map(i => ({ id: i.id, qty: i.q })) };
+  const body = { name: val('name'), phone: val('phone'), email: val('email'), delivery: method, address: method === 'pickup' ? '' : (val('address') + (val('apt') ? ' — ' + val('apt') : '')), notes: val('notes'), items: Cart.items.map(i => ({ id: i.id, qty: i.q })) };
   const btn = document.getElementById('ck-go'), t = document.getElementById('ck-go-t'), err = document.getElementById('ck-err');
   busy = true; btn.disabled = true; t.textContent = 'שולחים…'; err.hidden = true;
   let res, d = {};

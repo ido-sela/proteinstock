@@ -279,7 +279,7 @@ async function orders() {
   setBar('orders', 'הזמנות');
   pane().innerHTML = '<p class="empty">טוען הזמנות…</p>';
   const { data, error } = await sb.from('orders')
-    .select('id,number,status,customer_name,phone,address,notes,total,shipping,created_at,paid_at,order_items(title,qty,unit_price,line_total)')
+    .select('id,number,status,customer_name,phone,address,delivery,notes,total,shipping,created_at,paid_at,order_items(title,qty,unit_price,line_total)')
     .order('created_at', { ascending: false }).limit(300);
   if (error) { pane().innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
   let filter = 'all';
@@ -289,7 +289,7 @@ async function orders() {
     pane().innerHTML = `<div class="chips">${['all', ...Object.keys(STATUS)].map(s => `<button class="chip" data-f="${s}" aria-pressed="${s === filter}">${s === 'all' ? 'הכל' : STATUS[s]} (${counts[s] || 0})</button>`).join('')}</div>` +
       (list.length ? list.map(o => `<details class="ord" data-id="${esc(o.id)}"><summary><span class="num" dir="ltr">${esc(o.number)}</span><span>${esc(o.customer_name)}</span><span class="tot">${money(o.total)}</span><span class="badge ${esc(o.status)}">${esc(STATUS[o.status] || o.status)}</span><span class="sub">${when(o.created_at)}</span></summary>
         <div class="body"><table>${(o.order_items || []).map(i => `<tr><td>${esc(i.title)}</td><td>× ${i.qty}</td><td>${money(i.line_total)}</td></tr>`).join('')}${Number(o.shipping) ? `<tr><td>משלוח</td><td></td><td>${money(o.shipping)}</td></tr>` : ''}</table>
-        <div class="kv"><div><span>טלפון:</span> <a href="tel:${esc(o.phone)}" dir="ltr">${esc(o.phone)}</a></div><div><a href="https://wa.me/${esc(String(o.phone).replace(/\D/g, '').replace(/^0/, '972'))}" target="_blank" rel="noopener">וואטסאפ</a></div>${o.address ? `<div><span>כתובת:</span> ${esc(o.address)}</div>` : ''}${o.notes ? `<div><span>הערות:</span> ${esc(o.notes)}</div>` : ''}${o.paid_at ? `<div><span>שולם:</span> ${when(o.paid_at)}</div>` : ''}</div>
+        <div class="kv"><div><span>טלפון:</span> <a href="tel:${esc(o.phone)}" dir="ltr">${esc(o.phone)}</a></div><div><a href="https://wa.me/${esc(String(o.phone).replace(/\D/g, '').replace(/^0/, '972'))}" target="_blank" rel="noopener">וואטסאפ</a></div>${o.delivery === 'pickup' ? `<div><span>משלוח:</span> <b>איסוף עצמי</b></div>` : (o.address ? `<div><span>כתובת:</span> ${esc(o.address)}</div>` : '')}${o.notes ? `<div><span>הערות:</span> ${esc(o.notes)}</div>` : ''}${o.paid_at ? `<div><span>שולם:</span> ${when(o.paid_at)}</div>` : ''}</div>
         <div class="row2"><label for="st-${esc(o.id)}">סטטוס</label><select id="st-${esc(o.id)}" data-st="${esc(o.id)}">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}"${k === o.status ? ' selected' : ''}>${v}</option>`).join('')}</select></div></div></details>`).join('') : '<p class="empty">אין הזמנות להצגה.</p>');
     pane().querySelectorAll('[data-f]').forEach(b => b.onclick = () => { filter = b.dataset.f; draw(); });
     pane().querySelectorAll('[data-st]').forEach(s => s.onchange = async () => {
@@ -397,6 +397,7 @@ async function settings() {
   pane().innerHTML = `<div class="card" style="display:grid;gap:22px"><div><h2 style="font-size:1.05rem;margin-bottom:10px">משלוח</h2>
     <div class="grid2"><div class="field"><label for="fo">משלוח חינם מעל (₪)</label><input type="number" id="fo" min="0" step="1" value="${Number(ship.free_over) || 0}" dir="ltr"></div>
     <div class="field"><label for="ff">דמי משלוח מתחת לסכום (₪)</label><input type="number" id="ff" min="0" step="0.5" value="${Number(ship.fee) || 0}" dir="ltr"></div></div>
+    <label class="o" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="fp"${ship.pickup === false ? '' : ' checked'}> אפשר ללקוחות איסוף עצמי מהחנות (ללא עלות)</label>
     <p class="who" style="margin:8px 0 0">הסכום מחושב בשרת בעת ביצוע ההזמנה. הטקסטים באתר (למשל "משלוח חינם מעל ₪499") נשארים כפי שהם.</p>
     <button class="btn pri" id="ss" style="margin-top:12px">שמירת הגדרות משלוח</button></div>
     <div><h2 style="font-size:1.05rem;margin-bottom:10px">סרגל עליון באתר</h2><div class="field" style="max-width:560px"><label for="tb">טקסט (ריק = ברירת המחדל)</label><input type="text" id="tb" maxlength="160" value="${esc(content.topbar || '')}"></div><button class="btn pri" id="tbs" style="margin-top:12px">שמירת הסרגל</button></div>
@@ -418,7 +419,7 @@ async function settings() {
     const free_over = parseFloat(document.getElementById('fo').value) || 0, fee = parseFloat(document.getElementById('ff').value) || 0;
     if (free_over < 0 || fee < 0) { toast('ערך לא תקין'); return; }
     e.target.disabled = true;
-    const { error } = await sb.from('site_settings').update({ value: { free_over, fee } }).eq('key', 'shipping');
+    const { error } = await sb.from('site_settings').update({ value: { free_over, fee, pickup: document.getElementById('fp').checked } }).eq('key', 'shipping');
     e.target.disabled = false; toast(error ? 'השמירה נכשלה: ' + error.message : 'נשמר');
   };
   let ppKeys = null;

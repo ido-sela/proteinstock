@@ -4,17 +4,17 @@ const SITE = { phone:'0556650400', wa:'972556650400', email:'info@proteinstock.c
 /* Orders backend (Supabase). Both values are public by design; prices and totals are computed on the server. */
 const PS_CONFIG = { supabaseUrl:'https://yplzliqpohqehypllxdq.supabase.co', anonKey:'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };
 /* Shipping rule (free over / fee) — public copy of the server setting; the server recomputes it for every order. */
-const SHIP = { free_over: 499, fee: 0 };
+const SHIP = { free_over: 499, fee: 35, pickup: true };
 const shipCost = sub => (SHIP.free_over > 0 && sub >= SHIP.free_over) ? 0 : SHIP.fee;
 async function loadShipping(){
   try{
     const r = await fetch(PS_CONFIG.supabaseUrl + '/rest/v1/site_settings?select=value&key=eq.shipping', {headers:{apikey:PS_CONFIG.anonKey}});
     if(!r.ok) return; const a = await r.json(); const v = a[0] && a[0].value;
-    if(v){ SHIP.free_over = Number(v.free_over) || 0; SHIP.fee = Number(v.fee) || 0; }
+    if(v){ SHIP.free_over = Number(v.free_over) || 0; SHIP.fee = Number(v.fee) || 0; SHIP.pickup = v.pickup !== false; }
     Cart.render(); if(window.__rerender) window.__rerender();
   }catch(e){}
 }
-const ORDER_ERR = { unavailable:'חלק מהמוצרים כבר לא זמינים — רעננו את הדף ונסו שוב', rate_limited:'יותר מדי הזמנות בזמן קצר, נסו שוב בעוד כמה דקות', invalid_phone:'מספר הטלפון אינו תקין', invalid_name:'נא למלא שם מלא' };
+const ORDER_ERR = { unavailable:'חלק מהמוצרים כבר לא זמינים — רעננו את הדף ונסו שוב', rate_limited:'יותר מדי הזמנות בזמן קצר, נסו שוב בעוד כמה דקות', invalid_phone:'מספר הטלפון אינו תקין', invalid_name:'נא למלא שם מלא', invalid_address:'נא להזין כתובת מלאה', pickup_unavailable:'איסוף עצמי אינו זמין כרגע' };
 
 const PRODUCTS = RAW.map(build);
 const byId = id => PRODUCTS.find(p=>p.id===id);
