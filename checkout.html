@@ -48,8 +48,11 @@ function summary() {
     <p class="ck-vat">המחירים כוללים מע"מ</p></div>` };
 }
 
+let giveUp = false; setTimeout(() => { giveUp = true; if (!built) buildForm(); }, 4000);
+const pending = () => Cart.stored.length > Cart.items.filter(i => byId(i.id)).length && !window.__liveReady && !giveUp;
 function buildForm() {
   const items = Cart.items.filter(i => byId(i.id));
+  if (pending()) { host.innerHTML = '<div class="ct-empty"><p>טוען…</p></div>'; built = false; return; }
   if (!items.length) {
     host.innerHTML = `<div class="ct-empty"><div class="ct-empty-i">🛒</div><h1>העגלה ריקה</h1><p>אין מה לשלם עדיין.</p><a class="btn btn-primary" href="products">לקטלוג המוצרים</a></div>`;
     built = false; return;

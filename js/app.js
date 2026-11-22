@@ -47,6 +47,7 @@ const Cart = {
     const n=this.count();
     document.querySelectorAll('.cart-badge').forEach(b=>{b.textContent=n;b.style.display=n?'grid':'none';});
     const body=document.getElementById('d-body'); if(!body) return;
+    if(!this.items.length&&this.stored.length&&!window.__liveReady){ body.innerHTML='<div class="d-empty"><p>טוען…</p></div>'; document.getElementById('d-foot').style.display='none'; return; }
     if(!this.items.length){ body.innerHTML='<div class="d-empty"><p style="font-size:2.4rem">🛒</p><p>העגלה ריקה</p><p style="margin-top:14px"><a class="btn btn-dark btn-sm" href="products">לקטלוג המוצרים</a></p></div>'; document.getElementById('d-foot').style.display='none'; return; }
     document.getElementById('d-foot').style.display='';
     body.innerHTML=this.items.map(i=>{const p=byId(i.id);return `<div class="ci"><img src="${p.img}" alt="" loading="lazy"><div><h4>${esc(p.name)}</h4><div class="q"><button aria-label="הפחת" data-q="${p.id}:-1">−</button><span>${i.q}</span><button aria-label="הוסף" data-q="${p.id}:1">+</button></div><button class="rm" data-q="${p.id}:rm">הסר</button></div><b>${money(p.price*i.q)}</b></div>`}).join('');

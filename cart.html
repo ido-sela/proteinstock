@@ -22,8 +22,12 @@ const NOTE_KEY = 'ps_note';
 const getNote = () => { try { return sessionStorage.getItem(NOTE_KEY) || ''; } catch (e) { return ''; } };
 const setNote = v => { try { sessionStorage.setItem(NOTE_KEY, v.slice(0, 300)); } catch (e) { /* ignore */ } };
 
+let giveUp = false; setTimeout(() => { giveUp = true; draw(); }, 4000);
+/* items that are not in the built-in catalog (added in the admin) are known only after the live catalog loads */
+const pending = () => Cart.stored.length > Cart.items.filter(i => byId(i.id)).length && !window.__liveReady && !giveUp;
 function draw() {
   const items = Cart.items.filter(i => byId(i.id));
+  if (pending()) { host.innerHTML = '<div class="ct-empty"><p>טוען את העגלה…</p></div>'; return; }
   if (!items.length) {
     host.innerHTML = `<div class="ct-empty"><div class="ct-empty-i">🛒</div><h1>העגלה שלך ריקה</h1><p>עוד לא הוספת מוצרים. בוא נמצא משהו טוב.</p><a class="btn btn-primary" href="products">להמשך קנייה</a></div>`;
     return;
