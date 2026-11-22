@@ -200,6 +200,12 @@ section{padding:64px 0}
 .perks li::before{content:"✓";color:var(--blue);font-weight:900;margin-inline-end:10px}
 .desc{margin-top:26px}
 .desc h2{font-size:var(--t-md);margin-bottom:8px}
+.spec-t{width:100%;border-collapse:collapse;font-size:.95rem}
+.spec-t th,.spec-t td{padding:9px 0;border-bottom:1px solid var(--border);text-align:start;vertical-align:top}
+.note-box{margin-top:18px;background:var(--light);border-radius:var(--r);padding:14px 18px;font-size:.9rem;line-height:1.6}
+.note-box h3{font-size:1rem;margin-bottom:6px}
+.note-box ul{padding-inline-start:18px;list-style:disc}
+.spec-t th{width:40%;font-weight:600;color:var(--muted);padding-inline-end:12px}
 .stock-out{background:#fbe3df;color:#8F1F17;padding:12px 16px;border-radius:var(--r);font-weight:700;margin:18px 0}
 
 /* cart drawer */
@@ -308,6 +314,8 @@ footer a:hover{color:#6cb8f2}
   .campaign-img{min-height:200px}
   .pp{grid-template-columns:1fr;gap:26px}
   .pp-img{position:static}
+  .specs{grid-template-columns:1fr 1fr}
+  .spec:last-child:nth-child(odd){grid-column:1/-1}
   .why,.fgrid{grid-template-columns:1fr 1fr}
   .contact-grid{grid-template-columns:1fr}
 }

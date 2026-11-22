@@ -9,6 +9,8 @@ const CATS = [
   {id:'protein-health-snacks', name:'חטיפי בריאות עם חלבון', icon:'🌱', desc:'נשנושים אורגניים וטבעוניים עשירים בחלבון.'},
   {id:'creatine-and-nutritional-supplements', name:'קריאטין ותוספי תזונה', icon:'🧪', desc:'גומי קריאטין וכל מה שתומך בביצועים.'}
 ];
+/* Sugar per unit (grams) for products whose title doesn't state it. A title containing "X גרם סוכר" takes priority. */
+const SUGAR = {'57yf4w':2};
 const catName = id => (CATS.find(c=>c.id===id)||{}).name || '';
 
 const BRANDS = [
@@ -27,6 +29,7 @@ function build(r){
   // Snickers/Mars title ordering: first match wins; "Mars" suffix on Snickers items handled by order
   if(/snickers|סניקרס/i.test(title)) brand='Snickers';
   const pm=title.match(/(\d+(?:\.\d+)?)\s*גרם חלבון/); const protein=pm?parseFloat(pm[1]):0;
+  const sm=title.match(/(\d+(?:\.\d+)?)\s*גרם סוכר/); const sugar=sm?parseFloat(sm[1]):(SUGAR[id]??null);
   let cat='protein-snacks';
   if(/monster/i.test(title)) cat='energy-drinks';
   else if(/^משקה חלבון/.test(title)) cat='protein-beverages';
@@ -37,6 +40,6 @@ function build(r){
   else if(/profusion/i.test(title)) cat='protein-health-snacks';
   const name=parts[0];
   const rest=parts.slice(1).filter(p=>p.toLowerCase()!==brand.toLowerCase());
-  return {id,title,name,rest,price,old,tags,img:'img/p/'+img,out,brand,protein,cat,
+  return {id,title,name,rest,price,old,tags,img:'img/p/'+img,out,brand,protein,sugar,cat,
     sale:old>price, pct:old>price?Math.round((1-price/old)*100):0};
 }

@@ -16,6 +16,38 @@
 <script src="js/catalog.js"></script>
 <script src="js/app.js"></script>
 <script>
+/* Product specs, parsed from the title ("| 57 גרם | 20 גרם חלבון | 12 יחידות במארז | Brand"). */
+function parseSpecs(p){
+  const t=p.title;
+  const unit=(t.match(/(\d+)\s*(?:יחידות|יח'|חטיפים|חטיפי|פחיות|בקבוקים|שקיות)/)||t.match(/מארז\s*(?:של\s*)?(\d+)/)||[])[1];
+  const w=t.match(/(\d+(?:\.\d+)?)\s*(גרם|מ"ל|ק"ג|ליטר)(?!\s*(?:חלבון|סוכר))/);
+  const flavor=(t.match(/בטעם\s+([^|–]+)/)||[])[1];
+  const fl=flavor?flavor.split(/\s+-\s+|\s+(?=[A-Z]{2,}\s+[A-Z]{2,})/)[0].trim():'';
+  return {unit, weight:w?w[1]+' '+w[2]:'', flavor:fl};
+}
+function productSpecs(p){
+  const s=parseSpecs(p), out=[];
+  if(p.protein) out.push([p.protein+' גרם','חלבון ליחידה']);
+  if(p.sugar!=null) out.push([p.sugar+' גרם','סוכר ליחידה']);
+  if(s.weight) out.push([s.weight,'משקל / נפח ליחידה']);
+  if(s.unit) out.push([s.unit,'יחידות במארז']);
+  if(p.brand) out.push([p.brand,'מותג']);
+  return out;
+}
+function productDetails(p){
+  const s=parseSpecs(p), out=[['שם המוצר',p.name]];
+  if(p.brand) out.push(['מותג',p.brand]);
+  if(catName(p.cat)) out.push(['קטגוריה',catName(p.cat)]);
+  if(s.flavor) out.push(['טעם',s.flavor]);
+  if(s.weight) out.push(['משקל / נפח ליחידה',s.weight]);
+  if(s.unit) out.push(['יחידות במארז',s.unit]);
+  if(p.protein) out.push(['חלבון ליחידה',p.protein+' גרם']);
+  if(p.sugar!=null) out.push(['סוכר ליחידה',p.sugar+' גרם']);
+  if(p.tags.length) out.push(['מאפיינים',p.tags.join(', ')]);
+  return out;
+}
+</script>
+<script>
 layout('products');
 const PID=new URLSearchParams(location.search).get('id');
 const host=document.getElementById('pp');
@@ -28,12 +60,7 @@ if(!p){ host.innerHTML='<div class="empty"><h1>המוצר לא נמצא</h1><p s
 else{
   if(relSec) relSec.hidden=false;
   document.title=p.name+' — פרוטאין סטוק';
-  const unit=(p.title.match(/(\d+)\s*יחידות/)||[])[1];
-  const specs=[];
-  if(p.protein) specs.push([p.protein+' גרם','חלבון']);
-  const w=p.title.match(/\|\s*(\d+(?:\.\d+)?)\s*(גרם|מ"ל)\s*(?=\|)/); if(w) specs.push([w[1]+' '+w[2],'משקל / נפח ליחידה']);
-  if(unit) specs.push([unit,'יחידות במארז']);
-  if(p.brand) specs.push([p.brand,'מותג']);
+  const specs=productSpecs(p);
   const q=1; let qty=1;
   host.innerHTML=`<div class="crumbs" style="padding-top:24px"><a href="/">בית</a> / <a href="products">מוצרים</a> / <a href="products?cat=${p.cat}">${catName(p.cat)}</a></div>
   <div class="pp"><div class="pp-img"><img src="${p.img}" alt="${esc(p.name)}" width="800" height="800"></div>
@@ -45,7 +72,7 @@ else{
   <div class="buy"><div class="qty"><button id="m" aria-label="הפחת">−</button><span id="n">1</span><button id="pl" aria-label="הוסף">+</button></div>
   <button class="btn btn-primary" id="buy" ${p.out?'disabled':''} style="flex:1;min-width:200px">הוספה לעגלה</button></div>
   <ul class="perks"><li>משלוחים לכל הארץ — חינם מעל ${money(SITE.freeShip)}</li><li>מותג מקורי, טריות מובטחת</li><li>מידע על כשרות מופיע על האריזה</li></ul>
-  <div class="desc"><h2>פרטי המוצר</h2><p>${esc(p.title.replace(/\s*\|\s*/g,' · '))}</p>${p.desc?`<p style="margin-top:10px;white-space:pre-line">${esc(p.desc)}</p>`:''}</div></div></div>`;
+  <div class="desc"><h2>פרטי המוצר</h2><table class="spec-t"><tbody>${productDetails(p).map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table>${p.desc?`<p style="margin-top:10px;white-space:pre-line">${esc(p.desc)}</p>`:''}<div class="note-box"><h3>חשוב לדעת</h3><ul><li>התמונה להמחשה בלבד. עיצוב האריזה עשוי להשתנות בין סדרות ייצור.</li><li>המידע המחייב לגבי ערכים תזונתיים, רכיבים, אלרגנים, תאריך תפוגה וכשרות הוא המידע המופיע על גבי האריזה. יש לעיין בו לפני הצריכה.</li><li>הערכים המוצגים בעמוד הם ליחידה אחת (חטיף / פחית / בקבוק), אלא אם צוין אחרת.</li></ul></div></div></div></div>`;
   document.getElementById('m').onclick=()=>{qty=Math.max(1,qty-1);n.textContent=qty;};
   document.getElementById('pl').onclick=()=>{qty=Math.min(20,qty+1);n.textContent=qty;};
   document.getElementById('buy').onclick=()=>{Cart.add(p.id,qty);Cart.open();};
