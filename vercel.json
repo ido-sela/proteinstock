@@ -39,6 +39,18 @@
   ],
   "redirects": [
     {
+      "source": "/product",
+      "has": [
+        {
+          "type": "query",
+          "key": "id",
+          "value": "(?<pid>ecio0t|0fswlm|57yf4w|0zpa50|nho05h|euudrs|alw8g4|zeynbx|5k4qpy|hz5ul4|s5r79f|24lhib|qtkqxx|uvfrli|hfygfs|d20mju|abm5zw|zwjee9|4k5aj5|n01acm|rrivbm|hk1dvq|3o7nip|cgypj1|vdx2p0|5g4sp7|wu794d|4v4i0n|7jwocl|0k7r7a|hwgbud|ozdi0k|hqihcl|mnao75|ciprpw|xfm9y6|20kjyo|nfn76o|op107x|xhrk27|rftzpe|1se7a1|bla03u|ysom9e|h9umx1|sp0qrj|tt5tk9|6rnjgr|tsn2s9|zmr5rv|yakth3|airpzb|dwu0pp|2n052s|z5kewh|g5cl2p|onpwcm|l55t3o|ebc0hm|zgivhu|b6d4wx|dp9u4r|ban3qt|c6s359|frraw9|x06j8d|1wbn8q|df1gcx|yux81n|wc2qj8|35eyfl|glj0p8|3wvtn8|dyh8uv|vlmmh5|z6ei7d|w7pq7z|9eoguz|x1vyqh|1zv6tk)"
+        }
+      ],
+      "destination": "/p/:pid",
+      "permanent": true
+    },
+    {
       "source": "/category/:slug",
       "destination": "/products?cat=:slug",
       "permanent": true

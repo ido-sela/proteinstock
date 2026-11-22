@@ -31,7 +31,7 @@ function variantsHtml(p){
   const k=familyKey(p); if(!k) return '';
   const sib=PRODUCTS.filter(x=>familyKey(x)===k);
   if(sib.length<2) return '';
-  return `<div class="variants"><span class="vlabel">בחירת טעם:</span><div class="vlist">${sib.map(x=>`<a href="product?id=${x.id}" class="vopt${x.id===p.id?' on':''}${x.out?' out':''}" ${x.id===p.id?'aria-current="true"':''}>${esc(flavorShort(x))}${x.out?' (אזל)':''}</a>`).join('')}</div></div>`;
+  return `<div class="variants"><span class="vlabel">בחירת טעם:</span><div class="vlist">${sib.map(x=>`<a href="${purl(x.id)}" class="vopt${x.id===p.id?' on':''}${x.out?' out':''}" ${x.id===p.id?'aria-current="true"':''}>${esc(flavorShort(x))}${x.out?' (אזל)':''}</a>`).join('')}</div></div>`;
 }
 /* Mixed packs (old site: "הרכב המארז"): for oat porridge the customer can split the 12 units between flavors.
    Same product id and price; the chosen mix is saved on the cart line and sent with the order notes. */
@@ -106,7 +106,7 @@ function productDetails(p){
 <script>
 layout('products');
 const QS=new URLSearchParams(location.search);
-let PID=QS.get('id');
+let PID=QS.get('id')||window.PS_PID||null;
 function bySlug(slug){   // old site links: /product/<product-name-with-dashes>
   const norm=t=>t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
   const w=norm(decodeURIComponent(slug)).split(' ').filter(Boolean); if(!w.length) return null;
@@ -117,7 +117,7 @@ function bySlug(slug){   // old site links: /product/<product-name-with-dashes>
 const host=document.getElementById('pp');
 let giveUp=false; setTimeout(()=>{ giveUp=true; if(!byId(PID)) draw(); },4000);
 function draw(){
-if(!PID&&QS.get('slug')){ const m=bySlug(QS.get('slug')); if(m){ PID=m.id; history.replaceState(null,'','product?id='+m.id); } }
+if(!PID&&QS.get('slug')){ const m=bySlug(QS.get('slug')); if(m){ PID=m.id; history.replaceState(null,'',purl(m.id)); } }
 const p=byId(PID);
 const relSec=document.querySelector('section');
 if(!p&&!window.__liveReady&&!giveUp){ host.innerHTML='<div class="empty"><p style="padding:60px 0">טוען מוצר…</p></div>'; if(relSec) relSec.hidden=true; return; }

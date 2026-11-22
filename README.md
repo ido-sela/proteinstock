@@ -20,3 +20,9 @@ The server uses the `products` table, not `js/data.js`. Change a price in both p
 4. Give the provider this webhook URL: `https://yplzliqpohqehypllxdq.supabase.co/functions/v1/payment-webhook?provider=<key>`.
 
 Until then, orders are saved as `pending` and the customer gets the order number plus a WhatsApp link.
+
+## Product pages
+
+Every product in `js/data.js` has a static page at `p/<id>.html` (served as `/p/<id>`) with its own `<title>`, meta description, canonical URL, Open Graph tags and Product JSON-LD, so search engines and link previews see the product name. Old `/product?id=<id>` links redirect there (`vercel.json`). Products added in the admin keep using `product?id=`.
+
+After changing `js/data.js` or `product.html`, rebuild: `node tools/build-product-pages.mjs` (also updates `sitemap.xml` and the redirect in `vercel.json`).

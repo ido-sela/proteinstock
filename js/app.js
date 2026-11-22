@@ -18,6 +18,9 @@ const ORDER_ERR = { unavailable:'חלק מהמוצרים כבר לא זמיני�
 
 const PRODUCTS = RAW.map(build);
 const byId = id => PRODUCTS.find(p=>p.id===id);
+/* Products from js/data.js have a static page at p/<id> (built by tools/build-product-pages.mjs); products added in the admin use product?id=. */
+const STATIC_PAGE = new Set(RAW.map(r=>r[0]));
+const purl = id => STATIC_PAGE.has(id) ? 'p/'+encodeURIComponent(id) : 'product?id='+encodeURIComponent(id);
 
 const money = n => SITE.currency + (Math.round(n*100)/100).toLocaleString('he-IL',{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2});
 const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -67,8 +70,8 @@ function card(p){
   const tags=[]; if(p.out) tags.push('<span class="tag out">אזל מהמלאי</span>'); if(p.sale) tags.push(`<span class="tag sale">${p.pct}%- הנחה</span>`);
   p.tags.slice(0,2).forEach(t=>tags.push(`<span class="tag">${esc(t)}</span>`));
   const meta=p.protein?`${p.protein} גרם חלבון`:'';
-  return `<article class="pcard${p.out?' is-out':''}"><a class="pimg" href="product?id=${p.id}" aria-label="${esc(p.name)}"><img src="${p.img}" alt="${esc(p.name)}" loading="lazy" width="400" height="400"><div class="ptags">${tags.join('')}</div></a>
-  <div class="pbody"><span class="pbrand">${esc(p.brand)}</span><a class="pname" href="product?id=${p.id}">${esc(p.name)}</a><span class="pmeta">${meta}</span>
+  return `<article class="pcard${p.out?' is-out':''}"><a class="pimg" href="${purl(p.id)}" aria-label="${esc(p.name)}"><img src="${p.img}" alt="${esc(p.name)}" loading="lazy" width="400" height="400"><div class="ptags">${tags.join('')}</div></a>
+  <div class="pbody"><span class="pbrand">${esc(p.brand)}</span><a class="pname" href="${purl(p.id)}">${esc(p.name)}</a><span class="pmeta">${meta}</span>
   <div class="pfoot"><span class="price">${money(p.price)}${p.sale?`<s>${money(p.old)}</s>`:''}</span>
   <button class="add" ${p.out?'disabled':''} data-add="${p.id}" aria-label="הוסף לעגלה: ${esc(p.name)}">${ICON.plus}</button></div></div></article>`;
 }
@@ -577,7 +580,7 @@ function initSearchDD(){
     hits=PRODUCTS.filter(p=>{ const t=((p.title||p.name||'')+' '+(p.brand||'')+' '+catName(p.cat)+' '+(p.tags||[]).join(' ')).toLowerCase(); return words.every(w=>t.includes(w)); });
     act=-1;
     box.innerHTML = hits.length
-      ? hits.slice(0,6).map(p=>`<a class="sdd-i" role="option" href="product?id=${encodeURIComponent(p.id)}"><img src="${p.img}" alt="" width="40" height="40"><span class="sdd-t"><span class="n">${esc(p.title||p.name)}</span><small>${esc(p.brand||'')}</small></span><b>${money(p.price)}</b></a>`).join('') + (hits.length>6?`<a class="sdd-all" href="products?q=${encodeURIComponent(inp.value.trim())}">הצגת כל ${hits.length} התוצאות</a>`:'')
+      ? hits.slice(0,6).map(p=>`<a class="sdd-i" role="option" href="${purl(p.id)}"><img src="${p.img}" alt="" width="40" height="40"><span class="sdd-t"><span class="n">${esc(p.title||p.name)}</span><small>${esc(p.brand||'')}</small></span><b>${money(p.price)}</b></a>`).join('') + (hits.length>6?`<a class="sdd-all" href="products?q=${encodeURIComponent(inp.value.trim())}">הצגת כל ${hits.length} התוצאות</a>`:'')
       : '<div class="sdd-none">לא נמצאו מוצרים. נסו מילה אחרת.</div>';
     box.hidden=false;
   };
@@ -587,7 +590,7 @@ function initSearchDD(){
     const n=Math.min(hits.length,6);
     if(e.key==='ArrowDown'&&!box.hidden&&n){ e.preventDefault(); act=(act+1)%n; mark(); }
     else if(e.key==='ArrowUp'&&!box.hidden&&n){ e.preventDefault(); act=(act-1+n)%n; mark(); }
-    else if(e.key==='Enter'&&act>=0&&hits[act]){ e.preventDefault(); location.href='product?id='+encodeURIComponent(hits[act].id); }
+    else if(e.key==='Enter'&&act>=0&&hits[act]){ e.preventDefault(); location.href=purl(hits[act].id); }
     else if(e.key==='Escape'){ close(); inp.blur(); }
   });
   document.addEventListener('click',e=>{ if(!form.contains(e.target)) close(); });
