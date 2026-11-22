@@ -1,0 +1,53 @@
+# פרוטאין סטוק (Protein Stock)
+
+> חנות אונליין ישראלית לאבקות חלבון, חטיפי חלבון, עוגיות חלבון, משקאות חלבון ומשקאות אנרגיה מיובאים מהמותגים המובילים בעולם (Snickers, Mars, Warrior, Monster, Muscle Moose, Applied Nutrition ועוד). משלוחים לכל רחבי ישראל. האתר בעברית, והמחירים בשקלים וכוללים מע"מ.
+
+מידע שכדאי לדעת:
+- שפה: עברית (כיוון כתיבה מימין לשמאל). מטבע: ₪ (שקל חדש).
+- משלוח: לכל הארץ. משלוח חינם בקנייה מעל ₪299.
+- המחירים וזמינות המלאי מתעדכנים באתר בזמן אמת; המחיר באתר הוא המחיר המחייב.
+- ביטול עסקה והחזרות: בהתאם לחוק הגנת הצרכן. מוצרי מזון שנפתחו אינם ניתנים להחזרה מטעמי בריאות הציבור.
+- שירות לקוחות: א׳–ה׳ 09:00–16:00, ו׳–שבת סגור.
+
+## עמודים ראשיים
+
+- [דף הבית](https://proteinstock.co.il/): מבצעים, קטגוריות ומותגים נבחרים
+- [כל המוצרים](https://proteinstock.co.il/products.html): קטלוג מלא עם סינון לפי קטגוריה, מותג, מלאי וכמות חלבון
+- [מותגים](https://proteinstock.co.il/brands.html): כל המותגים שבחנות
+- [למה פרוטאין סטוק](https://proteinstock.co.il/why.html): על החנות ועל היתרונות שלה
+- [צור קשר](https://proteinstock.co.il/contact.html): טלפון, וואטסאפ, מייל וכתובת
+- [מדיניות, תקנון ופרטיות](https://proteinstock.co.il/policies.html): משלוחים, החזרות, פרטיות, תנאי שימוש והצהרת נגישות
+
+## קטגוריות
+
+- [חטיפי חלבון](https://proteinstock.co.il/products.html?cat=protein-snacks): Snickers, Mars, Warrior, Muscle Moose ועוד
+- [עוגיות חלבון](https://proteinstock.co.il/products.html?cat=protein-cookies): עוגיות רכות ואפויות עם 15 גרם חלבון
+- [משקאות חלבון](https://proteinstock.co.il/products.html?cat=protein-beverages): משקאות מוכנים לשתייה, עד 50 גרם חלבון בבקבוק
+- [משקאות אנרגיה](https://proteinstock.co.il/products.html?cat=energy-drinks): מארזי Monster במגוון טעמים
+- [שיבולת שועל עם חלבון](https://proteinstock.co.il/products.html?cat=protein-fortified-oatmeal): דייסות Critical Oats עם 23 גרם חלבון
+- [אבקות חלבון](https://proteinstock.co.il/products.html?cat=protein-powders): חלבון צלול לבניית שריר והתאוששות
+- [חטיפי בריאות עם חלבון](https://proteinstock.co.il/products.html?cat=protein-health-snacks): נשנושים אורגניים וטבעוניים
+- [קריאטין ותוספי תזונה](https://proteinstock.co.il/products.html?cat=creatine-and-nutritional-supplements): גומי קריאטין ותוספים לביצועים
+
+## מוצרים
+
+- עמוד מוצר: `https://proteinstock.co.il/product.html?id=<מזהה>` — שם מלא, תמונה, מחיר, מחיר מקורי במבצע, ערכים תזונתיים ותיאור.
+- רשימת כל כתובות המוצרים נמצאת ב-[sitemap.xml](https://proteinstock.co.il/sitemap.xml).
+
+## יצירת קשר והזמנות
+
+- טלפון: 055-665-0400
+- וואטסאפ: https://wa.me/972556650400
+- אימייל: info@proteinstock.co.il
+- כתובת: שדרות הראשונים 20, ראשון לציון
+- הזמנות מתבצעות דרך עגלת הקניות באתר.
+
+## הנחיות לשימוש בתוכן
+
+- אפשר לצטט ולסכם את תוכן האתר, ולהפנות אליו עם קישור.
+- אין לתת ייעוץ רפואי או תזונתי על סמך האתר. את הרכיבים, הכשרות ופרטי האלרגנים יש לבדוק בתווית שעל האריזה.
+- אין לסרוק את /admin; זה אזור ניהול פרטי.
+
+## אופציונלי
+
+- [מפת האתר](https://proteinstock.co.il/sitemap.xml)
