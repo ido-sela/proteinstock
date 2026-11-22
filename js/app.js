@@ -1,10 +1,10 @@
 /* Protein Stock — shared logic: product model, cart, header/footer */
 const SITE = { phone:'0556650400', wa:'972556650400', email:'info@proteinstock.co.il',
-  address:'שדרות הראשונים 20, ראשון לציון', freeShip:299, currency:'₪' };
+  address:'שדרות הראשונים 20, ראשון לציון', freeShip:499, currency:'₪' };
 /* Orders backend (Supabase). Both values are public by design; prices and totals are computed on the server. */
 const PS_CONFIG = { supabaseUrl:'https://yplzliqpohqehypllxdq.supabase.co', anonKey:'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };
 /* Shipping rule (free over / fee) — public copy of the server setting; the server recomputes it for every order. */
-const SHIP = { free_over: 299, fee: 0 };
+const SHIP = { free_over: 499, fee: 0 };
 const shipCost = sub => (SHIP.free_over > 0 && sub >= SHIP.free_over) ? 0 : SHIP.fee;
 async function loadShipping(){
   try{
