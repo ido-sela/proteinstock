@@ -594,7 +594,7 @@ function initSearchDD(){
     hits=PRODUCTS.filter(p=>{ const t=((p.title||p.name||'')+' '+(p.brand||'')+' '+catName(p.cat)+' '+(p.tags||[]).join(' ')).toLowerCase(); return words.every(w=>t.includes(w)); });
     act=-1;
     box.innerHTML = hits.length
-      ? hits.slice(0,6).map(p=>`<a class="sdd-i" role="option" href="product.html?id=${encodeURIComponent(p.id)}"><img src="${p.img}" alt="" width="40" height="40"><span class="sdd-t">${esc(p.title||p.name)}<small>${esc(p.brand||'')}</small></span><b>${money(p.price)}</b></a>`).join('') + (hits.length>6?`<a class="sdd-all" href="products.html?q=${encodeURIComponent(inp.value.trim())}">הצגת כל ${hits.length} התוצאות</a>`:'')
+      ? hits.slice(0,6).map(p=>`<a class="sdd-i" role="option" href="product.html?id=${encodeURIComponent(p.id)}"><img src="${p.img}" alt="" width="40" height="40"><span class="sdd-t"><span class="n">${esc(p.title||p.name)}</span><small>${esc(p.brand||'')}</small></span><b>${money(p.price)}</b></a>`).join('') + (hits.length>6?`<a class="sdd-all" href="products.html?q=${encodeURIComponent(inp.value.trim())}">הצגת כל ${hits.length} התוצאות</a>`:'')
       : '<div class="sdd-none">לא נמצאו מוצרים. נסו מילה אחרת.</div>';
     box.hidden=false;
   };
