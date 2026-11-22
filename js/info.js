@@ -36,38 +36,38 @@ return {
   '57yf4w': {...SNICKERS_LS, per:'לחטיף (57 גרם)', n:{kcal:218, fat:10, sat:4.3, carb:15, sugar:2.0, protein:20, salt:0.58}},
   '35eyfl': {...SNICKERS_LS, per:'לחטיף (57 גרם)', n:{kcal:217, fat:10, sat:4.2, carb:15, sugar:1.9, protein:20, salt:0.58}},
   '3o7nip': {...SNICKERS_LS, per:'לחטיף (57 גרם)', n:{kcal:215, fat:10, sat:4.2, carb:14, sugar:1.1, protein:20, salt:0.56}},
-  'nho05h': {...SNICKERS_LS, contains:[A.milk, A.soy, A.peanut, A.hazel], per:'לחטיף (57 גרם)', n:{kcal:221, fat:11, carb:15, protein:20}},
+  'nho05h': {...SNICKERS_LS, contains:[A.milk, A.soy, A.peanut, A.hazel], per:'לחטיף (57 גרם)', n:{kcal:221, fat:11, sat:4.2, carb:15, sugar:2, protein:20, salt:0.33}},
   'yux81n': {contains:[A.milk, A.soy, A.peanut], may:[A.nuts, A.egg], per:'לחטיף (57 גרם)', n:{kcal:225, fat:8.5, sat:3, carb:20, sugar:9.4, protein:20}},
   'wc2qj8': {contains:[A.milk, A.soy, A.peanut], may:[A.nuts, A.egg, A.gluten], per:'לחטיף (55 גרם)', n:{kcal:217, fat:8.2, carb:15.4, protein:20}, note:'חטיף עם בוטנים, קרמל ופתיתים פריכים בציפוי שוקולד חלב.'},
   /* Mars Hi Protein Low Sugar 57g */
-  '3wvtn8': {...MARS_LS, per:'לחטיף (57 גרם)', n:{kcal:201, sugar:1.9, protein:18}},
+  '3wvtn8': {...MARS_LS, per:'לחטיף (57 גרם)', n:{kcal:201, fat:7.7, sat:4.2, carb:22, sugar:1.9, protein:18}},
   'glj0p8': {...MARS_LS, contains:[A.milk, A.soy, A.barley, A.gluten], may:[A.nuts, A.egg, A.peanut], per:'לחטיף (57 גרם)', n:{kcal:196, fat:7.7, sat:4.6, carb:18, sugar:1.7, protein:18, salt:0.39}},
   '0k7r7a': {...MARS_LS, per:'לחטיף (57 גרם)', n:{kcal:201, fat:7.8, sat:4.6, carb:22, sugar:1.8, protein:18, salt:0.27}},
   /* M&M's Hi Protein 51g */
   'wu794d': {ben:['עם פתיתי M&M׳s מיני אמיתיים','ציפוי שוקולד חלב'], contains:[A.milk, A.soy], may:[A.peanut, A.nuts, A.egg, A.wheat, A.barley, A.oats], warn:[W.collagen], per:'לחטיף (51 גרם)', n:{kcal:192, fat:6.3, sat:3.7, carb:19, sugar:13, protein:15, salt:0.34}, note:'עם פתיתי M&M׳s מיני אמיתיים בציפוי שוקולד חלב.'},
   /* Hi Protein cookies 60g */
   'frraw9': {...HP_COOKIE, contains:[A.wheat, A.gluten, A.soy, A.milk, A.peanut], per:'לעוגייה (60 גרם)', n:{kcal:249, fat:9.3, sat:2.5, carb:25, sugar:13, protein:15, salt:0.42}},
-  'hfygfs': {...HP_COOKIE, contains:[A.wheat, A.gluten, A.soy, A.milk, A.peanut], per:'לעוגייה (60 גרם)', n:{protein:15}},
+  'hfygfs': {...HP_COOKIE, contains:[A.wheat, A.gluten, A.soy, A.milk, A.peanut], per:'לעוגייה (60 גרם)', n:{kcal:245, fat:9, sat:2.1, carb:25, sugar:14, protein:15, salt:0.48}},
   'x06j8d': {...HP_COOKIE, per:'לעוגייה (60 גרם)', n:{kcal:233, fat:7.2, sat:2.1, carb:25, sugar:14, protein:15}},
   '5g4sp7': {...HP_COOKIE, per:'לעוגייה (60 גרם)', n:{protein:15}},
   /* Hi Protein milk drinks 250ml */
   '4v4i0n': {ben:['הטעם של מארס במשקה חלב','מוכן לשתייה – בלי שייקר ובלי הכנה'], contains:[A.milk, A.barley, A.gluten], warn:[W.lactose], per:'לבקבוק (250 מ״ל)', n:{kcal:158, fat:3, sat:2, carb:12, sugar:12, protein:20, salt:0.5}, note:'משקה חלב עשיר בחלבון בטעם מארס.'},
-  'n01acm': {ben:['הטעם של סניקרס במשקה חלב','מוכן לשתייה – בלי שייקר ובלי הכנה'], contains:[A.milk], warn:[W.lactose], per:'לבקבוק (250 מ״ל)', n:{protein:20}, note:'משקה חלב עשיר בחלבון (חלב מופחת שומן, תרכיז חלבון חלב ומי גבינה) בטעם סניקרס.'},
+  'n01acm': {ben:['הטעם של סניקרס במשקה חלב','מוכן לשתייה – בלי שייקר ובלי הכנה'], contains:[A.milk], warn:[W.lactose], per:'לבקבוק (250 מ״ל)', n:{kcal:158, protein:20}, note:'משקה חלב עשיר בחלבון (חלב מופחת שומן, תרכיז חלבון חלב ומי גבינה) בטעם סניקרס.'},
   /* Warrior RAW 75g */
   'tt5tk9': {...RAW, per:'לחטיף (75 גרם)', n:{kcal:249, fat:3.8, sat:1.4, carb:20.9, sugar:3.7, fiber:7.6, protein:20.1, salt:0.23}},
   'ysom9e': {...RAW, contains:[A.milk, A.oats, A.gluten, A.soy, A.peanut], per:'לחטיף (75 גרם)', n:{kcal:262, fat:5.6, sat:1.6, carb:20.6, sugar:3.7, fiber:6.8, protein:20.1, salt:0.18}},
   'sp0qrj': {...RAW, contains:[A.milk, A.oats, A.barley, A.gluten, A.soy, A.peanut], per:'לחטיף (75 גרם)', n:{kcal:255, fat:5.3, sugar:3.5, fiber:8.5, protein:21}},
-  'abm5zw': {...RAW, per:'לחטיף (75 גרם)', n:{sugar:3.1, protein:20}},
-  'uvfrli': {...RAW, per:'לחטיף (75 גרם)', n:{kcal:246, fiber:8.5, protein:20}},
+  'abm5zw': {...RAW, per:'לחטיף (75 גרם)', n:{kcal:236, fat:2.1, sat:0.6, carb:33.9, sugar:3.1, fiber:8.1, protein:20.2, salt:0.29}},
+  'uvfrli': {...RAW, per:'לחטיף (75 גרם)', n:{kcal:247, fat:2.2, sat:0.5, carb:36.8, sugar:4.1, fiber:8.5, protein:20}},
   'h9umx1': {...RAW, per:'לחטיף (75 גרם)', n:{protein:20}},
   /* Warrior Crunch 64g */
   'tsn2s9': {...CRUNCH, per:'לחטיף (64 גרם)', n:{kcal:239, fat:11, sat:6.1, carb:24, sugar:2.3, protein:20, salt:0.36}},
   'dwu0pp': {...CRUNCH, per:'לחטיף (64 גרם)', n:{kcal:243, fat:11, sat:7.3, carb:23, sugar:2.3, protein:20, salt:0.35}},
   'vdx2p0': {...CRUNCH, per:'לחטיף (64 גרם)', n:{kcal:241, fat:11, sat:7.1, carb:25, sugar:2.1, protein:20}},
-  'yakth3': {...CRUNCH, per:'לחטיף (64 גרם)', n:{kcal:239, sugar:2.1, protein:20}},
-  'zmr5rv': {...CRUNCH, contains:[A.milk, A.soy, A.barley, A.gluten, A.peanut], per:'לחטיף (64 גרם)', n:{protein:20}},
-  'airpzb': {...CRUNCH, contains:[A.milk, A.soy, A.barley, A.gluten, A.peanut], per:'לחטיף (64 גרם)', n:{protein:20}},
-  '2n052s': {...CRUNCH, per:'לחטיף (64 גרם)', n:{protein:20}},
+  'yakth3': {...CRUNCH, per:'לחטיף (64 גרם)', n:{kcal:239, fat:11, sat:7.1, carb:23, sugar:2.1, protein:20, salt:0.36}},
+  'zmr5rv': {...CRUNCH, contains:[A.milk, A.soy, A.barley, A.gluten, A.peanut], per:'לחטיף (64 גרם)', n:{kcal:238, fat:11, sat:6.3, carb:23, sugar:2.2, protein:20}},
+  'airpzb': {...CRUNCH, contains:[A.milk, A.soy, A.barley, A.gluten, A.peanut], per:'לחטיף (64 גרם)', n:{kcal:235, fat:11, sat:6.3, carb:22, sugar:0.7, protein:20, salt:0.33}},
+  '2n052s': {...CRUNCH, per:'לחטיף (64 גרם)', n:{kcal:251, fat:12, sat:8.3, carb:24, sugar:2.6, protein:20, salt:0.34}},
   '6rnjgr': {...CRUNCH, per:'לחטיף (64 גרם)', n:{protein:20}},
   /* Monster — zero sugar */
   'hz5ul4': {...MONSTER_ZERO, per:'לפחית (500 מ״ל)', n:{sugar:0}},
@@ -86,8 +86,8 @@ return {
   /* Monster — with sugar */
   'cgypj1': {...MONSTER_SUGAR, per:'לפחית (500 מ״ל)', n:{kcal:229, carb:57, sugar:55, salt:0.2, caf:160}},
   '20kjyo': {...MONSTER_SUGAR, per:'לפחית (500 מ״ל)', n:{kcal:179, carb:46, sugar:41, salt:0.86, caf:160}, note:'מכיל 6% מיץ פירות מרוכז, סוכר וממתיקים. ללא אלרגנים מוצהרים.'},
-  'op107x': {...MONSTER_SUGAR, per:'לפחית (500 מ״ל)'},
-  '1se7a1': {...MONSTER_SUGAR, per:'לפחית (500 מ״ל)'},
+  'op107x': {...MONSTER_SUGAR, n:{kcal:152, carb:38, sugar:35, salt:0.51, caf:160}, per:'לפחית (500 מ״ל)'},
+  '1se7a1': {...MONSTER_SUGAR, n:{kcal:174, carb:44, sugar:38, salt:0.51, caf:160}, per:'לפחית (500 מ״ל)'},
   'hqihcl': {contains:[], warn:[W.caf], per:'לפחית (458 מ״ל)', note:'משקה אנרגיה על בסיס תה. ללא אלרגנים מוצהרים.'},
   /* UFIT 500ml */
   '24lhib': {...UFIT, per:'לבקבוק (500 מ״ל)', n:{kcal:295, fat:1.5, sat:1, carb:18, sugar:17, protein:50, salt:0.7}},
@@ -95,10 +95,10 @@ return {
   'd20mju': {...UFIT, per:'לבקבוק (500 מ״ל)', n:{kcal:280, fat:0.5, sat:0.5, carb:18, protein:50, salt:1.3}},
   'bla03u': {...UFIT, per:'לבקבוק (500 מ״ל)', n:{kcal:280, fat:0.5, sat:0.5, carb:18.5, sugar:18, protein:50}},
   /* Applied Nutrition High Protein Shake 500ml */
-  'euudrs': {...APPLIED_SHAKE, per:'לבקבוק (500 מ״ל)', n:{protein:42}, ingr:'תרכיז חלבון חלב (65%), מים, חלב רזה (7.5%), חומרי טעם, מייצבים (קרגינן, גלאן), מווסת חומציות (טריסודיום ציטרט), צבע (בטא קרוטן), ממתיק (סוכרלוז).'},
-  '1wbn8q': {...APPLIED_SHAKE, per:'לבקבוק (500 מ״ל)', n:{protein:42}, ingr:'תרכיז חלבון חלב (65%), מים, חלב רזה (7.5%), חומרי טעם, מייצבים (קרגינן, גלאן), מווסת חומציות (טריסודיום ציטרט), צבע (ליקופן), ממתיק (סוכרלוז).'},
-  'rrivbm': {...APPLIED_SHAKE, per:'לבקבוק (500 מ״ל)', n:{protein:42}, ingr:'תרכיז חלבון חלב (62%), מים, חלב רזה (10%), אבקת קקאו מופחתת שומן (0.9%), מייצבים (קרגינן, גלאן), מווסת חומציות (טריסודיום ציטרט), חומרי טעם, ממתיק (סוכרלוז).'},
-  'hk1dvq': {...APPLIED_SHAKE, per:'לבקבוק (500 מ״ל)', n:{protein:42}, ingr:'תרכיז חלבון חלב (65%), מים, חלב רזה (7.5%), חומרי טעם, מייצבים (קרגינן, גלאן), מווסת חומציות (טריסודיום ציטרט), צבע (בטא קרוטן), ממתיק (סוכרלוז).'},
+  'euudrs': {...APPLIED_SHAKE, per:'לבקבוק (500 מ״ל)', n:{kcal:240, fat:0.5, sat:0.5, carb:17, sugar:17, protein:42, salt:0.5}, ingr:'תרכיז חלבון חלב (65%), מים, חלב רזה (7.5%), חומרי טעם, מייצבים (קרגינן, גלאן), מווסת חומציות (טריסודיום ציטרט), צבע (בטא קרוטן), ממתיק (סוכרלוז).'},
+  '1wbn8q': {...APPLIED_SHAKE, per:'לבקבוק (500 מ״ל)', n:{kcal:240, fat:0.5, sat:0.5, carb:17, sugar:17, protein:42, salt:0.5}, ingr:'תרכיז חלבון חלב (65%), מים, חלב רזה (7.5%), חומרי טעם, מייצבים (קרגינן, גלאן), מווסת חומציות (טריסודיום ציטרט), צבע (ליקופן), ממתיק (סוכרלוז).'},
+  'rrivbm': {...APPLIED_SHAKE, per:'לבקבוק (500 מ״ל)', n:{kcal:240, fat:0.5, sat:0.5, carb:17, sugar:17, protein:42, salt:0.5}, ingr:'תרכיז חלבון חלב (62%), מים, חלב רזה (10%), אבקת קקאו מופחתת שומן (0.9%), מייצבים (קרגינן, גלאן), מווסת חומציות (טריסודיום ציטרט), חומרי טעם, ממתיק (סוכרלוז).'},
+  'hk1dvq': {...APPLIED_SHAKE, per:'לבקבוק (500 מ״ל)', n:{kcal:240, fat:0.5, sat:0.5, carb:17, sugar:17, protein:42, salt:0.5}, ingr:'תרכיז חלבון חלב (65%), מים, חלב רזה (7.5%), חומרי טעם, מייצבים (קרגינן, גלאן), מווסת חומציות (טריסודיום ציטרט), צבע (בטא קרוטן), ממתיק (סוכרלוז).'},
   /* Critical Oats 60g pots */
   '1zv6tk': {...OATS, per:'לגביע (60 גרם)', n:{kcal:238, fat:6.4, sat:3.1, mct:2.4, carb:23, sugar:1.4, fiber:3.9, protein:23}},
   'qtkqxx': {...OATS, ben:['100% שיבולת שועל מלאה אורגנית','חתיכות עוגיות אמיתיות בטעם עוגיות ושמנת','חלבון מי גבינה איכותי (ISO-XP) לתמיכה בבניית שריר והתאוששות','מוכנה תוך 2 דקות בלבד – עם מים רותחים או חלב','פחמימות מורכבות לשחרור אנרגיה הדרגתי לאורך הבוקר'], per:'לגביע (60 גרם)', n:{kcal:238, protein:23, carb:23, sugar:1.4, fat:6.4, sat:3.1, mct:2.4, fiber:3.9, salt:0.54, bcaa:4.4}},
@@ -115,7 +115,7 @@ return {
   '0fswlm': {...DINKY, per:'לחטיף (35 גרם)', n:{kcal:130, fat:4.6, sat:1.6, carb:11, sugar:1.4, fiber:4.7, protein:11, salt:0.11}},
   'dp9u4r': {...DINKY, per:'לחטיף (35 גרם)', n:{kcal:129, fat:4.9, sugar:1.5, protein:11}},
   '4k5aj5': {...DINKY, per:'לחטיף (35 גרם)', n:{kcal:130, fiber:5, protein:11}},
-  'zwjee9': {...DINKY, per:'לחטיף (35 גרם)', n:{protein:11}},
+  'zwjee9': {...DINKY, per:'לחטיף (35 גרם)', n:{kcal:125, fat:4.8, protein:11}},
   /* ProPud 55g */
   'onpwcm': {...PROPUD, per:'לחטיף (55 גרם)', n:{kcal:232, fat:12, sat:6.6, carb:17.6, sugar:1.5, protein:18, salt:0.24}},
   'g5cl2p': {...PROPUD, per:'לחטיף (55 גרם)', n:{protein:18}},
