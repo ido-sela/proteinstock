@@ -610,3 +610,10 @@ function initSearchDD(){
   document.addEventListener('click',e=>{ if(!form.contains(e.target)) close(); });
 }
 setTimeout(initSearchDD,0); document.addEventListener('DOMContentLoaded',initSearchDD); window.addEventListener('load',initSearchDD);
+/* ---------- return from the payment page ---------- */
+setTimeout(()=>{
+  const q=new URLSearchParams(location.search), s=q.get('pay'), o=(q.get('order')||'').replace(/[^A-Z0-9]/gi,'').slice(0,12);
+  if(!s) return;
+  const M={success:`התשלום התקבל, תודה! מספר הזמנה ${o}. נחזור אליכם בהקדם.`,failure:'התשלום לא הושלם. אפשר לנסות שוב או לפנות אלינו.',cancel:'התשלום בוטל. ההזמנה לא חויבה.'};
+  if(M[s]){ try{ toast(M[s]); history.replaceState(null,'',location.pathname); }catch(e){} }
+},400);

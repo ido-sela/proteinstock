@@ -394,7 +394,15 @@ async function settings() {
     <p class="who" style="margin:8px 0 0">הסכום מחושב בשרת בעת ביצוע ההזמנה. הטקסטים באתר (למשל "משלוח חינם מעל ₪299") נשארים כפי שהם.</p>
     <button class="btn pri" id="ss" style="margin-top:12px">שמירת הגדרות משלוח</button></div>
     <div><h2 style="font-size:1.05rem;margin-bottom:10px">סרגל עליון באתר</h2><div class="field" style="max-width:560px"><label for="tb">טקסט (ריק = ברירת המחדל)</label><input type="text" id="tb" maxlength="160" value="${esc(content.topbar || '')}"></div><button class="btn pri" id="tbs" style="margin-top:12px">שמירת הסרגל</button></div>
-    <div><h2 style="font-size:1.05rem;margin-bottom:6px">סליקה</h2><p style="margin:0">${pay.enabled ? `פעילה — ספק: <b>${esc(pay.provider)}</b>` : 'לא מחוברת. הזמנות נשמרות כ"ממתינה לתשלום" והלקוח מקבל מספר הזמנה וקישור לוואטסאפ.'}</p></div></div>`;
+    <div id="pp"><h2 style="font-size:1.05rem;margin-bottom:6px">סליקה — PayPlus</h2>
+      <p class="who" id="pp-st" style="margin:0 0 10px">בודק חיבור…</p>
+      <div class="field" style="max-width:560px"><label for="pp-uid">מזהה דף תשלום (Payment Page UID)</label><input type="text" id="pp-uid" value="${esc(pay.page_uid || '')}" dir="ltr" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off"></div>
+      <label class="o" style="display:flex;gap:8px;align-items:center;margin:10px 0"><input type="checkbox" id="pp-sb"${pay.sandbox ? ' checked' : ''}> מצב בדיקות (Sandbox)</label>
+      <label class="o" style="display:flex;gap:8px;align-items:center;margin:10px 0"><input type="checkbox" id="pp-en"${pay.enabled ? ' checked' : ''}> הפעלת תשלום באתר (לקוחות יעברו לדף תשלום מאובטח)</label>
+      <p class="who" style="margin:0 0 10px">כשהסליקה כבויה, הזמנות נשמרות כ"ממתינה לתשלום" והלקוח מקבל מספר הזמנה וקישור לוואטסאפ. מפתחות ה-API שמורים בשרת בלבד ולא מוצגים כאן.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" id="pp-save">שמירת הגדרות סליקה</button><button class="btn" id="pp-test">בדיקת חיבור</button></div>
+      <p class="who" id="pp-res" style="margin:10px 0 0"></p>
+      <details style="margin-top:10px"><summary class="who" style="cursor:pointer">כתובת Callback להגדרה ב-PayPlus</summary><p class="who" dir="ltr" id="pp-wh" style="user-select:all;word-break:break-all;margin:6px 0 0"></p></details></div></div>`;
   document.getElementById('tbs').onclick = async e => {
     const topbar = document.getElementById('tb').value.trim().slice(0, 160); e.target.disabled = true;
     const { error } = await sb.from('site_settings').update({ value: { ...content, topbar } }).eq('key', 'content');
@@ -407,7 +415,34 @@ async function settings() {
     const { error } = await sb.from('site_settings').update({ value: { free_over, fee } }).eq('key', 'shipping');
     e.target.disabled = false; toast(error ? 'השמירה נכשלה: ' + error.message : 'נשמר');
   };
-}
+  let ppKeys = null;
+  const ppStatus = async () => {
+    const st = document.getElementById('pp-st');
+    const { data, error } = await sb.functions.invoke('payment-admin', { body: { action: 'status' } });
+    if (error || !data) { st.textContent = 'לא ניתן לבדוק את מצב המפתחות כרגע.'; return; }
+    ppKeys = data.keys; document.getElementById('pp-wh').textContent = data.webhook_url;
+    const ok = data.keys.api_key && data.keys.secret_key;
+    st.innerHTML = ok ? '<b style="color:#1a7f37">מפתחות ה-API מחוברים בשרת.</b>' : '<b style="color:#b42318">מפתחות ה-API עדיין לא הוגדרו בשרת.</b> יש להוסיף את PAYPLUS_API_KEY ו-PAYPLUS_SECRET_KEY ב-Supabase.';
+  };
+  ppStatus();
+  document.getElementById('pp-save').onclick = async e => {
+    const page_uid = document.getElementById('pp-uid').value.trim(), sandbox = document.getElementById('pp-sb').checked; let enabled = document.getElementById('pp-en').checked;
+    const res = document.getElementById('pp-res');
+    if (page_uid && !/^[0-9a-f-]{30,40}$/i.test(page_uid)) { res.textContent = 'מזהה דף התשלום לא נראה תקין.'; return; }
+    if (enabled && (!page_uid || !ppKeys || !ppKeys.api_key || !ppKeys.secret_key)) { enabled = false; document.getElementById('pp-en').checked = false; res.textContent = 'כדי להפעיל צריך מפתחות API בשרת ומזהה דף תשלום. שמרתי כשהסליקה כבויה.'; }
+    e.target.disabled = true;
+    const { error } = await sb.from('site_settings').update({ value: { ...pay, provider: 'payplus', page_uid, sandbox, enabled } }).eq('key', 'payment');
+    e.target.disabled = false;
+    if (error) toast('השמירה נכשלה: ' + error.message); else { Object.assign(pay, { provider: 'payplus', page_uid, sandbox, enabled }); toast('נשמר'); if (!res.textContent.startsWith('כדי')) res.textContent = enabled ? 'הסליקה פעילה באתר.' : 'הסליקה כבויה.'; }
+  };
+  document.getElementById('pp-test').onclick = async e => {
+    const res = document.getElementById('pp-res'); e.target.disabled = true; res.textContent = 'בודק…';
+    const { data, error } = await sb.functions.invoke('payment-admin', { body: { action: 'test' } });
+    e.target.disabled = false;
+    const MSG = { keys_missing: 'מפתחות ה-API לא הוגדרו בשרת.', page_uid_missing: 'חסר מזהה דף תשלום. שמרו אותו ונסו שוב.', provider_rejected: 'PayPlus דחה את הבקשה. בדקו שהמפתחות ומזהה הדף נכונים, ושמצב הבדיקות (Sandbox) תואם לחשבון.', no_provider: 'שמרו קודם את הגדרות הסליקה.' };
+    if (error || !data) res.textContent = 'הבדיקה נכשלה. נסו שוב.';
+    else res.innerHTML = data.ok ? '<b style="color:#1a7f37">החיבור תקין.</b> נוצר דף תשלום לבדיקה (לא בוצע חיוב).' : esc(MSG[data.error] || 'הבדיקה נכשלה.');
+  };}
 
 /* ---------- boot ---------- */
 let current = null;
