@@ -11,7 +11,7 @@
 </head>
 <body>
 <main id="main">
-<div class="page-head"><div class="wrap"><div class="crumbs"><a href="index.html">בית</a> / מותגים</div><h1>מותגים מכל העולם</h1><p style="color:var(--muted);margin-top:6px;max-width:60ch">אנחנו מייבאים עבורכם את השמות הגדולים בעולם תזונת הספורט — כל מוצר עם הטעמים המוכרים והאיכות הבינלאומית.</p></div></div>
+<div class="page-head"><div class="wrap"><div class="crumbs"><a href="/">בית</a> / מותגים</div><h1>מותגים מכל העולם</h1><p style="color:var(--muted);margin-top:6px;max-width:60ch">אנחנו מייבאים עבורכם את השמות הגדולים בעולם תזונת הספורט — כל מוצר עם הטעמים המוכרים והאיכות הבינלאומית.</p></div></div>
 <section><div class="wrap"><div class="cats" id="b"></div></div></section>
 </main>
 <script src="js/data.js"></script>
@@ -21,7 +21,7 @@
 layout('brands');
 const brands=[...new Set(PRODUCTS.map(p=>p.brand).filter(Boolean))];
 document.getElementById('b').innerHTML=brands.map(b=>{const l=PRODUCTS.filter(p=>p.brand===b);const img=l.find(p=>!p.out)||l[0];
-return `<a class="cat" href="products.html?brand=${encodeURIComponent(b)}"><img src="${img.img}" alt="" loading="lazy" style="height:150px;object-fit:contain;margin:0 auto 6px"><h3>${esc(b)}</h3><p>${l.length} מוצרים</p><span class="go">לצפייה במוצרים ←</span></a>`}).join('');
+return `<a class="cat" href="products?brand=${encodeURIComponent(b)}"><img src="${img.img}" alt="" loading="lazy" style="height:150px;object-fit:contain;margin:0 auto 6px"><h3>${esc(b)}</h3><p>${l.length} מוצרים</p><span class="go">לצפייה במוצרים ←</span></a>`}).join('');
 </script>
 </body>
 </html>

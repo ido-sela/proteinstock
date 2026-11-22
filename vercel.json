@@ -1,5 +1,5 @@
 {
-  "rewrites": [{ "source": "/admin", "destination": "/admin.html" }],
+  "cleanUrls": true,
   "headers": [
     {
       "source": "/(robots|llms).txt",

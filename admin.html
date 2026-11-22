@@ -310,7 +310,7 @@ const AI_ERR = {
   forbidden: 'אין לך הרשאה להשתמש בעוזר.',
   unauthorized: 'ההתחברות פגה. התנתקו והתחברו שוב.'
 };
-const PV_PAGES = [['index.html', 'דף הבית'], ['products.html', 'כל המוצרים'], ['brands.html', 'מותגים'], ['why.html', 'למה פרוטאין סטוק'], ['contact.html', 'צור קשר']];
+const PV_PAGES = [['index.html', 'דף הבית'], ['products', 'כל המוצרים'], ['brands', 'מותגים'], ['why', 'למה פרוטאין סטוק'], ['contact', 'צור קשר']];
 const PV_PHONE = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="8" height="15" rx="2"/><path d="M9 15h2"/></svg>';
 const PV_REFRESH = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10a6 6 0 1 1-1.8-4.3M16 3.5V6h-2.5"/></svg>';
 const PV_OPEN = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3.5h5.5V9M16.5 3.5L9 11M8 5H4.5v10.5H15V12"/></svg>';
@@ -321,7 +321,7 @@ async function ai() {
   const EX = ['הסתר את כל המוצרים שאזלו', 'העלה ב-5% את המחירים של כל מוצרי Monster', 'שנה את הסרגל העליון ל"משלוח חינם עד סוף השבוע"', 'הראה לי את ההזמנות הממתינות', 'אילו מוצרים נמצאים במבצע?'];
   host.innerHTML = `<div class="ai-split">
     <section class="pv" aria-label="תצוגה מקדימה של האתר"><div class="pv-bar"><select id="pv-page" aria-label="עמוד לתצוגה">${PV_PAGES.map(([u, n]) => `<option value="${u}">${n}</option>`).join('')}</select><span class="pv-s"></span>
-      <button class="ib" id="pv-d" aria-pressed="false" aria-label="תצוגת נייד" title="תצוגת נייד">${PV_PHONE}</button><button class="ib" id="pv-r" aria-label="רענון" title="רענון">${PV_REFRESH}</button><a class="ib" id="pv-o" href="index.html" target="_blank" rel="noopener" aria-label="פתיחה בלשונית חדשה" title="פתיחה בלשונית חדשה">${PV_OPEN}</a></div>
+      <button class="ib" id="pv-d" aria-pressed="false" aria-label="תצוגת נייד" title="תצוגת נייד">${PV_PHONE}</button><button class="ib" id="pv-r" aria-label="רענון" title="רענון">${PV_REFRESH}</button><a class="ib" id="pv-o" href="/" target="_blank" rel="noopener" aria-label="פתיחה בלשונית חדשה" title="פתיחה בלשונית חדשה">${PV_OPEN}</a></div>
       <div class="pv-stage"><div class="pv-frame" id="pv-frame"><iframe id="pv-if" title="האתר" src="index.html"></iframe><div class="pv-busy" id="pv-busy" hidden>מתעדכן…</div></div></div></section>
     <section class="chatp"><div class="chat" id="chat" aria-live="polite"></div><div class="chips" id="ex">${EX.map(t => `<button class="chip" type="button">${esc(t)}</button>`).join('')}</div>
       <form id="af" class="comp"><textarea id="ap" rows="2" maxlength="4000" placeholder="כתבו כל בקשה בעברית…"></textarea><div class="comp-r"><span class="who">הבקשות נחשבות בחשבון ה-API שחיברתם</span><button class="btn pri" id="as">שליחה</button></div></form></section></div>`;
@@ -335,7 +335,7 @@ async function ai() {
       const file = f.contentWindow.location.pathname.split('/').pop() || 'index.html';
       const q = f.contentWindow.location.search;
       let o = [...sel.options].find(x => x.value === file);
-      if (!o) { sel.insertAdjacentHTML('beforeend', `<option value="${esc(file)}">${file === 'product.html' ? 'עמוד מוצר' : esc(file)}</option>`); o = sel.lastElementChild; }
+      if (!o) { sel.insertAdjacentHTML('beforeend', `<option value="${esc(file)}">${file === 'product' ? 'עמוד מוצר' : esc(file)}</option>`); o = sel.lastElementChild; }
       sel.value = file; openA.href = file + q;
     } catch (e) { /* cross-origin: ignore */ }
   };
@@ -368,8 +368,8 @@ async function ai() {
     sendBtn.disabled = false; paint();
     if ((out.actions || []).length) {   // something changed: show it in the preview
       const t = out.touched || [];
-      if (t.length === 1) go('product.html?id=' + encodeURIComponent(t[0]));
-      else if (t.length > 1) go('products.html');
+      if (t.length === 1) go('product?id=' + encodeURIComponent(t[0]));
+      else if (t.length > 1) go('products');
       else reload();
     }
   };

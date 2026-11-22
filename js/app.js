@@ -35,7 +35,7 @@ const Cart = {
     const n=this.count();
     document.querySelectorAll('.cart-badge').forEach(b=>{b.textContent=n;b.style.display=n?'grid':'none';});
     const body=document.getElementById('d-body'); if(!body) return;
-    if(!this.items.length){ body.innerHTML='<div class="d-empty"><p style="font-size:2.4rem">🛒</p><p>העגלה ריקה</p><p style="margin-top:14px"><a class="btn btn-dark btn-sm" href="products.html">לקטלוג המוצרים</a></p></div>'; document.getElementById('d-foot').style.display='none'; return; }
+    if(!this.items.length){ body.innerHTML='<div class="d-empty"><p style="font-size:2.4rem">🛒</p><p>העגלה ריקה</p><p style="margin-top:14px"><a class="btn btn-dark btn-sm" href="products">לקטלוג המוצרים</a></p></div>'; document.getElementById('d-foot').style.display='none'; return; }
     document.getElementById('d-foot').style.display='';
     body.innerHTML=this.items.map(i=>{const p=byId(i.id);return `<div class="ci"><img src="${p.img}" alt="" loading="lazy"><div><h4>${esc(p.name)}</h4><div class="q"><button aria-label="הפחת" data-q="${p.id}:-1">−</button><span>${i.q}</span><button aria-label="הוסף" data-q="${p.id}:1">+</button></div><button class="rm" data-q="${p.id}:rm">הסר</button></div><b>${money(p.price*i.q)}</b></div>`}).join('');
     const t=this.total(); const left=SITE.freeShip-t;
@@ -84,8 +84,8 @@ function card(p){
   const tags=[]; if(p.out) tags.push('<span class="tag out">אזל מהמלאי</span>'); if(p.sale) tags.push(`<span class="tag sale">${p.pct}%- הנחה</span>`);
   p.tags.slice(0,2).forEach(t=>tags.push(`<span class="tag">${esc(t)}</span>`));
   const meta=p.protein?`${p.protein} גרם חלבון`:'';
-  return `<article class="pcard${p.out?' is-out':''}"><a class="pimg" href="product.html?id=${p.id}" aria-label="${esc(p.name)}"><img src="${p.img}" alt="${esc(p.name)}" loading="lazy" width="400" height="400"><div class="ptags">${tags.join('')}</div></a>
-  <div class="pbody"><span class="pbrand">${esc(p.brand)}</span><a class="pname" href="product.html?id=${p.id}">${esc(p.name)}</a><span class="pmeta">${meta}</span>
+  return `<article class="pcard${p.out?' is-out':''}"><a class="pimg" href="product?id=${p.id}" aria-label="${esc(p.name)}"><img src="${p.img}" alt="${esc(p.name)}" loading="lazy" width="400" height="400"><div class="ptags">${tags.join('')}</div></a>
+  <div class="pbody"><span class="pbrand">${esc(p.brand)}</span><a class="pname" href="product?id=${p.id}">${esc(p.name)}</a><span class="pmeta">${meta}</span>
   <div class="pfoot"><span class="price">${money(p.price)}${p.sale?`<s>${money(p.old)}</s>`:''}</span>
   <button class="add" ${p.out?'disabled':''} data-add="${p.id}" aria-label="הוסף לעגלה: ${esc(p.name)}">${ICON.plus}</button></div></div></article>`;
 }
@@ -93,28 +93,28 @@ function card(p){
 /* ---------- layout ---------- */
 function layout(active){
   const q=new URLSearchParams(location.search).get('q')||'';
-  const navCats=CATS.map(c=>`<a href="products.html?cat=${c.id}">${c.name}</a>`).join('');
+  const navCats=CATS.map(c=>`<a href="products?cat=${c.id}">${c.name}</a>`).join('');
   document.body.insertAdjacentHTML('afterbegin',`
   <a class="skip" href="#main">דלג לתוכן</a>
   <div class="topbar" id="topbar">🚀 <b>מחירי השקה</b> — משלוחים לכל הארץ · משלוח חינם בקנייה מעל ${money(SITE.freeShip)}</div>
   <header class="header"><div class="wrap">
     <button class="icon-btn burger" id="burger" aria-label="תפריט" aria-expanded="false">${ICON.menu}</button>
-    <a class="logo" href="index.html" aria-label="פרוטאין סטוק"><img src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק - PROTEIN STOCK" width="150" height="46"></a>
+    <a class="logo" href="/" aria-label="פרוטאין סטוק"><img src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק - PROTEIN STOCK" width="150" height="46"></a>
     <nav class="nav" id="nav" aria-label="ראשי">
-      <a href="index.html" class="${active==='home'?'active':''}">בית</a>
-      <div class="has-menu"><a href="products.html" class="${active==='products'?'active':''}">מוצרים ▾</a><div class="menu"><a href="products.html">כל המוצרים</a>${navCats}</div></div>
-      <a href="brands.html" class="${active==='brands'?'active':''}">מותגים</a>
-      <a href="why.html" class="${active==='why'?'active':''}">למה פרוטאין סטוק</a>
-      <a href="contact.html" class="${active==='contact'?'active':''}">צור קשר</a>
+      <a href="/" class="${active==='home'?'active':''}">בית</a>
+      <div class="has-menu"><a href="products" class="${active==='products'?'active':''}">מוצרים ▾</a><div class="menu"><a href="products">כל המוצרים</a>${navCats}</div></div>
+      <a href="brands" class="${active==='brands'?'active':''}">מותגים</a>
+      <a href="why" class="${active==='why'?'active':''}">למה פרוטאין סטוק</a>
+      <a href="contact" class="${active==='contact'?'active':''}">צור קשר</a>
     </nav>
-    <form class="hsearch" action="products.html" role="search"><input type="search" name="q" value="${esc(q)}" placeholder="חיפוש מוצרים…" aria-label="חיפוש מוצרים">${ICON.search}</form>
+    <form class="hsearch" action="products" role="search"><input type="search" name="q" value="${esc(q)}" placeholder="חיפוש מוצרים…" aria-label="חיפוש מוצרים">${ICON.search}</form>
     <button class="icon-btn" id="cart-btn" aria-label="פתח עגלה">${ICON.cart}<span class="badge cart-badge" style="display:none">0</span></button>
   </div></header>
   <div class="overlay" id="overlay"></div>
   <aside class="drawer" id="drawer" aria-label="עגלת קניות"><header><h2>העגלה שלי</h2><button class="icon-btn" id="d-close" aria-label="סגור">${ICON.close}</button></header>
     <div class="d-body" id="d-body"></div>
     <div class="d-foot" id="d-foot"><div class="tot"><span>סה"כ</span><span id="d-total"></span></div><p class="ship" id="d-ship"></p>
-      <input id="d-name" placeholder="שם מלא" autocomplete="name" required><input id="d-phone" type="tel" inputmode="tel" placeholder="טלפון" autocomplete="tel" required><input id="d-addr" placeholder="כתובת למשלוח (לא חובה)" autocomplete="street-address"><p class="legal-note">בשליחת ההזמנה אני מאשר/ת את <a href="terms.html" target="_blank" rel="noopener">תנאי השימוש והרכישה</a> ואת <a href="privacy.html" target="_blank" rel="noopener">מדיניות הפרטיות</a>.</p><button class="btn btn-primary" id="d-order">שליחת הזמנה</button><a class="btn btn-outline" id="d-pay" target="_blank" rel="noopener noreferrer" hidden></a><p class="pay-note" id="d-paynote" hidden></p></div></aside>
+      <input id="d-name" placeholder="שם מלא" autocomplete="name" required><input id="d-phone" type="tel" inputmode="tel" placeholder="טלפון" autocomplete="tel" required><input id="d-addr" placeholder="כתובת למשלוח (לא חובה)" autocomplete="street-address"><p class="legal-note">בשליחת ההזמנה אני מאשר/ת את <a href="terms" target="_blank" rel="noopener">תנאי השימוש והרכישה</a> ואת <a href="privacy" target="_blank" rel="noopener">מדיניות הפרטיות</a>.</p><button class="btn btn-primary" id="d-order">שליחת הזמנה</button><a class="btn btn-outline" id="d-pay" target="_blank" rel="noopener noreferrer" hidden></a><p class="pay-note" id="d-paynote" hidden></p></div></aside>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <a class="wa" href="https://wa.me/${SITE.wa}" target="_blank" rel="noopener" aria-label="וואטסאפ">${ICON.wa}</a>`);
 
@@ -122,8 +122,8 @@ function layout(active){
   <footer><div class="wrap"><div class="fgrid">
     <div><img class="flogo" src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק" width="150" height="48"><p>אבקות חלבון, חטיפי אנרגיה ומשקאות מהמותגים המובילים בעולם — איכות בינלאומית, משלוח מהיר מישראל, במחיר המשתלם ביותר.</p>
       <div class="social"><a href="https://instagram.com/protein.stock" target="_blank" rel="noopener" aria-label="Instagram">IG</a><a href="https://facebook.com/profile.php?id=100063652643790" target="_blank" rel="noopener" aria-label="Facebook">FB</a><a href="https://tiktok.com/@proten.stock" target="_blank" rel="noopener" aria-label="TikTok">TT</a><a href="https://youtube.com/@proteinstock" target="_blank" rel="noopener" aria-label="YouTube">YT</a></div></div>
-    <div><h4>קטגוריות</h4>${CATS.slice(0,6).map(c=>`<a href="products.html?cat=${c.id}">${c.name}</a>`).join('')}</div>
-    <div><h4>מידע</h4><a href="why.html">למה פרוטאין סטוק</a><a href="brands.html">מותגים מכל העולם</a><a href="policies.html#shipping">מדיניות משלוחים</a><a href="terms.html#cancel">החזרות וביטול עסקה</a><a href="privacy.html">מדיניות פרטיות</a><a href="terms.html">תנאי שימוש ורכישה</a><a href="accessibility.html">הצהרת נגישות</a></div>
+    <div><h4>קטגוריות</h4>${CATS.slice(0,6).map(c=>`<a href="products?cat=${c.id}">${c.name}</a>`).join('')}</div>
+    <div><h4>מידע</h4><a href="why">למה פרוטאין סטוק</a><a href="brands">מותגים מכל העולם</a><a href="policies#shipping">מדיניות משלוחים</a><a href="terms#cancel">החזרות וביטול עסקה</a><a href="privacy">מדיניות פרטיות</a><a href="terms">תנאי שימוש ורכישה</a><a href="accessibility">הצהרת נגישות</a></div>
     <div><h4>יצירת קשר</h4><a href="mailto:${SITE.email}">${SITE.email}</a><a href="tel:${SITE.phone}">${SITE.phone}</a><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SITE.address)}" target="_blank" rel="noopener">${SITE.address}</a><p style="margin-top:8px">א׳–ה׳ 09:00–16:00<br>ו׳–שבת סגור</p></div>
   </div><div class="fbottom"><span>© ${new Date().getFullYear()} פרוטאין סטוק — כל הזכויות שמורות</span><span>המחירים כוללים מע"מ</span></div></div></footer>`);
 
@@ -594,7 +594,7 @@ function initSearchDD(){
     hits=PRODUCTS.filter(p=>{ const t=((p.title||p.name||'')+' '+(p.brand||'')+' '+catName(p.cat)+' '+(p.tags||[]).join(' ')).toLowerCase(); return words.every(w=>t.includes(w)); });
     act=-1;
     box.innerHTML = hits.length
-      ? hits.slice(0,6).map(p=>`<a class="sdd-i" role="option" href="product.html?id=${encodeURIComponent(p.id)}"><img src="${p.img}" alt="" width="40" height="40"><span class="sdd-t"><span class="n">${esc(p.title||p.name)}</span><small>${esc(p.brand||'')}</small></span><b>${money(p.price)}</b></a>`).join('') + (hits.length>6?`<a class="sdd-all" href="products.html?q=${encodeURIComponent(inp.value.trim())}">הצגת כל ${hits.length} התוצאות</a>`:'')
+      ? hits.slice(0,6).map(p=>`<a class="sdd-i" role="option" href="product?id=${encodeURIComponent(p.id)}"><img src="${p.img}" alt="" width="40" height="40"><span class="sdd-t"><span class="n">${esc(p.title||p.name)}</span><small>${esc(p.brand||'')}</small></span><b>${money(p.price)}</b></a>`).join('') + (hits.length>6?`<a class="sdd-all" href="products?q=${encodeURIComponent(inp.value.trim())}">הצגת כל ${hits.length} התוצאות</a>`:'')
       : '<div class="sdd-none">לא נמצאו מוצרים. נסו מילה אחרת.</div>';
     box.hidden=false;
   };
@@ -604,7 +604,7 @@ function initSearchDD(){
     const n=Math.min(hits.length,6);
     if(e.key==='ArrowDown'&&!box.hidden&&n){ e.preventDefault(); act=(act+1)%n; mark(); }
     else if(e.key==='ArrowUp'&&!box.hidden&&n){ e.preventDefault(); act=(act-1+n)%n; mark(); }
-    else if(e.key==='Enter'&&act>=0&&hits[act]){ e.preventDefault(); location.href='product.html?id='+encodeURIComponent(hits[act].id); }
+    else if(e.key==='Enter'&&act>=0&&hits[act]){ e.preventDefault(); location.href='product?id='+encodeURIComponent(hits[act].id); }
     else if(e.key==='Escape'){ close(); inp.blur(); }
   });
   document.addEventListener('click',e=>{ if(!form.contains(e.target)) close(); });
