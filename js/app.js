@@ -581,7 +581,7 @@ async function initAdmin(){
 
 /* ---------- live search dropdown ---------- */
 function initSearchDD(){
-  const form=document.querySelector('.hsearch'); if(!form) return;
+  const form=document.querySelector('.hsearch'); if(!form||form.dataset.dd) return; form.dataset.dd='1';
   const inp=form.querySelector('input'); const box=document.createElement('div');
   box.className='sdd'; box.hidden=true; box.setAttribute('role','listbox'); form.appendChild(box);
   inp.setAttribute('autocomplete','off');
@@ -609,4 +609,4 @@ function initSearchDD(){
   });
   document.addEventListener('click',e=>{ if(!form.contains(e.target)) close(); });
 }
-setTimeout(initSearchDD,0);
+setTimeout(initSearchDD,0); document.addEventListener('DOMContentLoaded',initSearchDD); window.addEventListener('load',initSearchDD);
