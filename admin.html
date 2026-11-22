@@ -137,18 +137,35 @@ function showLogin(note) {
   document.body.classList.remove('sh'); app.className = 'wrap';
   app.innerHTML = `<div class="login card">
     <img src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק">
-    <h1>כניסה לניהול</h1><p>נשלח אליך קישור כניסה למייל. אין סיסמה.</p>
+    <h1>כניסה לניהול</h1><p>נשלח אליך מייל כניסה. אין סיסמה.</p>
     <form id="lf"><input type="email" id="em" placeholder="האימייל שלך" autocomplete="email" required dir="ltr" style="text-align:start">
-    <button class="btn pri" style="width:100%;margin-top:10px" id="lb">שלחו לי קישור כניסה</button></form>
+    <button class="btn pri" style="width:100%;margin-top:10px" id="lb">שלחו לי מייל כניסה</button></form>
+    <form id="cf" hidden><input type="text" id="cd" placeholder="קוד מהמייל" inputmode="numeric" autocomplete="one-time-code" maxlength="10" dir="ltr" style="text-align:center;letter-spacing:.2em">
+    <button class="btn pri" style="width:100%;margin-top:10px" id="cb">כניסה עם הקוד</button></form>
     <div id="lm"></div>${note ? `<div class="msg err">${esc(note)}</div>` : ''}</div>`;
+  const m = document.getElementById('lm');
+  const LERR = e => {
+    const c = e.code || '', t = (e.message || '').toLowerCase();
+    if (c === 'over_email_send_rate_limit' || e.status === 429 || t.includes('rate limit')) return 'נשלחו יותר מדי מיילים בזמן קצר. המתינו כמה דקות ונסו שוב. אם כבר קיבלתם מייל, השתמשו בו.';
+    if (c === 'otp_expired' || t.includes('expired') || t.includes('invalid')) return 'הקוד לא תקין או שפג תוקפו. בקשו מייל חדש.';
+    if (c === 'signup_disabled' || t.includes('signups not allowed')) return 'האימייל הזה לא רשום כמנהל. בדקו שהקלדתם נכון.';
+    return e.message;
+  };
   document.getElementById('lf').onsubmit = async e => {
     e.preventDefault();
-    const b = document.getElementById('lb'), m = document.getElementById('lm'); b.disabled = true;
+    const b = document.getElementById('lb'); b.disabled = true;
     const { error } = await sb.auth.signInWithOtp({ email: document.getElementById('em').value.trim(), options: { emailRedirectTo: location.origin + '/admin' } });
     b.disabled = false;
-    m.innerHTML = error
-      ? `<div class="msg err">לא הצלחנו לשלוח את הקישור: ${esc(error.message)}</div>`
-      : '<div class="msg ok">הקישור נשלח. פתחו אותו באותו מכשיר ובאותו דפדפן. אם לא הגיע, בדקו בספאם.</div>';
+    if (error) { m.innerHTML = `<div class="msg err">לא הצלחנו לשלוח: ${esc(LERR(error))}</div>`; return; }
+    document.getElementById('cf').hidden = false;
+    m.innerHTML = '<div class="msg ok">המייל נשלח. לחצו על הקישור שבו באותו דפדפן, או הקלידו כאן את הקוד שמופיע בו. אם לא הגיע, בדקו בספאם.</div>';
+  };
+  document.getElementById('cf').onsubmit = async e => {
+    e.preventDefault();
+    const b = document.getElementById('cb'); b.disabled = true;
+    const { error } = await sb.auth.verifyOtp({ email: document.getElementById('em').value.trim(), token: document.getElementById('cd').value.trim(), type: 'email' });
+    b.disabled = false;
+    if (error) m.innerHTML = `<div class="msg err">${esc(LERR(error))}</div>`;
   };
 }
 
