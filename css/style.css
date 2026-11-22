@@ -210,6 +210,8 @@ section{padding:64px 0}
 .vlist{display:flex;flex-wrap:wrap;gap:8px}
 .vopt{border:1.5px solid var(--border);border-radius:999px;padding:7px 14px;font-size:.9rem;background:#fff}
 .vopt.on{border-color:var(--blue);background:var(--light);font-weight:700}
+.vopt{cursor:pointer;font:inherit}
+.ci-v,.ct-v{display:block;font-size:.8rem;color:var(--muted);margin-top:2px}
 .vopt.out{color:var(--muted)}
 .note-box ul{padding-inline-start:18px;list-style:disc}
 .spec-t th{width:40%;font-weight:600;color:var(--muted);padding-inline-end:12px}

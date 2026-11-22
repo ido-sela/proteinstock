@@ -37,8 +37,9 @@ const Cart = {
   stored: [],
   load(){ try{ this.stored=JSON.parse(localStorage.getItem('ps_cart')||'[]'); if(!Array.isArray(this.stored)) this.stored=[]; this.items=this.stored.filter(i=>byId(i.id)); }catch(e){ this.stored=[]; this.items=[]; } },
   save(){ this.stored=this.items.concat(this.stored.filter(s=>!byId(s.id))); try{ localStorage.setItem('ps_cart',JSON.stringify(this.stored)); }catch(e){} this.orderId=null; this.render(); },
-  add(id,q=1){ const p=byId(id); if(!p||p.out) return; const it=this.items.find(i=>i.id===id); it?it.q+=q:this.items.push({id,q}); this.save(); toast('נוסף לעגלה ✓'); },
-  set(id,q){ const it=this.items.find(i=>i.id===id); if(!it) return; it.q=q; if(q<=0) this.items=this.items.filter(i=>i.id!==id); this.save(); },
+  /* v = optional pack composition chosen on the product page (e.g. "8 שוקולד + 4 גולדן סירופ"); same product, same price */
+  add(id,q=1,v=''){ const p=byId(id); if(!p||p.out) return; const it=this.items.find(i=>i.id===id&&(i.v||'')===v); it?it.q+=q:this.items.push(v?{id,q,v}:{id,q}); this.save(); toast('נוסף לעגלה ✓'); },
+  set(idx,q){ const it=this.items[idx]; if(!it) return; it.q=q; if(q<=0) this.items.splice(idx,1); this.save(); },
   count(){ return this.items.reduce((s,i)=>s+i.q,0); },
   total(){ return this.items.reduce((s,i)=>s+byId(i.id).price*i.q,0); },
   open(){ document.getElementById('drawer').classList.add('open'); document.getElementById('overlay').classList.add('open'); },
@@ -50,7 +51,7 @@ const Cart = {
     if(!this.items.length&&this.stored.length&&!window.__liveReady){ body.innerHTML='<div class="d-empty"><p>טוען…</p></div>'; document.getElementById('d-foot').style.display='none'; return; }
     if(!this.items.length){ body.innerHTML='<div class="d-empty"><p style="font-size:2.4rem">🛒</p><p>העגלה ריקה</p><p style="margin-top:14px"><a class="btn btn-dark btn-sm" href="products">לקטלוג המוצרים</a></p></div>'; document.getElementById('d-foot').style.display='none'; return; }
     document.getElementById('d-foot').style.display='';
-    body.innerHTML=this.items.map(i=>{const p=byId(i.id);return `<div class="ci"><img src="${p.img}" alt="" loading="lazy"><div><h4>${esc(p.name)}</h4><div class="q"><button aria-label="הפחת" data-q="${p.id}:-1">−</button><span>${i.q}</span><button aria-label="הוסף" data-q="${p.id}:1">+</button></div><button class="rm" data-q="${p.id}:rm">הסר</button></div><b>${money(p.price*i.q)}</b></div>`}).join('');
+    body.innerHTML=this.items.map((i,k)=>{const p=byId(i.id);return `<div class="ci"><img src="${p.img}" alt="" loading="lazy"><div><h4>${esc(p.name)}</h4>${i.v?`<small class="ci-v">הרכב: ${esc(i.v)}</small>`:''}<div class="q"><button aria-label="הפחת" data-q="${k}:-1">−</button><span>${i.q}</span><button aria-label="הוסף" data-q="${k}:1">+</button></div><button class="rm" data-q="${k}:rm">הסר</button></div><b>${money(p.price*i.q)}</b></div>`}).join('');
     const t=this.total(); const left=SHIP.free_over-t;
     document.getElementById('d-total').textContent=money(t);
     document.getElementById('d-ship').textContent= SHIP.free_over<=0 ? '' : left>0 ? `עוד ${money(left)} למשלוח חינם` : '🎉 המשלוח אצלנו!';
@@ -117,7 +118,7 @@ function layout(active){
   document.addEventListener('click',e=>{
     if(nav.classList.contains('open')&&!e.target.closest('#nav,#burger')){nav.classList.remove('open');burger.setAttribute('aria-expanded','false');}
     const a=e.target.closest('[data-add]'); if(a){ Cart.add(a.dataset.add); return; }
-    const q=e.target.closest('[data-q]'); if(q){ const [id,op]=q.dataset.q.split(':'); const it=Cart.items.find(i=>i.id===id); if(!it) return; Cart.set(id, op==='rm'?0:it.q+parseInt(op)); }
+    const q=e.target.closest('[data-q]'); if(q){ const [k,op]=q.dataset.q.split(':'); const it=Cart.items[+k]; if(!it) return; Cart.set(+k, op==='rm'?0:it.q+parseInt(op)); }
   });
   Cart.load(); Cart.render();
   initLive();

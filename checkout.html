@@ -48,12 +48,16 @@ const I = {
 
 const field = (id, label, opts = {}) => `<div class="ck-f"><label for="f-${id}">${label}${opts.opt ? '' : ' <i>*</i>'}</label><input id="f-${id}" type="${opts.type || 'text'}"${opts.ph ? ` placeholder="${esc(opts.ph)}"` : ''}${opts.mode ? ` inputmode="${opts.mode}"` : ''}${opts.ac ? ` autocomplete="${opts.ac}"` : ''}${opts.dir ? ` dir="${opts.dir}"` : ''} value="${esc(opts.v || '')}"><small class="ck-e" id="e-${id}"></small></div>`;
 
+/* the server prices by product id, so lines of the same product with different pack compositions are merged,
+   and the chosen compositions travel in the order notes */
+function mergedItems() { const m = new Map(); Cart.items.forEach(i => m.set(i.id, (m.get(i.id) || 0) + i.q)); return [...m].map(([id, qty]) => ({ id, qty })); }
+function packNotes() { const l = Cart.items.filter(i => i.v).map(i => `${byId(i.id).name.slice(0, 40)} ×${i.q}: ${i.v}`); return l.length ? 'הרכב מארז — ' + l.join(' | ') + '\n' : ''; }
 function totals() {
   const sub = Cart.total(), ship = method === 'pickup' ? 0 : shipCost(sub), total = sub + ship;
   return { sub, ship, total, vat: Math.round(total * VAT / (1 + VAT) * 100) / 100 };
 }
 function itemsHtml() {
-  return Cart.items.filter(i => byId(i.id)).map(i => { const p = byId(i.id); return `<div class="ck-item"><div class="ck-thumb"><img src="${p.img}" alt="" width="64" height="64"><i>${i.q}</i></div><div class="ck-iname"><span>${esc(p.name)}</span>${p.brand ? `<small>${esc(p.brand)}</small>` : ''}</div><b>${money(p.price * i.q)}</b></div>`; }).join('');
+  return Cart.items.filter(i => byId(i.id)).map(i => { const p = byId(i.id); return `<div class="ck-item"><div class="ck-thumb"><img src="${p.img}" alt="" width="64" height="64"><i>${i.q}</i></div><div class="ck-iname"><span>${esc(p.name)}</span>${i.v ? `<small>הרכב: ${esc(i.v)}</small>` : ''}${p.brand ? `<small>${esc(p.brand)}</small>` : ''}</div><b>${money(p.price * i.q)}</b></div>`; }).join('');
 }
 
 const step = (n, key, title, icon, body) => `<section class="ck-step${openStep === n ? ' open' : ''}" data-step="${n}" id="st-${key}">
@@ -190,7 +194,7 @@ async function submit(e) {
   if (busy) return;
   if (!document.getElementById('f-terms').checked) { document.getElementById('e-terms').textContent = 'יש לאשר את התנאים כדי להמשיך'; return; }
   for (const n of [1, 2]) { if (!validate(n)) { openAt(n); return; } }
-  const body = { name: val('name'), phone: val('phone'), email: val('email'), delivery: method, address: method === 'pickup' ? '' : (val('address') + (val('apt') ? ' — ' + val('apt') : '')), notes: val('notes'), items: Cart.items.map(i => ({ id: i.id, qty: i.q })) };
+  const body = { name: val('name'), phone: val('phone'), email: val('email'), delivery: method, address: method === 'pickup' ? '' : (val('address') + (val('apt') ? ' — ' + val('apt') : '')), notes: (packNotes() + val('notes')).slice(0, 300), items: mergedItems() };
   const btn = document.getElementById('ck-go'), t = document.getElementById('ck-go-t'), err = document.getElementById('ck-err');
   busy = true; btn.disabled = true; t.textContent = 'שולחים…'; err.hidden = true;
   let res, d = {};
