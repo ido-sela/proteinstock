@@ -19,9 +19,11 @@
 layout('products');
 const PID=new URLSearchParams(location.search).get('id');
 const host=document.getElementById('pp');
+let giveUp=false; setTimeout(()=>{ giveUp=true; if(!byId(PID)) draw(); },4000);
 function draw(){
 const p=byId(PID);
 const relSec=document.querySelector('section');
+if(!p&&!window.__liveReady&&!giveUp){ host.innerHTML='<div class="empty"><p style="padding:60px 0">טוען מוצר…</p></div>'; if(relSec) relSec.hidden=true; return; }
 if(!p){ host.innerHTML='<div class="empty"><h1>המוצר לא נמצא</h1><p style="margin:12px 0 22px">ייתכן שהמוצר הוסר מהקטלוג.</p><a class="btn btn-dark" href="products">לכל המוצרים</a></div>'; if(relSec) relSec.hidden=true; }
 else{
   if(relSec) relSec.hidden=false;
