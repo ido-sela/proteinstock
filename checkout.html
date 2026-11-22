@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>קופה — פרוטאין סטוק</title>
+<title>תשלום — פרוטאין סטוק</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,8 +12,8 @@
 </head>
 <body class="ck-body">
 <header class="ck-top"><div class="ck-in"><a href="/" class="ck-logo" aria-label="פרוטאין סטוק - חזרה לחנות"><img src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק" width="130" height="40"></a>
-  <a class="ck-bag" href="cart" aria-label="חזרה לעגלה"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l1 12H5L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></a></div></header>
-<main id="main" class="ck-shell"><div class="ck-in" id="ck"></div></main>
+  <a class="ck-bag" href="cart" aria-label="חזרה לעגלה"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h3l2.4 11.2a1.6 1.6 0 0 0 1.6 1.3h8.1a1.6 1.6 0 0 0 1.6-1.2L21 7.5H6.2"/></svg><span class="ck-bagn" id="ck-bagn">0</span></a></div></header>
+<main id="main" class="ck-main"><h1 class="ck-h1">תשלום</h1><div class="ck-in" id="ck"></div></main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="js/data.js"></script>
 <script src="js/catalog.js"></script>
@@ -21,7 +21,8 @@
 <script>
 const host = document.getElementById('ck');
 const FKEY = 'ps_checkout';
-const FIELDS = ['name', 'address', 'phone', 'email'];
+const FIELDS = ['name', 'phone', 'email', 'address'];
+const VAT = 0.18;   // Israeli VAT; prices already include it
 const readStore = st => { try { return JSON.parse(st.getItem(FKEY) || '{}'); } catch (e) { return {}; } };
 const load = () => ({ ...readStore(sessionStorage), ...readStore(localStorage) });
 const save = () => {
@@ -33,23 +34,32 @@ const save = () => {
   } catch (e) { /* ignore */ }
 };
 const note = () => { try { return sessionStorage.getItem('ps_note') || ''; } catch (e) { return ''; } };
-let busy = false, built = false;
+let busy = false, built = false, openStep = 1, giveUp = false;
+setTimeout(() => { giveUp = true; if (!built) buildForm(); }, 4000);
+const pending = () => Cart.stored.length > Cart.items.filter(i => byId(i.id)).length && !window.__liveReady && !giveUp;
 
-const field = (id, label, opts = {}) => `<div class="ck-fl${opts.cls ? ' ' + opts.cls : ''}"><input id="f-${id}" type="${opts.type || 'text'}" placeholder=" "${opts.mode ? ` inputmode="${opts.mode}"` : ''}${opts.ac ? ` autocomplete="${opts.ac}"` : ''}${opts.dir ? ` dir="${opts.dir}"` : ''}${opts.max ? ` maxlength="${opts.max}"` : ''} value="${esc(opts.v || '')}"><label for="f-${id}">${label}</label><small class="ck-e" id="e-${id}"></small></div>`;
+const I = {
+  user: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><rect x="15.5" y="9" width="6" height="8" rx="1"/><path d="M17 12h3M17 14.5h3"/></svg>',
+  truck: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11v10H2z"/><path d="M13 9h4.5l3.5 3.5V16h-8"/><circle cx="6.5" cy="17.5" r="1.7"/><circle cx="17" cy="17.5" r="1.7"/></svg>',
+  card: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6 15h4"/></svg>',
+  tag: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 3H20a1 1 0 0 1 1 1v7.4a1 1 0 0 1-.3.7l-8.6 8.6a1 1 0 0 1-1.4 0l-7.4-7.4a1 1 0 0 1 0-1.4L11.9 3.3a1 1 0 0 1 .7-.3z"/><circle cx="16.5" cy="7.5" r="1.3"/></svg>',
+  chev: '<svg class="ck-chev" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l5 5 5-5"/></svg>'
+};
 
-function summary() {
-  const items = Cart.items.filter(i => byId(i.id));
-  const sub = Cart.total(), ship = shipCost(sub);
-  const lines = items.map(i => { const p = byId(i.id); return `<div class="ck-item"><div class="ck-thumb"><img src="${p.img}" alt="" width="64" height="64"><i>${i.q}</i></div><div class="ck-iname"><span>${esc(p.name)}</span>${p.brand ? `<small>${esc(p.brand)}</small>` : ''}</div><b>${money(p.price * i.q)}</b></div>`; }).join('');
-  return { sub, ship, total: sub + ship, html: `<div class="ck-items">${lines}</div>
-    <div class="ck-rows"><div class="ck-sl"><span>סכום ביניים · ${Cart.count()} פריטים</span><b>${money(sub)}</b></div>
-    <div class="ck-sl"><span>משלוח</span><b>${ship ? money(ship) : 'חינם'}</b></div>
-    <div class="ck-sl tot"><span>סה"כ</span><b><small>ILS</small> ${money(sub + ship)}</b></div>
-    <p class="ck-vat">המחירים כוללים מע"מ</p></div>` };
+const field = (id, label, opts = {}) => `<div class="ck-f"><label for="f-${id}">${label} <i>*</i></label><input id="f-${id}" type="${opts.type || 'text'}"${opts.ph ? ` placeholder="${opts.ph}"` : ''}${opts.mode ? ` inputmode="${opts.mode}"` : ''}${opts.ac ? ` autocomplete="${opts.ac}"` : ''}${opts.dir ? ` dir="${opts.dir}"` : ''} value="${esc(opts.v || '')}"><small class="ck-e" id="e-${id}"></small></div>`;
+
+function totals() {
+  const sub = Cart.total(), ship = shipCost(sub), total = sub + ship;
+  return { sub, ship, total, vat: Math.round(total * VAT / (1 + VAT) * 100) / 100 };
+}
+function itemsHtml() {
+  return Cart.items.filter(i => byId(i.id)).map(i => { const p = byId(i.id); return `<div class="ck-item"><div class="ck-thumb"><img src="${p.img}" alt="" width="64" height="64"><i>${i.q}</i></div><div class="ck-iname"><span>${esc(p.name)}</span>${p.brand ? `<small>${esc(p.brand)}</small>` : ''}</div><b>${money(p.price * i.q)}</b></div>`; }).join('');
 }
 
-let giveUp = false; setTimeout(() => { giveUp = true; if (!built) buildForm(); }, 4000);
-const pending = () => Cart.stored.length > Cart.items.filter(i => byId(i.id)).length && !window.__liveReady && !giveUp;
+const step = (n, key, title, icon, body) => `<section class="ck-step${openStep === n ? ' open' : ''}" data-step="${n}" id="st-${key}">
+  <button type="button" class="ck-sh" aria-expanded="${openStep === n}" aria-controls="sb-${key}"><span class="ck-ico">${icon}</span><span class="ck-st"><b>${title}</b><small class="ck-line" id="ln-${key}"></small></span>${I.chev}</button>
+  <div class="ck-sb" id="sb-${key}">${body}</div></section>`;
+
 function buildForm() {
   const items = Cart.items.filter(i => byId(i.id));
   if (pending()) { host.innerHTML = '<div class="ct-empty"><p>טוען…</p></div>'; built = false; return; }
@@ -57,69 +67,91 @@ function buildForm() {
     host.innerHTML = `<div class="ct-empty"><div class="ct-empty-i">🛒</div><h1>העגלה ריקה</h1><p>אין מה לשלם עדיין.</p><a class="btn btn-primary" href="products">לקטלוג המוצרים</a></div>`;
     built = false; return;
   }
-  const v = load(), s = summary(), kept = !!Object.keys(readStore(localStorage)).length;
+  const v = load(), t = totals(), kept = !!Object.keys(readStore(localStorage)).length;
   host.innerHTML = `<div class="ck-grid">
-  <form id="ckf" class="ck-form" novalidate autocomplete="on">
-    <section><h2>פרטי משלוח</h2>
-      ${field('name', 'שם מלא', { ac: 'name', v: v.name })}
-      ${field('address', 'כתובת מלאה (רחוב, מספר בית, דירה ועיר)', { ac: 'street-address', v: v.address })}
-      ${field('phone', 'נייד', { type: 'tel', mode: 'tel', ac: 'tel', dir: 'ltr', v: v.phone })}
-      ${field('email', 'דוא"ל (לאישור הזמנה וקבלה)', { type: 'email', mode: 'email', ac: 'email', dir: 'ltr', v: v.email })}
-      <div class="ck-fl ta"><textarea id="f-notes" rows="3" maxlength="300" placeholder=" ">${esc(note())}</textarea><label for="f-notes">הערות להזמנה (לא חובה)</label></div>
+  <form id="ckf" class="ck-steps" novalidate autocomplete="on">
+    ${step(1, 'contact', 'פרטי התקשרות', I.user, `
+      ${field('name', 'שם מלא', { ph: 'שם מלא', ac: 'name', v: v.name })}
+      ${field('phone', 'מספר טלפון נייד', { ph: 'טלפון', type: 'tel', mode: 'tel', ac: 'tel', dir: 'ltr', v: v.phone })}
+      ${field('email', 'דוא"ל', { ph: 'כתובת דוא"ל (לאישור הזמנה וקבלה)', type: 'email', mode: 'email', ac: 'email', dir: 'ltr', v: v.email })}
       <label class="ck-check"><input type="checkbox" id="f-keep"${kept ? ' checked' : ''}><span>שמור מידע זה לפעם הבאה (במכשיר הזה בלבד)</span></label>
-    </section>
-    <section><h3>שיטת משלוח</h3>
-      <label class="ck-radio"><input type="radio" name="ship" checked><span class="ck-dot" aria-hidden="true"></span><span class="ck-rt"><b>משלוח עד הבית</b><small>זמן האספקה המדויק יאושר בעת אישור ההזמנה</small></span><em id="ck-shiprow">${s.ship ? money(s.ship) : 'חינם'}</em></label>
-    </section>
-    <section><h2>תשלום</h2><p class="ck-sub">כל העסקאות מאובטחות ומוצפנות.</p>
-      <div class="ck-paybox"><div class="ck-payh"><b>כרטיס אשראי ושיטות נוספות</b><span>🔒 PayPlus</span></div>
-        <div class="ck-payb"><p>לחיצה על "לתשלום עכשיו" תעביר אתכם לדף תשלום מאובטח של PayPlus. פרטי הכרטיס לא נשמרים באתר שלנו.</p><p class="ck-small">אם התשלום המקוון אינו זמין כרגע, ההזמנה תישמר ונחזור אליכם להשלמת התשלום.</p></div></div>
-    </section>
-    <div class="ck-act">
-      <label class="ck-check"><input type="checkbox" id="f-terms"><span>קראתי ואני מאשר/ת את <a href="terms" target="_blank" rel="noopener">תנאי השימוש והרכישה</a> ואת <a href="privacy" target="_blank" rel="noopener">מדיניות הפרטיות</a>, כולל זכות ביטול העסקה לפי חוק.</span></label><small class="ck-e" id="e-terms"></small>
-      <button class="ck-submit" id="ck-go" type="submit"><span id="ck-go-t">לתשלום עכשיו · ${money(s.total)}</span></button>
-      <p class="ck-err" id="ck-err" role="alert" hidden></p>
-    </div>
-    <nav class="ck-links" aria-label="מדיניות"><a href="terms#cancel">החזרות וביטול עסקה</a><a href="privacy">פרטיות</a><a href="terms">תנאי שימוש</a><a href="contact">צור קשר</a></nav>
+      <button type="button" class="ck-next" data-next="1">הבא</button>`)}
+    ${step(2, 'ship', 'שיטת משלוח', I.truck, `
+      ${field('address', 'כתובת מלאה', { ph: 'רחוב, מספר בית, דירה ועיר', ac: 'street-address', v: v.address })}
+      <label class="ck-radio"><input type="radio" name="ship" checked><span class="ck-dot" aria-hidden="true"></span><span class="ck-rt"><b>משלוח עד הבית</b><small>זמן האספקה המדויק יאושר בעת אישור ההזמנה</small></span><em id="ck-shiprow">${t.ship ? money(t.ship) : 'חינם'}</em></label>
+      <div class="ck-f"><label for="f-notes">הערות להזמנה</label><textarea id="f-notes" rows="3" maxlength="300" placeholder="למשל: להתקשר לפני ההגעה">${esc(note())}</textarea></div>
+      <button type="button" class="ck-next" data-next="2">הבא</button>`)}
+    ${step(3, 'pay', 'תשלום', I.card, `
+      <div class="ck-paybox"><p><b>🔒 תשלום מאובטח</b></p><p>לאחר לחיצה על "בצע הזמנה" תועברו לדף תשלום מוצפן של PayPlus (כרטיס אשראי ועוד). פרטי הכרטיס לא נשמרים באתר שלנו.</p><p class="ck-small">אם התשלום המקוון אינו זמין כרגע, ההזמנה תישמר ונחזור אליכם להשלמת התשלום.</p></div>
+      <button type="button" class="ck-next" data-next="3">הבא</button>`)}
+    ${step(4, 'items', 'פריטים', I.tag, `<div class="ck-items" id="ck-items">${itemsHtml()}</div><a class="ck-edit" href="cart">עריכת העגלה</a>`)}
   </form>
-  <aside class="ck-sum" aria-label="סיכום הזמנה"><button class="ck-sumtoggle" type="button" id="ck-tg" aria-expanded="false"><span>הצגת סיכום ההזמנה ▾</span><b id="ck-tgt">${money(s.total)}</b></button><div class="ck-sumbody" id="ck-sb">${s.html}</div></aside></div>`;
+  <aside class="ck-sum" aria-label="פרטי ההזמנה"><h2>פרטי ההזמנה</h2><hr>
+    <div class="ck-sl"><span>סכום ביניים:</span><b id="s-sub">${money(t.sub)}</b></div>
+    <div class="ck-sl vat"><span>כולל מע"מ:</span><span id="s-vat">${money(t.vat)}</span></div>
+    <div class="ck-sl"><span>משלוח:</span><b id="s-ship">${t.ship ? money(t.ship) : 'חינם'}</b></div>
+    <hr>
+    <div class="ck-sl tot"><span>סה"כ לתשלום:</span><b id="s-tot">${money(t.total)}</b></div>
+    <label class="ck-terms"><input type="checkbox" id="f-terms"><span>אני מסכים/ה ל<a href="terms" target="_blank" rel="noopener">תנאי השימוש</a> ול<a href="privacy" target="_blank" rel="noopener">מדיניות הפרטיות</a></span></label>
+    <button type="submit" form="ckf" class="ck-submit" id="ck-go" disabled><span id="ck-go-t">בצע הזמנה</span></button>
+    <p class="ck-err" id="ck-err" role="alert" hidden></p>
+    <small class="ck-e" id="e-terms"></small>
+  </aside></div>`;
   built = true;
-  document.getElementById('ck-tg').onclick = e => { const o = document.getElementById('ck-sb').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', o); };
   const form = document.getElementById('ckf');
   form.addEventListener('input', save);
-  form.addEventListener('input', e => { if (e.target.id === 'f-notes') { try { sessionStorage.setItem('ps_note', e.target.value.slice(0, 300)); } catch (x) { /* ignore */ } } });
   form.addEventListener('change', save);
+  form.addEventListener('input', e => { if (e.target.id === 'f-notes') { try { sessionStorage.setItem('ps_note', e.target.value.slice(0, 300)); } catch (x) { /* ignore */ } } });
   form.addEventListener('submit', submit);
+  form.addEventListener('click', e => {
+    const h = e.target.closest('.ck-sh'); if (h) { openAt(+h.parentNode.dataset.step); return; }
+    const n = e.target.closest('[data-next]'); if (n) { const k = +n.dataset.next; if (validate(k)) openAt(k + 1); }
+  });
+  document.getElementById('f-terms').addEventListener('change', e => { document.getElementById('ck-go').disabled = !e.target.checked || busy; document.getElementById('e-terms').textContent = ''; });
+  paintLines(); paintBag();
 }
+
+function openAt(n) {
+  openStep = n;
+  document.querySelectorAll('.ck-step').forEach(s => { const o = +s.dataset.step === n; s.classList.toggle('open', o); s.querySelector('.ck-sh').setAttribute('aria-expanded', o); });
+  paintLines();
+  const el = document.querySelector(`.ck-step[data-step="${n}"]`); if (el) setTimeout(() => el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 30);
+}
+const val = id => { const el = document.getElementById('f-' + id); return el ? (el.value || '').trim() : ''; };
+function paintLines() {
+  const set = (k, t) => { const el = document.getElementById('ln-' + k); if (el) el.textContent = t; };
+  set('contact', openStep !== 1 && val('name') && val('phone') ? `${val('name')} · ${val('phone')}` : '');
+  set('ship', openStep !== 2 && val('address') ? val('address') : '');
+}
+function paintBag() { const n = Cart.count(); const b = document.getElementById('ck-bagn'); if (b) { b.textContent = n; b.style.display = n ? 'grid' : 'none'; } }
 
 /* live refresh of totals only (never rebuilds the form, so typing is not lost) */
 function refresh() {
   if (!built) { buildForm(); return; }
-  const items = Cart.items.filter(i => byId(i.id));
-  if (!items.length) { buildForm(); return; }
-  const s = summary();
-  document.getElementById('ck-sb').innerHTML = s.html;
-  document.getElementById('ck-tgt').textContent = money(s.total);
-  document.getElementById('ck-shiprow').textContent = s.ship ? money(s.ship) : 'חינם';
-  if (!busy) document.getElementById('ck-go-t').textContent = 'לתשלום עכשיו · ' + money(s.total);
+  if (!Cart.items.filter(i => byId(i.id)).length) { buildForm(); return; }
+  const t = totals();
+  document.getElementById('ck-items').innerHTML = itemsHtml();
+  document.getElementById('s-sub').textContent = money(t.sub);
+  document.getElementById('s-vat').textContent = money(t.vat);
+  document.getElementById('s-ship').textContent = t.ship ? money(t.ship) : 'חינם';
+  document.getElementById('s-tot').textContent = money(t.total);
+  document.getElementById('ck-shiprow').textContent = t.ship ? money(t.ship) : 'חינם';
+  paintBag();
 }
 
-const E = { email: 'נא להזין כתובת דוא"ל תקינה', name: 'נא להזין שם מלא', address: 'נא להזין כתובת מלאה, כולל עיר', phone: 'נא להזין מספר טלפון תקין', terms: 'יש לאשר את התנאים כדי להמשיך' };
-const ORDER = ['name', 'address', 'phone', 'email', 'terms'];
-function check() {
-  const val = id => (document.getElementById('f-' + id).value || '').trim();
-  const bad = {};
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))) bad.email = 1;
-  if (val('name').length < 2) bad.name = 1;
-  if (val('address').length < 6) bad.address = 1;
-  if (!/^[0-9+\-\s()]{7,20}$/.test(val('phone')) || val('phone').replace(/\D/g, '').length < 9) bad.phone = 1;
-  if (!document.getElementById('f-terms').checked) bad.terms = 1;
-  ORDER.forEach(k => {
-    document.getElementById('e-' + k).textContent = bad[k] ? E[k] : '';
-    const inp = document.getElementById('f-' + k); if (inp && inp.type !== 'checkbox') inp.parentNode.classList.toggle('bad', !!bad[k]);
-  });
-  const first = ORDER.find(k => bad[k]);
-  if (first) { const t = document.getElementById('f-' + first); t.focus(); t.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+const E = { name: 'נא להזין שם מלא', phone: 'נא להזין מספר טלפון תקין', email: 'נא להזין כתובת דוא"ל תקינה', address: 'נא להזין כתובת מלאה, כולל עיר' };
+const STEP_FIELDS = { 1: ['name', 'phone', 'email'], 2: ['address'] };
+function bad(k) {
+  if (k === 'name') return val('name').length < 2;
+  if (k === 'phone') return !/^[0-9+\-\s()]{7,20}$/.test(val('phone')) || val('phone').replace(/\D/g, '').length < 9;
+  if (k === 'email') return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'));
+  if (k === 'address') return val('address').length < 6;
+  return false;
+}
+function validate(n) {
+  const keys = STEP_FIELDS[n] || []; let first = null;
+  keys.forEach(k => { const b = bad(k); document.getElementById('e-' + k).textContent = b ? E[k] : ''; document.getElementById('f-' + k).classList.toggle('bad', b); if (b && !first) first = k; });
+  if (first) document.getElementById('f-' + first).focus();
   return !first;
 }
 
@@ -127,11 +159,10 @@ const ERR = { ...ORDER_ERR, invalid_email: 'נא להזין כתובת דוא"ל
 
 async function submit(e) {
   e.preventDefault();
-  if (busy || !check()) return;
-  const val = id => (document.getElementById('f-' + id).value || '').trim();
-  const name = val('name');
-  const address = val('address');
-  const body = { name, phone: val('phone'), email: val('email'), address, notes: val('notes'), items: Cart.items.map(i => ({ id: i.id, qty: i.q })) };
+  if (busy) return;
+  if (!document.getElementById('f-terms').checked) { document.getElementById('e-terms').textContent = 'יש לאשר את התנאים כדי להמשיך'; return; }
+  for (const n of [1, 2]) { if (!validate(n)) { openAt(n); return; } }
+  const body = { name: val('name'), phone: val('phone'), email: val('email'), address: val('address'), notes: val('notes'), items: Cart.items.map(i => ({ id: i.id, qty: i.q })) };
   const btn = document.getElementById('ck-go'), t = document.getElementById('ck-go-t'), err = document.getElementById('ck-err');
   busy = true; btn.disabled = true; t.textContent = 'שולחים…'; err.hidden = true;
   let res, d = {};
@@ -140,13 +171,13 @@ async function submit(e) {
     try { d = await res.json(); } catch (x) { /* empty */ }
   } catch (x) { res = null; }
   if (!res || !res.ok) {
-    busy = false; btn.disabled = false; refresh();
+    busy = false; btn.disabled = false; t.textContent = 'בצע הזמנה';
     err.textContent = !res ? 'אין חיבור לשרת. בדקו את האינטרנט ונסו שוב.' : (ERR[d.error] || 'לא הצלחנו לשלוח את ההזמנה. נסו שוב או פנו אלינו בוואטסאפ.');
     err.hidden = false; err.scrollIntoView({ block: 'center', behavior: 'smooth' });
     return;
   }
   const pay = typeof d.payment_url === 'string' && d.payment_url.startsWith('https://') ? d.payment_url : '';
-  try { sessionStorage.setItem('ps_last', JSON.stringify({ number: d.order_number, total: d.total, name, paid: !!pay })); sessionStorage.removeItem('ps_note'); } catch (x) { /* ignore */ }
+  try { sessionStorage.setItem('ps_last', JSON.stringify({ number: d.order_number, total: d.total, name: body.name, paid: !!pay })); sessionStorage.removeItem('ps_note'); } catch (x) { /* ignore */ }
   if (pay) { t.textContent = 'מעבירים לתשלום…'; location.href = pay; return; }   // the cart stays until the payment succeeds
   Cart.items = []; Cart.stored = []; try { localStorage.setItem('ps_cart', '[]'); } catch (x) { /* ignore */ }
   location.href = 'thank-you?status=received&order=' + encodeURIComponent(d.order_number);
