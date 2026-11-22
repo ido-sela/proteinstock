@@ -137,38 +137,43 @@ function showLogin(note) {
   document.body.classList.remove('sh'); app.className = 'wrap';
   app.innerHTML = `<div class="login card">
     <img src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק">
-    <h1>כניסה לניהול</h1><p>נשלח אליך מייל כניסה. אין סיסמה.</p>
+    <h1>כניסה לניהול</h1><p id="lp">נשלח לאימייל שלך קוד כניסה בן 6 ספרות. אין סיסמה.</p>
     <form id="lf"><input type="email" id="em" placeholder="האימייל שלך" autocomplete="email" required dir="ltr" style="text-align:start">
-    <button class="btn pri" style="width:100%;margin-top:10px" id="lb">שלחו לי מייל כניסה</button></form>
-    <form id="cf" hidden><input type="text" id="cd" placeholder="קוד מהמייל" inputmode="numeric" autocomplete="one-time-code" maxlength="10" dir="ltr" style="text-align:center;letter-spacing:.2em">
-    <button class="btn pri" style="width:100%;margin-top:10px" id="cb">כניסה עם הקוד</button></form>
+    <button class="btn pri" style="width:100%;margin-top:10px" id="lb">שלחו לי קוד</button></form>
+    <form id="cf" hidden><input type="text" id="cd" placeholder="______" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" dir="ltr" aria-label="קוד בן 6 ספרות" style="text-align:center;letter-spacing:.5em;font-size:1.5rem;font-weight:700">
+    <button class="btn pri" style="width:100%;margin-top:10px" id="cb">כניסה</button>
+    <div style="display:flex;justify-content:space-between;gap:8px;margin-top:10px"><button type="button" class="btn sm link" id="cr" disabled>שליחה חוזרת</button><button type="button" class="btn sm link" id="cx">שינוי אימייל</button></div></form>
     <div id="lm"></div>${note ? `<div class="msg err">${esc(note)}</div>` : ''}</div>`;
-  const m = document.getElementById('lm');
+  const $ = id => document.getElementById(id), m = $('lm');
   const LERR = e => {
     const c = e.code || '', t = (e.message || '').toLowerCase();
-    if (c === 'over_email_send_rate_limit' || e.status === 429 || t.includes('rate limit')) return 'נשלחו יותר מדי מיילים בזמן קצר. המתינו כמה דקות ונסו שוב. אם כבר קיבלתם מייל, השתמשו בו.';
-    if (c === 'otp_expired' || t.includes('expired') || t.includes('invalid')) return 'הקוד לא תקין או שפג תוקפו. בקשו מייל חדש.';
-    if (c === 'signup_disabled' || t.includes('signups not allowed')) return 'האימייל הזה לא רשום כמנהל. בדקו שהקלדתם נכון.';
+    if (c === 'over_email_send_rate_limit' || e.status === 429 || t.includes('rate limit')) return 'נשלחו יותר מדי מיילים בזמן קצר. המתינו כמה דקות ונסו שוב. אם כבר קיבלתם קוד, השתמשו בו.';
+    if (c === 'otp_expired' || t.includes('expired') || t.includes('invalid')) return 'הקוד לא תקין או שפג תוקפו. בקשו קוד חדש.';
     return e.message;
   };
-  document.getElementById('lf').onsubmit = async e => {
-    e.preventDefault();
-    const b = document.getElementById('lb'); b.disabled = true;
-    const { error } = await sb.auth.signInWithOtp({ email: document.getElementById('em').value.trim(), options: { emailRedirectTo: location.origin + '/admin' } });
-    b.disabled = false;
-    if (error) { m.innerHTML = `<div class="msg err">לא הצלחנו לשלוח: ${esc(LERR(error))}</div>`; return; }
-    document.getElementById('cf').hidden = false;
-    m.innerHTML = '<div class="msg ok">המייל נשלח. לחצו על הקישור שבו באותו דפדפן, או הקלידו כאן את הקוד שמופיע בו. אם לא הגיע, בדקו בספאם.</div>';
+  let cool = 0, timer = null;
+  const tick = () => { const b = $('cr'); if (!b) return; if (cool > 0) { b.disabled = true; b.textContent = `שליחה חוזרת (${cool})`; cool--; timer = setTimeout(tick, 1000); } else { b.disabled = false; b.textContent = 'שליחה חוזרת'; } };
+  const send = async () => {
+    const { error } = await sb.auth.signInWithOtp({ email: $('em').value.trim() });
+    if (error) { m.innerHTML = `<div class="msg err">לא הצלחנו לשלוח: ${esc(LERR(error))}</div>`; return false; }
+    $('lf').hidden = true; $('cf').hidden = false; $('lp').textContent = `שלחנו קוד בן 6 ספרות אל ${$('em').value.trim()}. אפשר להעתיק אותו מהמייל ולהדביק כאן.`;
+    m.innerHTML = '<div class="msg ok">הקוד נשלח. אם לא הגיע, בדקו בספאם.</div>';
+    cool = 45; clearTimeout(timer); tick(); $('cd').value = ''; $('cd').focus(); return true;
   };
-  document.getElementById('cf').onsubmit = async e => {
-    e.preventDefault();
-    const b = document.getElementById('cb'); b.disabled = true;
-    const { error } = await sb.auth.verifyOtp({ email: document.getElementById('em').value.trim(), token: document.getElementById('cd').value.trim(), type: 'email' });
+  $('lf').onsubmit = async e => { e.preventDefault(); const b = $('lb'); b.disabled = true; await send(); b.disabled = false; };
+  const verify = async () => {
+    const token = $('cd').value.replace(/\D/g, '');
+    if (token.length !== 6) { m.innerHTML = '<div class="msg err">יש להזין קוד בן 6 ספרות.</div>'; return; }
+    const b = $('cb'); b.disabled = true;
+    const { error } = await sb.auth.verifyOtp({ email: $('em').value.trim(), token, type: 'email' });
     b.disabled = false;
-    if (error) m.innerHTML = `<div class="msg err">${esc(LERR(error))}</div>`;
+    if (error) { m.innerHTML = `<div class="msg err">${esc(LERR(error))}</div>`; $('cd').select(); }
   };
+  $('cf').onsubmit = e => { e.preventDefault(); verify(); };
+  $('cd').oninput = () => { $('cd').value = $('cd').value.replace(/\D/g, '').slice(0, 6); if ($('cd').value.length === 6) verify(); };
+  $('cr').onclick = async () => { $('cr').disabled = true; await send(); };
+  $('cx').onclick = () => { clearTimeout(timer); $('cf').hidden = true; $('lf').hidden = false; $('lp').textContent = 'נשלח לאימייל שלך קוד כניסה בן 6 ספרות. אין סיסמה.'; m.innerHTML = ''; $('em').focus(); };
 }
-
 /* ---------- shell ---------- */
 const ICO = {
   orders: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5l1-3h11l1 3"/><path d="M3.5 6.5v10h13v-10"/><path d="M7.5 10h5"/></svg>',
