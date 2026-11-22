@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>העגלה שלי — פרוטאין סטוק</title>
+<meta name="robots" content="noindex,follow">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main id="main"><div class="wrap ct" id="ct"></div></main>
+<script src="js/data.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/app.js"></script>
+<script>
+layout('cart');
+const host = document.getElementById('ct');
+const NOTE_KEY = 'ps_note';
+const getNote = () => { try { return sessionStorage.getItem(NOTE_KEY) || ''; } catch (e) { return ''; } };
+const setNote = v => { try { sessionStorage.setItem(NOTE_KEY, v.slice(0, 300)); } catch (e) { /* ignore */ } };
+
+function draw() {
+  const items = Cart.items.filter(i => byId(i.id));
+  if (!items.length) {
+    host.innerHTML = `<div class="ct-empty"><div class="ct-empty-i">🛒</div><h1>העגלה שלך ריקה</h1><p>עוד לא הוספת מוצרים. בוא נמצא משהו טוב.</p><a class="btn btn-primary" href="products">להמשך קנייה</a></div>`;
+    return;
+  }
+  const sub = Cart.total(), ship = shipCost(sub), left = SHIP.free_over - sub;
+  const pct = SHIP.free_over > 0 ? Math.min(100, Math.round(sub / SHIP.free_over * 100)) : 100;
+  const bar = SHIP.free_over > 0 ? `<div class="ct-ship"><p>${left > 0 ? `עוד <b>${money(left)}</b> ומקבלים משלוח חינם` : '🎉 מגיע לך משלוח חינם'}</p><div class="ct-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pct}%"></span></div></div>` : '';
+  const rows = items.map(i => {
+    const p = byId(i.id);
+    return `<div class="ct-row" data-id="${esc(p.id)}">
+      <a class="ct-img" href="product?id=${encodeURIComponent(p.id)}"><img src="${p.img}" alt="${esc(p.name)}" width="96" height="96" loading="lazy"></a>
+      <div class="ct-info"><span class="pbrand">${esc(p.brand || '')}</span><a class="ct-name" href="product?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a>
+        <span class="ct-unit">${money(p.price)}${p.sale ? `<s>${money(p.old)}</s>` : ''}</span>
+        ${p.out ? '<span class="ct-warn">המוצר אזל מהמלאי. יש להסיר אותו כדי להמשיך.</span>' : ''}</div>
+      <div class="ct-qty" role="group" aria-label="כמות"><button type="button" aria-label="הפחת" data-q="${esc(p.id)}:-1">−</button><span aria-live="polite">${i.q}</span><button type="button" aria-label="הוסף" data-q="${esc(p.id)}:1">+</button></div>
+      <b class="ct-line">${money(p.price * i.q)}</b>
+      <button type="button" class="ct-rm" data-q="${esc(p.id)}:rm" aria-label="הסר: ${esc(p.name)}">✕</button></div>`;
+  }).join('');
+  const blocked = items.some(i => byId(i.id).out);
+  const rel = PRODUCTS.filter(x => !x.out && !items.some(i => i.id === x.id) && items.some(i => byId(i.id).cat === x.cat)).slice(0, 4);
+  host.innerHTML = `<div class="ct-head"><h1>העגלה שלי</h1><span>${Cart.count()} פריטים</span></div>
+  <div class="ct-grid"><section class="ct-list" aria-label="פריטים בעגלה">${bar}${rows}
+      <label class="ct-note"><span>הערה להזמנה (לא חובה)</span><textarea id="ct-note" rows="2" maxlength="300" placeholder="למשל: להתקשר לפני ההגעה">${esc(getNote())}</textarea></label></section>
+    <aside class="ct-sum" aria-label="סיכום הזמנה"><h2>סיכום הזמנה</h2>
+      <div class="ct-l"><span>סכום ביניים</span><b>${money(sub)}</b></div>
+      <div class="ct-l"><span>משלוח</span><b>${ship ? money(ship) : 'חינם'}</b></div>
+      <div class="ct-l tot"><span>סה"כ</span><b>${money(sub + ship)}</b></div>
+      <p class="ct-vat">המחיר כולל מע"מ. המשלוח מחושב סופית בקופה.</p>
+      <a class="btn btn-primary ct-go${blocked ? ' dis' : ''}" href="${blocked ? '#' : 'checkout'}" ${blocked ? 'aria-disabled="true"' : ''}>המשך לתשלום</a>
+      <a class="ct-more" href="products">← המשך קנייה</a>
+      <ul class="ct-trust"><li>🔒 תשלום מאובטח בדף מוצפן</li><li>🚚 משלוחים לכל הארץ</li><li>↩ ביטול עסקה לפי חוק הגנת הצרכן</li></ul></aside></div>
+  ${rel.length ? `<section class="ct-rel"><h2>אולי יעניין אותך גם</h2><div class="grid">${rel.map(card).join('')}</div></section>` : ''}`;
+  const note = document.getElementById('ct-note'); if (note) note.oninput = () => setNote(note.value);
+  const go = host.querySelector('.ct-go.dis'); if (go) go.onclick = e => { e.preventDefault(); toast('יש להסיר מוצרים שאזלו מהמלאי'); };
+}
+draw(); window.__rerender = draw; if (window.__liveReady) draw();
+/* qty buttons are handled by the shared click handler in app.js; redraw after it runs */
+document.addEventListener('click', e => { if (e.target.closest('[data-q]')) setTimeout(draw, 0); });
+</script>
+</body>
+</html>

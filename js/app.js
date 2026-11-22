@@ -3,6 +3,17 @@ const SITE = { phone:'0556650400', wa:'972556650400', email:'info@proteinstock.c
   address:'שדרות הראשונים 20, ראשון לציון', freeShip:299, currency:'₪' };
 /* Orders backend (Supabase). Both values are public by design; prices and totals are computed on the server. */
 const PS_CONFIG = { supabaseUrl:'https://yplzliqpohqehypllxdq.supabase.co', anonKey:'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };
+/* Shipping rule (free over / fee) — public copy of the server setting; the server recomputes it for every order. */
+const SHIP = { free_over: 299, fee: 0 };
+const shipCost = sub => (SHIP.free_over > 0 && sub >= SHIP.free_over) ? 0 : SHIP.fee;
+async function loadShipping(){
+  try{
+    const r = await fetch(PS_CONFIG.supabaseUrl + '/rest/v1/site_settings?select=value&key=eq.shipping', {headers:{apikey:PS_CONFIG.anonKey}});
+    if(!r.ok) return; const a = await r.json(); const v = a[0] && a[0].value;
+    if(v){ SHIP.free_over = Number(v.free_over) || 0; SHIP.fee = Number(v.fee) || 0; }
+    Cart.render(); if(window.__rerender) window.__rerender();
+  }catch(e){}
+}
 const ORDER_ERR = { unavailable:'חלק מהמוצרים כבר לא זמינים — רעננו את הדף ונסו שוב', rate_limited:'יותר מדי הזמנות בזמן קצר, נסו שוב בעוד כמה דקות', invalid_phone:'מספר הטלפון אינו תקין', invalid_name:'נא למלא שם מלא' };
 
 const PRODUCTS = RAW.map(build);
@@ -23,8 +34,9 @@ const ICON = {
 /* ---------- cart ---------- */
 const Cart = {
   items: [],
-  load(){ try{ this.items=JSON.parse(localStorage.getItem('ps_cart')||'[]').filter(i=>byId(i.id)); }catch(e){ this.items=[]; } },
-  save(){ try{ localStorage.setItem('ps_cart',JSON.stringify(this.items)); }catch(e){} this.orderId=null; this.render(); },
+  stored: [],
+  load(){ try{ this.stored=JSON.parse(localStorage.getItem('ps_cart')||'[]'); if(!Array.isArray(this.stored)) this.stored=[]; this.items=this.stored.filter(i=>byId(i.id)); }catch(e){ this.stored=[]; this.items=[]; } },
+  save(){ this.stored=this.items.concat(this.stored.filter(s=>!byId(s.id))); try{ localStorage.setItem('ps_cart',JSON.stringify(this.stored)); }catch(e){} this.orderId=null; this.render(); },
   add(id,q=1){ const p=byId(id); if(!p||p.out) return; const it=this.items.find(i=>i.id===id); it?it.q+=q:this.items.push({id,q}); this.save(); toast('נוסף לעגלה ✓'); },
   set(id,q){ const it=this.items.find(i=>i.id===id); if(!it) return; it.q=q; if(q<=0) this.items=this.items.filter(i=>i.id!==id); this.save(); },
   count(){ return this.items.reduce((s,i)=>s+i.q,0); },
@@ -38,42 +50,10 @@ const Cart = {
     if(!this.items.length){ body.innerHTML='<div class="d-empty"><p style="font-size:2.4rem">🛒</p><p>העגלה ריקה</p><p style="margin-top:14px"><a class="btn btn-dark btn-sm" href="products">לקטלוג המוצרים</a></p></div>'; document.getElementById('d-foot').style.display='none'; return; }
     document.getElementById('d-foot').style.display='';
     body.innerHTML=this.items.map(i=>{const p=byId(i.id);return `<div class="ci"><img src="${p.img}" alt="" loading="lazy"><div><h4>${esc(p.name)}</h4><div class="q"><button aria-label="הפחת" data-q="${p.id}:-1">−</button><span>${i.q}</span><button aria-label="הוסף" data-q="${p.id}:1">+</button></div><button class="rm" data-q="${p.id}:rm">הסר</button></div><b>${money(p.price*i.q)}</b></div>`}).join('');
-    const t=this.total(); const left=SITE.freeShip-t;
+    const t=this.total(); const left=SHIP.free_over-t;
     document.getElementById('d-total').textContent=money(t);
-    document.getElementById('d-ship').textContent= left>0 ? `עוד ${money(left)} למשלוח חינם` : '🎉 המשלוח אצלנו!';
+    document.getElementById('d-ship').textContent= SHIP.free_over<=0 ? '' : left>0 ? `עוד ${money(left)} למשלוח חינם` : '🎉 המשלוח אצלנו!';
     paintPay();
-  },
-  async order(){
-    const name=(document.getElementById('d-name').value||'').trim();
-    const phone=(document.getElementById('d-phone').value||'').trim();
-    const address=(document.getElementById('d-addr').value||'').trim();
-    if(name.length<2){ toast('נא למלא שם מלא'); document.getElementById('d-name').focus(); return; }
-    if(!/^[0-9+\-\s()]{7,20}$/.test(phone)){ toast('נא למלא מספר טלפון תקין'); document.getElementById('d-phone').focus(); return; }
-    const btn=document.getElementById('d-order'); btn.disabled=true;
-    let res;
-    try{
-      res=await fetch(PS_CONFIG.supabaseUrl+'/functions/v1/create-order',{method:'POST',headers:{'Content-Type':'application/json',apikey:PS_CONFIG.anonKey},
-        body:JSON.stringify({name,phone,address,items:this.items.map(i=>({id:i.id,qty:i.q}))})});
-    }catch(e){ btn.disabled=false; return this.orderWa(name); }   // backend unreachable (e.g. preview) — fall back to the WhatsApp order
-    let d={}; try{ d=await res.json(); }catch(e){}
-    btn.disabled=false;
-    if(!res.ok){ toast(ORDER_ERR[d.error]||'לא הצלחנו לשלוח את ההזמנה, נסו שוב'); return; }
-    this.done(d,name);
-  },
-  done(d,name){
-    this.items=[]; try{ localStorage.setItem('ps_cart','[]'); }catch(e){}
-    document.querySelectorAll('.cart-badge').forEach(b=>{b.style.display='none';});
-    const msg=encodeURIComponent(`שלום, ביצעתי הזמנה באתר. מספר הזמנה: ${d.order_number} · סה"כ ${money(d.total)}${name?' · '+name:''}`);
-    const pay=typeof d.payment_url==='string'&&d.payment_url.startsWith('https://')?d.payment_url:'';
-    document.getElementById('d-foot').style.display='none';
-    document.getElementById('d-body').innerHTML=`<div class="d-empty"><p style="font-size:2.4rem">✅</p><p><b>ההזמנה נקלטה</b></p><p>מספר הזמנה: <b dir="ltr">${esc(d.order_number)}</b></p><p>סה"כ ${money(d.total)}</p>${pay?`<p style="margin-top:14px">מעבירים אתכם לדף תשלום מאובטח…</p><p style="margin-top:10px"><a class="btn btn-primary" href="${esc(pay)}">לתשלום מאובטח</a></p>`:'<p style="margin-top:8px">נחזור אליכם בהקדם לאישור ותשלום.</p>'}<p style="margin-top:12px"><a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="https://wa.me/${SITE.wa}?text=${msg}">שלחו לנו בוואטסאפ</a></p></div>`;
-    if(pay) setTimeout(()=>{ location.href=pay; },1200);
-  },
-  orderWa(name){
-    let m='שלום, אשמח להזמין מפרוטאין סטוק:%0A';
-    this.items.forEach(i=>{const p=byId(i.id); m+=encodeURIComponent(`• ${p.name.slice(0,70)} ×${i.q} — ${money(p.price*i.q)}`)+'%0A';});
-    m+=encodeURIComponent(`סה"כ: ${money(this.total())}`)+'%0A'+(name?encodeURIComponent('שם: '+name)+'%0A':'')+(this.orderId?encodeURIComponent('מספר הזמנה: '+this.orderId):'');
-    window.open(`https://wa.me/${SITE.wa}?text=${m}`,'_blank','noopener');
   }
 };
 
@@ -114,8 +94,7 @@ function layout(active){
   <div class="overlay" id="overlay"></div>
   <aside class="drawer" id="drawer" aria-label="עגלת קניות"><header><h2>העגלה שלי</h2><button class="icon-btn" id="d-close" aria-label="סגור">${ICON.close}</button></header>
     <div class="d-body" id="d-body"></div>
-    <div class="d-foot" id="d-foot"><div class="tot"><span>סה"כ</span><span id="d-total"></span></div><p class="ship" id="d-ship"></p>
-      <input id="d-name" placeholder="שם מלא" autocomplete="name" required><input id="d-phone" type="tel" inputmode="tel" placeholder="טלפון" autocomplete="tel" required><input id="d-addr" placeholder="כתובת למשלוח (לא חובה)" autocomplete="street-address"><p class="legal-note">בשליחת ההזמנה אני מאשר/ת את <a href="terms" target="_blank" rel="noopener">תנאי השימוש והרכישה</a> ואת <a href="privacy" target="_blank" rel="noopener">מדיניות הפרטיות</a>.</p><button class="btn btn-primary" id="d-order">שליחת הזמנה</button><a class="btn btn-outline" id="d-pay" target="_blank" rel="noopener noreferrer" hidden></a><p class="pay-note" id="d-paynote" hidden></p></div></aside>
+    <div class="d-foot" id="d-foot"><div class="tot"><span>סה"כ ביניים</span><span id="d-total"></span></div><p class="ship" id="d-ship"></p><p class="pay-note" style="margin:0 0 4px">משלוח ומיסים מחושבים בקופה. המחירים כוללים מע"מ.</p><a class="btn btn-primary" href="checkout" id="d-checkout">לתשלום</a><a class="btn btn-outline" href="cart">צפייה בעגלה</a></div></aside>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <a class="wa" href="https://wa.me/${SITE.wa}" target="_blank" rel="noopener" aria-label="וואטסאפ">${ICON.wa}</a>`);
 
@@ -131,9 +110,8 @@ function layout(active){
   const nav=document.getElementById('nav'), burger=document.getElementById('burger');
   burger.onclick=()=>{const o=nav.classList.toggle('open');burger.setAttribute('aria-expanded',o);};
   nav.addEventListener('click',e=>{ if(e.target.closest('a')&&innerWidth<=900) nav.classList.remove('open'); });
-  document.getElementById('cart-btn').onclick=()=>Cart.open();
+  document.getElementById('cart-btn').onclick=()=>{ if(active==='cart'||active==='checkout') window.scrollTo({top:0,behavior:'smooth'}); else Cart.open(); };
   document.getElementById('d-close').onclick=document.getElementById('overlay').onclick=()=>Cart.close();
-  document.getElementById('d-order').onclick=()=>Cart.order();
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){Cart.close();nav.classList.remove('open');} });
   document.addEventListener('click',e=>{
     if(nav.classList.contains('open')&&!e.target.closest('#nav,#burger')){nav.classList.remove('open');burger.setAttribute('aria-expanded','false');}
@@ -202,7 +180,7 @@ function applyLive(){
   PRODUCTS.splice(0, PRODUCTS.length, ...buildList(false));
   const tb = document.getElementById('topbar');
   if(tb){ if(topbarDefault === null) topbarDefault = tb.innerHTML; if(LIVE.banner) tb.textContent = LIVE.banner; else tb.innerHTML = topbarDefault; }
-  Cart.items = Cart.items.filter(i => byId(i.id)); Cart.render();
+  Cart.items = Cart.stored.filter(i => byId(i.id)); Cart.render();
   LIVE.ready = true; window.__liveReady = true;
   if(!rerenderQueued){ rerenderQueued = true; setTimeout(() => { rerenderQueued = false; if(window.__rerender) window.__rerender(); if(window.__adminRefresh) window.__adminRefresh(); }); }
 }
@@ -210,6 +188,7 @@ function applyLive(){
 const DIAG = [];
 /* Opening the site with #admin on the link shows an "ניהול האתר" button even when the admin tools are unavailable, and says why. */
 async function initLive(){
+  loadShipping();
   try{ await initLive2(); }catch(e){ DIAG.push('שגיאה: ' + (e && e.message || e)); }
   if(location.hash === '#admin' && !document.getElementById('adm-fab')){
     const f = mk('button', {class:'adm-fab', id:'adm-fab', type:'button', text:'ניהול האתר'});
@@ -612,9 +591,7 @@ function initSearchDD(){
 }
 setTimeout(initSearchDD,0); document.addEventListener('DOMContentLoaded',initSearchDD); window.addEventListener('load',initSearchDD);
 /* ---------- return from the payment page ---------- */
-setTimeout(()=>{
+(function(){
   const q=new URLSearchParams(location.search), s=q.get('pay'), o=(q.get('order')||'').replace(/[^A-Z0-9]/gi,'').slice(0,12);
-  if(!s) return;
-  const M={success:`התשלום התקבל, תודה! מספר הזמנה ${o}. נחזור אליכם בהקדם.`,failure:'התשלום לא הושלם. אפשר לנסות שוב או לפנות אלינו.',cancel:'התשלום בוטל. ההזמנה לא חויבה.'};
-  if(M[s]){ try{ toast(M[s]); history.replaceState(null,'',location.pathname); }catch(e){} }
-},400);
+  if(s&&/^(success|failure|cancel)$/.test(s)) location.replace('thank-you?status='+s+'&order='+encodeURIComponent(o));
+})();

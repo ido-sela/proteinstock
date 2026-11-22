@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>קופה — פרוטאין סטוק</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="ck-body">
+<header class="ck-top"><div class="ck-wrap"><a href="/" class="ck-logo" aria-label="פרוטאין סטוק - חזרה לחנות"><img src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק" width="130" height="40"></a>
+  <span class="ck-secure">🔒 קופה מאובטחת</span><a class="ck-back" href="cart">חזרה לעגלה ←</a></div></header>
+<main id="main" class="ck-wrap"><div id="ck"></div></main>
+<footer class="ck-foot"><div class="ck-wrap"><a href="terms#cancel">החזרות וביטול עסקה</a><a href="privacy">פרטיות</a><a href="terms">תנאי שימוש ורכישה</a><a href="contact">צור קשר</a></div></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="js/data.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/app.js"></script>
+<script>
+const host = document.getElementById('ck');
+const FKEY = 'ps_checkout';
+const FIELDS = ['phone', 'email', 'name', 'city', 'street', 'apt', 'zip'];
+const load = () => { try { return JSON.parse(sessionStorage.getItem(FKEY) || '{}'); } catch (e) { return {}; } };
+const save = () => { try { const o = {}; FIELDS.forEach(f => { const el = document.getElementById('f-' + f); if (el) o[f] = el.value; }); sessionStorage.setItem(FKEY, JSON.stringify(o)); } catch (e) { /* ignore */ } };
+const note = () => { try { return sessionStorage.getItem('ps_note') || ''; } catch (e) { return ''; } };
+let busy = false, built = false;
+
+function summary() {
+  const items = Cart.items.filter(i => byId(i.id));
+  const sub = Cart.total(), ship = shipCost(sub);
+  const lines = items.map(i => { const p = byId(i.id); return `<div class="ck-item"><div class="ck-thumb"><img src="${p.img}" alt="" width="64" height="64"><i>${i.q}</i></div><span class="ck-iname">${esc(p.name)}</span><b>${money(p.price * i.q)}</b></div>`; }).join('');
+  return { sub, ship, total: sub + ship, html: `${lines}
+    <div class="ck-sl"><span>סכום ביניים</span><b>${money(sub)}</b></div>
+    <div class="ck-sl"><span>משלוח</span><b>${ship ? money(ship) : 'חינם'}</b></div>
+    <div class="ck-sl tot"><span>סה"כ</span><b><small>ILS</small> ${money(sub + ship)}</b></div>
+    <p class="ck-vat">כולל מע"מ</p>` };
+}
+
+function build() {
+  const items = Cart.items.filter(i => byId(i.id));
+  if (!items.length) {
+    host.innerHTML = `<div class="ct-empty"><div class="ct-empty-i">🛒</div><h1>העגלה ריקה</h1><p>אין מה לשלם עדיין.</p><a class="btn btn-primary" href="products">לקטלוג המוצרים</a></div>`;
+    built = false; return;
+  }
+  const v = load(), s = summary();
+  host.innerHTML = `<div class="ck-grid">
+  <form id="ckf" class="ck-form" novalidate autocomplete="on">
+    <section><h2>פרטי קשר</h2>
+      <div class="ck-f"><label for="f-phone">טלפון נייד</label><input id="f-phone" name="tel" type="tel" inputmode="tel" autocomplete="tel" dir="ltr" required placeholder="050-0000000" value="${esc(v.phone || '')}"><small class="ck-e" id="e-phone"></small></div>
+      <div class="ck-f"><label for="f-email">אימייל (לאישור הזמנה וקבלה)</label><input id="f-email" name="email" type="email" inputmode="email" autocomplete="email" dir="ltr" placeholder="name@example.com" value="${esc(v.email || '')}"><small class="ck-e" id="e-email"></small></div></section>
+    <section><h2>כתובת למשלוח</h2>
+      <div class="ck-f"><label for="f-country">מדינה</label><input id="f-country" value="ישראל" disabled></div>
+      <div class="ck-f"><label for="f-name">שם מלא</label><input id="f-name" name="name" autocomplete="name" required value="${esc(v.name || '')}"><small class="ck-e" id="e-name"></small></div>
+      <div class="ck-2"><div class="ck-f"><label for="f-city">עיר</label><input id="f-city" name="city" autocomplete="address-level2" required value="${esc(v.city || '')}"><small class="ck-e" id="e-city"></small></div>
+        <div class="ck-f"><label for="f-zip">מיקוד (לא חובה)</label><input id="f-zip" name="zip" inputmode="numeric" autocomplete="postal-code" dir="ltr" maxlength="10" value="${esc(v.zip || '')}"></div></div>
+      <div class="ck-f"><label for="f-street">רחוב ומספר בית</label><input id="f-street" name="street" autocomplete="address-line1" required value="${esc(v.street || '')}"><small class="ck-e" id="e-street"></small></div>
+      <div class="ck-f"><label for="f-apt">דירה, קומה, הוראות הגעה (לא חובה)</label><input id="f-apt" name="apt" autocomplete="address-line2" value="${esc(v.apt || '')}"></div></section>
+    <section><h2>שיטת משלוח</h2>
+      <label class="ck-radio"><input type="radio" name="ship" checked><span><b>משלוח לכל הארץ</b><small>זמן האספקה המדויק יאושר בעת אישור ההזמנה</small></span><em id="ck-shiprow">${s.ship ? money(s.ship) : 'חינם'}</em></label></section>
+    <section><h2>תשלום</h2>
+      <div class="ck-pay"><p><b>🔒 תשלום מאובטח</b></p><p>לחיצה על "לתשלום" תעביר אתכם לדף תשלום מוצפן של PayPlus (כרטיס אשראי ועוד). פרטי הכרטיס לא נשמרים באתר שלנו.</p><p class="ck-small">אם התשלום המקוון אינו זמין כרגע, ההזמנה תישמר ונחזור אליכם להשלמת התשלום.</p></div></section>
+    <label class="ck-terms"><input type="checkbox" id="f-terms"><span>קראתי ואני מאשר/ת את <a href="terms" target="_blank" rel="noopener">תנאי השימוש והרכישה</a> ואת <a href="privacy" target="_blank" rel="noopener">מדיניות הפרטיות</a>, כולל זכות ביטול העסקה לפי חוק.</span></label><small class="ck-e" id="e-terms"></small>
+    <button class="btn btn-primary ck-submit" id="ck-go" type="submit"><span id="ck-go-t">לתשלום · ${money(s.total)}</span></button>
+    <p class="ck-err" id="ck-err" role="alert" hidden></p>
+  </form>
+  <aside class="ck-sum" aria-label="סיכום הזמנה"><button class="ck-sumtoggle" type="button" id="ck-tg" aria-expanded="false"><span>🛒 הצגת סיכום ההזמנה</span><b id="ck-tgt">${money(s.total)}</b></button><div class="ck-sumbody" id="ck-sb">${s.html}</div></aside></div>`;
+  built = true;
+  document.getElementById('ck-tg').onclick = e => { const o = document.getElementById('ck-sb').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', o); };
+  const form = document.getElementById('ckf');
+  form.addEventListener('input', save);
+  form.addEventListener('submit', submit);
+}
+
+/* live refresh of totals only (never rebuilds the form, so typing is not lost) */
+function refresh() {
+  if (!built) { build(); return; }
+  const items = Cart.items.filter(i => byId(i.id));
+  if (!items.length) { build(); return; }
+  const s = summary();
+  document.getElementById('ck-sb').innerHTML = s.html;
+  document.getElementById('ck-tgt').textContent = money(s.total);
+  document.getElementById('ck-shiprow').textContent = s.ship ? money(s.ship) : 'חינם';
+  if (!busy) document.getElementById('ck-go-t').textContent = 'לתשלום · ' + money(s.total);
+}
+
+const E = { phone: 'נא להזין מספר טלפון תקין', name: 'נא להזין שם מלא', city: 'נא להזין עיר', street: 'נא להזין רחוב ומספר בית', email: 'כתובת האימייל אינה תקינה', terms: 'יש לאשר את התנאים כדי להמשיך' };
+function check() {
+  const val = id => (document.getElementById(id).value || '').trim();
+  const bad = {};
+  if (!/^[0-9+\-\s()]{7,20}$/.test(val('f-phone')) || val('f-phone').replace(/\D/g, '').length < 9) bad.phone = 1;
+  if (val('f-name').length < 2) bad.name = 1;
+  if (val('f-city').length < 2) bad.city = 1;
+  if (val('f-street').length < 3) bad.street = 1;
+  if (val('f-email') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('f-email'))) bad.email = 1;
+  if (!document.getElementById('f-terms').checked) bad.terms = 1;
+  ['phone', 'name', 'city', 'street', 'email', 'terms'].forEach(k => {
+    const el = document.getElementById('e-' + k); el.textContent = bad[k] ? E[k] : '';
+    const inp = document.getElementById('f-' + k); if (inp && inp.type !== 'checkbox') inp.setAttribute('aria-invalid', bad[k] ? 'true' : 'false');
+  });
+  const first = ['phone', 'name', 'city', 'street', 'email', 'terms'].find(k => bad[k]);
+  if (first) { const t = document.getElementById('f-' + first); t.focus(); t.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  return !first;
+}
+
+const ERR = { ...ORDER_ERR, invalid_email: 'כתובת האימייל אינה תקינה', invalid_items: 'העגלה אינה תקינה, רעננו את הדף', rate_limited: 'יותר מדי הזמנות בזמן קצר. נסו שוב בעוד כמה דקות.', unavailable: 'חלק מהמוצרים כבר לא זמינים. חזרו לעגלה כדי לעדכן.' };
+
+async function submit(e) {
+  e.preventDefault();
+  if (busy || !check()) return;
+  const val = id => (document.getElementById(id).value || '').trim();
+  const address = [val('f-street'), val('f-apt'), val('f-city') + (val('f-zip') ? ' ' + val('f-zip') : '')].filter(Boolean).join(', ');
+  const body = { name: val('f-name'), phone: val('f-phone'), email: val('f-email'), address, notes: note(), items: Cart.items.map(i => ({ id: i.id, qty: i.q })) };
+  const btn = document.getElementById('ck-go'), t = document.getElementById('ck-go-t'), err = document.getElementById('ck-err');
+  busy = true; btn.disabled = true; t.textContent = 'שולחים…'; err.hidden = true;
+  let res, d = {};
+  try {
+    res = await fetch(PS_CONFIG.supabaseUrl + '/functions/v1/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: PS_CONFIG.anonKey }, body: JSON.stringify(body) });
+    try { d = await res.json(); } catch (x) { /* empty */ }
+  } catch (x) { res = null; }
+  if (!res || !res.ok) {
+    busy = false; btn.disabled = false; refresh();
+    err.textContent = !res ? 'אין חיבור לשרת. בדקו את האינטרנט ונסו שוב.' : (ERR[d.error] || 'לא הצלחנו לשלוח את ההזמנה. נסו שוב או פנו אלינו בוואטסאפ.');
+    err.hidden = false; err.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    return;
+  }
+  const pay = typeof d.payment_url === 'string' && d.payment_url.startsWith('https://') ? d.payment_url : '';
+  try { sessionStorage.setItem('ps_last', JSON.stringify({ number: d.order_number, total: d.total, name: body.name, paid: !!pay })); sessionStorage.removeItem('ps_note'); } catch (x) { /* ignore */ }
+  if (pay) { t.textContent = 'מעבירים לתשלום…'; location.href = pay; return; }   // the cart stays until the payment succeeds
+  Cart.items = []; try { localStorage.setItem('ps_cart', '[]'); } catch (x) { /* ignore */ }
+  location.href = 'thank-you?status=received&order=' + encodeURIComponent(d.order_number);
+}
+
+Cart.load();
+build();
+window.__rerender = refresh;
+initLive();
+</script>
+</body>
+</html>
