@@ -199,7 +199,9 @@ async function submit(e) {
   busy = true; btn.disabled = true; t.textContent = 'שולחים…'; err.hidden = true;
   let res, d = {};
   try {
-    res = await fetch(PS_CONFIG.supabaseUrl + '/functions/v1/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: PS_CONFIG.anonKey }, body: JSON.stringify(body) });
+    res = await fetch('/api/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (res.status === 404 || res.status === 503)   // new database not set up yet: legacy Supabase function (remove after the move)
+      res = await fetch(LEGACY_SB.url + '/functions/v1/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: LEGACY_SB.key }, body: JSON.stringify(body) });
     try { d = await res.json(); } catch (x) { /* empty */ }
   } catch (x) { res = null; }
   if (!res || !res.ok) {

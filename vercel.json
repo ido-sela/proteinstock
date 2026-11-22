@@ -70,5 +70,10 @@
       "destination": "/contact",
       "permanent": true
     }
-  ]
+  ],
+  "functions": {
+    "api/setup.js": {
+      "includeFiles": "db/schema.sql"
+    }
+  }
 }

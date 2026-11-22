@@ -1,15 +1,29 @@
 /* Protein Stock — shared logic: product model, cart, header/footer */
 const SITE = { phone:'0556650400', wa:'972556650400', email:'info@proteinstock.co.il',
   address:'שדרות הראשונים 20, ראשון לציון', freeShip:499, currency:'₪' };
-/* Orders backend (Supabase). Both values are public by design; prices and totals are computed on the server. */
-const PS_CONFIG = { supabaseUrl:'https://yplzliqpohqehypllxdq.supabase.co', anonKey:'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };
+/* Backend: our own API on the same domain (/api/*, PostgreSQL behind it). Prices and totals are always computed on the server.
+   LEGACY_SB is the old Supabase project, used only as a fallback while the new database is being set up — remove after the move. */
+const LEGACY_SB = { url:'https://yplzliqpohqehypllxdq.supabase.co', key:'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };
+/* Read rows from the public data API: apiRead('products', 'id,title', [['eq','key','x']]) -> array, or null on failure. */
+async function apiRead(table, select, filters){
+  try{
+    const r = await fetch('/api/db', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({table, select, filters:filters||[]})});
+    if(r.ok){ const j = await r.json(); return Array.isArray(j.data) ? j.data : null; }
+    if(r.status !== 404 && r.status !== 503) return null;
+  }catch(e){ /* fall through */ }
+  try{   // legacy fallback (new database not ready yet)
+    const qs = (filters||[]).map(([op,c,v]) => '&' + c + '=' + op + '.' + encodeURIComponent(v)).join('');
+    const r = await fetch(LEGACY_SB.url + '/rest/v1/' + table + '?select=' + select + qs, {headers:{apikey:LEGACY_SB.key}});
+    return r.ok ? await r.json() : null;
+  }catch(e){ return null; }
+}
 /* Shipping rule (free over / fee) — public copy of the server setting; the server recomputes it for every order. */
 const SHIP = { free_over: 499, fee: 35, pickup: true };
 const shipCost = sub => (SHIP.free_over > 0 && sub >= SHIP.free_over) ? 0 : SHIP.fee;
 async function loadShipping(){
   try{
-    const r = await fetch(PS_CONFIG.supabaseUrl + '/rest/v1/site_settings?select=value&key=eq.shipping', {headers:{apikey:PS_CONFIG.anonKey}});
-    if(!r.ok) return; const a = await r.json(); const v = a[0] && a[0].value;
+    const a = await apiRead('site_settings', 'value', [['eq','key','shipping']]);
+    if(!a) return; const v = a[0] && a[0].value;
     if(v){ SHIP.free_over = Number(v.free_over) || 0; SHIP.fee = Number(v.fee) || 0; SHIP.pickup = v.pickup !== false; }
     Cart.render(); if(window.__rerender) window.__rerender();
   }catch(e){}
@@ -202,14 +216,12 @@ async function initLive(){
     document.body.append(f);
   }
 }
-/* On the hosted site the catalog comes from the Supabase `products` table (the same table the server charges from):
+/* On the hosted site the catalog comes from the `products` table in PostgreSQL (the same table the server charges from):
    prices, stock, status, title, vendor, category, tags, photo and description. Products added in the admin appear here too.
    If the request fails the built-in catalog (data.js) is used. */
 async function remoteCatalog(){
   try{
-    const r = await fetch(PS_CONFIG.supabaseUrl + '/rest/v1/products?select=id,title,description,price,old_price,out_of_stock,vendor,category,tags,image', {headers:{apikey:PS_CONFIG.anonKey}});
-    if(!r.ok) return;
-    const rows = await r.json();
+    const rows = await apiRead('products', 'id,title,description,price,old_price,out_of_stock,vendor,category,tags,image');
     if(!Array.isArray(rows) || !rows.length) return;
     const m = new Map(rows.map(x => [x.id, x]));
     const apply = (p, x, isNew) => {
@@ -236,8 +248,8 @@ async function remoteCatalog(){
       apply(p, x, true); BASE.push(p);
     });
     try{   // storefront texts edited in the admin (top bar)
-      const cr = await fetch(PS_CONFIG.supabaseUrl + '/rest/v1/site_settings?select=value&key=eq.content', {headers:{apikey:PS_CONFIG.anonKey}});
-      if(cr.ok){ const c = await cr.json(); LIVE.banner = (c[0] && c[0].value && typeof c[0].value.topbar === 'string') ? c[0].value.topbar : ''; }
+      const c = await apiRead('site_settings', 'value', [['eq','key','content']]);
+      if(c){ LIVE.banner = (c[0] && c[0].value && typeof c[0].value.topbar === 'string') ? c[0].value.topbar : ''; }
     }catch(e){}
     applyLive();
   }catch(e){}

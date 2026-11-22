@@ -118,12 +118,10 @@ textarea:focus{outline:2px solid var(--blue);outline-offset:2px}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="js/data.js"></script>
 <script src="js/catalog.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="js/db-client.js"></script>
 <script src="js/admin-products.js"></script>
 <script>
-const SB_URL = 'https://yplzliqpohqehypllxdq.supabase.co';
-const SB_KEY = 'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB';
-const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+const sb = supabase.createClient();   // our own API (js/db-client.js), PostgreSQL behind it
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const money = n => '₪' + (Math.round(Number(n) * 100) / 100).toLocaleString('he-IL');
@@ -308,8 +306,8 @@ async function orders() {
 /* ---------- AI assistant with live site preview ---------- */
 let chatHist = [];
 const AI_ERR = {
-  not_configured: 'העוזר עדיין לא מחובר. צריך להוסיף את המפתח ANTHROPIC_API_KEY ב-Supabase (Edge Functions ← Secrets).',
-  bad_key: 'המפתח של Anthropic לא תקין. בדקו את הסוד ANTHROPIC_API_KEY ב-Supabase.',
+  not_configured: 'העוזר עדיין לא מחובר. צריך להוסיף את המפתח ANTHROPIC_API_KEY בהגדרות השרת (Vercel ← Settings ← Environment Variables).',
+  bad_key: 'המפתח של Anthropic לא תקין. בדקו את המשתנה ANTHROPIC_API_KEY בהגדרות השרת ב-Vercel.',
   no_credit: 'נגמרו הקרדיטים בחשבון ה-API של Anthropic. צריך להוסיף קרדיט ב-console.anthropic.com ← Billing.',
   ai_rate_limited: 'יותר מדי בקשות ל-Anthropic ברגע זה. נסו שוב בעוד דקה.',
   rate_limited: 'הגעתם למגבלת השימוש השעתית. נסו שוב מאוחר יותר.',
@@ -429,7 +427,7 @@ async function settings() {
     if (error || !data) { st.textContent = 'לא ניתן לבדוק את מצב המפתחות כרגע.'; return; }
     ppKeys = data.keys; document.getElementById('pp-wh').textContent = data.webhook_url;
     const ok = data.keys.api_key && data.keys.secret_key;
-    st.innerHTML = ok ? '<b style="color:#1a7f37">מפתחות ה-API מחוברים בשרת.</b>' : '<b style="color:#b42318">מפתחות ה-API עדיין לא הוגדרו בשרת.</b> יש להוסיף את PAYPLUS_API_KEY ו-PAYPLUS_SECRET_KEY ב-Supabase.';
+    st.innerHTML = ok ? '<b style="color:#1a7f37">מפתחות ה-API מחוברים בשרת.</b>' : '<b style="color:#b42318">מפתחות ה-API עדיין לא הוגדרו בשרת.</b> יש להוסיף את PAYPLUS_API_KEY ו-PAYPLUS_SECRET_KEY בהגדרות השרת ב-Vercel.';
   };
   ppStatus();
   document.getElementById('pp-save').onclick = async e => {
