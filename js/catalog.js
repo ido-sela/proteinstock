@@ -11,8 +11,13 @@ const CATS = [
 ];
 /* Sugar per unit (grams) for products whose title doesn't state it. A title containing "X גרם סוכר" takes priority. */
 const SUGAR = {'57yf4w':2};
-const inCat = (p, id) => p.cat===id || (p.cats||[]).includes(id);
-const catName = id => (CATS.find(c=>c.id===id)||{}).name || '';
+/* Virtual categories: computed from product data, shown in the store only (the admin keeps using CATS). */
+const VCATS = [
+  {id:'high-protein', name:'20 גרם חלבון ומעלה', icon:'🏋️', desc:'כל המוצרים עם 20 גרם חלבון ומעלה ביחידה — חטיפים, משקאות ודייסות.', test:p=>p.protein>=20}
+];
+const SHOP_CATS = [...VCATS, ...CATS];
+const inCat = (p, id) => { const v=VCATS.find(c=>c.id===id); if(v) return v.test(p); return p.cat===id || (p.cats||[]).includes(id); };
+const catName = id => (SHOP_CATS.find(c=>c.id===id)||{}).name || '';
 
 const BRANDS = [
   ['Monster',/monster/i],['Snickers',/snickers|סניקרס/i],['Mars',/\bmars\b|מרס/i],['Warrior',/warrior/i],

@@ -92,8 +92,8 @@
 <script src="js/app.js"></script>
 <script>
 layout('home');
-document.getElementById('catband').innerHTML=CATS.map(c=>`<a href="products?cat=${c.id}">${c.name}</a>`).join('');
-document.getElementById('cats').innerHTML=CATS.slice(0,4).map(c=>`<a class="cat" href="products?cat=${c.id}"><div class="ic" aria-hidden="true">${c.icon}</div><h3>${c.name}</h3><p>${c.desc}</p><span class="go">לכל ה${c.name}</span></a>`).join('');
+document.getElementById('catband').innerHTML=SHOP_CATS.map(c=>`<a href="products?cat=${c.id}">${c.name}</a>`).join('');
+document.getElementById('cats').innerHTML=SHOP_CATS.slice(0,4).map(c=>`<a class="cat" href="products?cat=${c.id}"><div class="ic" aria-hidden="true">${c.icon}</div><h3>${c.name}</h3><p>${c.desc}</p><span class="go">לכל ה${c.name}</span></a>`).join('');
 function paintHome(){
   const feat=['0zpa50','s5r79f','nho05h','vdx2p0','5g4sp7','wu794d','euudrs','24lhib'].map(byId).filter(Boolean);
   document.getElementById('featured').innerHTML=feat.map(card).join('');

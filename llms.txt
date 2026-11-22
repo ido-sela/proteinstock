@@ -23,6 +23,7 @@
 
 ## קטגוריות
 
+- [20 גרם חלבון ומעלה](https://proteinstock.co.il/products?cat=high-protein): כל המוצרים עם 20 גרם חלבון ומעלה ביחידה
 - [חטיפי חלבון](https://proteinstock.co.il/products?cat=protein-snacks): Snickers, Mars, Warrior, Muscle Moose ועוד
 - [עוגיות חלבון](https://proteinstock.co.il/products?cat=protein-cookies): עוגיות רכות ואפויות עם 15 גרם חלבון
 - [משקאות חלבון](https://proteinstock.co.il/products?cat=protein-beverages): משקאות מוכנים לשתייה, עד 50 גרם חלבון בבקבוק

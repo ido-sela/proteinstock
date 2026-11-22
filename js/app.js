@@ -79,7 +79,7 @@ function card(p){
 /* ---------- layout ---------- */
 function layout(active){
   const q=new URLSearchParams(location.search).get('q')||'';
-  const navCats=CATS.map(c=>`<a href="products?cat=${c.id}">${c.name}</a>`).join('');
+  const navCats=SHOP_CATS.map(c=>`<a href="products?cat=${c.id}">${c.name}</a>`).join('');
   document.body.insertAdjacentHTML('afterbegin',`
   <a class="skip" href="#main">דלג לתוכן</a>
   <div class="topbar" id="topbar">🚀 <b>מחירי השקה</b> — משלוחים לכל הארץ · משלוח חינם בקנייה מעל ${money(SITE.freeShip)}</div>
@@ -107,7 +107,7 @@ function layout(active){
   <footer><div class="wrap"><div class="fgrid">
     <div><img class="flogo" src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק" width="150" height="48"><p>אבקות חלבון, חטיפי אנרגיה ומשקאות מהמותגים המובילים בעולם — איכות בינלאומית, משלוח מהיר מישראל, במחיר המשתלם ביותר.</p>
       <div class="social"><a href="https://instagram.com/protein.stock" target="_blank" rel="noopener" aria-label="Instagram">IG</a><a href="https://facebook.com/profile.php?id=100063652643790" target="_blank" rel="noopener" aria-label="Facebook">FB</a><a href="https://tiktok.com/@proten.stock" target="_blank" rel="noopener" aria-label="TikTok">TT</a><a href="https://youtube.com/@proteinstock" target="_blank" rel="noopener" aria-label="YouTube">YT</a></div></div>
-    <div><h4>קטגוריות</h4>${CATS.slice(0,6).map(c=>`<a href="products?cat=${c.id}">${c.name}</a>`).join('')}</div>
+    <div><h4>קטגוריות</h4>${SHOP_CATS.slice(0,6).map(c=>`<a href="products?cat=${c.id}">${c.name}</a>`).join('')}</div>
     <div><h4>מידע</h4><a href="why">למה פרוטאין סטוק</a><a href="brands">מותגים מכל העולם</a><a href="policies#shipping">מדיניות משלוחים</a><a href="terms#cancel">החזרות וביטול עסקה</a><a href="privacy">מדיניות פרטיות</a><a href="terms">תנאי שימוש ורכישה</a><a href="accessibility">הצהרת נגישות</a></div>
     <div><h4>יצירת קשר</h4><a href="mailto:${SITE.email}">${SITE.email}</a><a href="tel:${SITE.phone}">${SITE.phone}</a><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SITE.address)}" target="_blank" rel="noopener">${SITE.address}</a><p style="margin-top:8px">א׳–ה׳ 09:00–16:00<br>ו׳–שבת סגור</p></div>
   </div><div class="fbottom"><span>© ${new Date().getFullYear()} פרוטאין סטוק — כל הזכויות שמורות</span><span>המחירים כוללים מע"מ</span></div></div></footer>`);
