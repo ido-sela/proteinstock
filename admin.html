@@ -137,10 +137,10 @@ function showLogin(note) {
   document.body.classList.remove('sh'); app.className = 'wrap';
   app.innerHTML = `<div class="login card">
     <img src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק">
-    <h1>כניסה לניהול</h1><p id="lp">נשלח לאימייל שלך קוד כניסה בן 6 ספרות. אין סיסמה.</p>
+    <h1>כניסה לניהול</h1><p id="lp">נשלח לאימייל שלך קוד כניסה. אין סיסמה.</p>
     <form id="lf"><input type="email" id="em" placeholder="האימייל שלך" autocomplete="email" required dir="ltr" style="text-align:start">
     <button class="btn pri" style="width:100%;margin-top:10px" id="lb">שלחו לי קוד</button></form>
-    <form id="cf" hidden><input type="text" id="cd" placeholder="______" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" dir="ltr" aria-label="קוד בן 6 ספרות" style="text-align:center;letter-spacing:.5em;font-size:1.5rem;font-weight:700">
+    <form id="cf" hidden><input type="text" id="cd" placeholder="______" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="8" dir="ltr" aria-label="קוד הכניסה מהמייל" style="text-align:center;letter-spacing:.5em;font-size:1.5rem;font-weight:700">
     <button class="btn pri" style="width:100%;margin-top:10px" id="cb">כניסה</button>
     <div style="display:flex;justify-content:space-between;gap:8px;margin-top:10px"><button type="button" class="btn sm link" id="cr" disabled>שליחה חוזרת</button><button type="button" class="btn sm link" id="cx">שינוי אימייל</button></div></form>
     <div id="lm"></div>${note ? `<div class="msg err">${esc(note)}</div>` : ''}</div>`;
@@ -156,7 +156,7 @@ function showLogin(note) {
   const send = async () => {
     const { error } = await sb.auth.signInWithOtp({ email: $('em').value.trim() });
     if (error) { m.innerHTML = `<div class="msg err">לא הצלחנו לשלוח: ${esc(LERR(error))}</div>`; return false; }
-    $('lf').hidden = true; $('cf').hidden = false; $('lp').textContent = `שלחנו קוד בן 6 ספרות אל ${$('em').value.trim()}. אפשר להעתיק אותו מהמייל ולהדביק כאן.`;
+    $('lf').hidden = true; $('cf').hidden = false; $('lp').textContent = `שלחנו קוד כניסה אל ${$('em').value.trim()}. אפשר להעתיק אותו מהמייל ולהדביק כאן.`;
     m.innerHTML = '<div class="msg ok">הקוד נשלח. אם לא הגיע, בדקו בספאם.</div>';
     if (window.PSDB && (await PSDB.mode()) === 'sb') {   // Supabase emails a sign-in link (sometimes with a code too)
       $('lp').textContent = `שלחנו מייל אל ${$('em').value.trim()}. לחצו על הקישור שבמייל, באותו מחשב ובאותו דפדפן, והפאנל ייפתח. אם במייל יש קוד, אפשר גם להזין אותו כאן.`;
@@ -167,16 +167,16 @@ function showLogin(note) {
   $('lf').onsubmit = async e => { e.preventDefault(); const b = $('lb'); b.disabled = true; await send(); b.disabled = false; };
   const verify = async () => {
     const token = $('cd').value.replace(/\D/g, '');
-    if (token.length !== 6) { m.innerHTML = '<div class="msg err">יש להזין קוד בן 6 ספרות.</div>'; return; }
+    if (token.length < 6) { m.innerHTML = '<div class="msg err">יש להזין את הקוד מהמייל.</div>'; return; }
     const b = $('cb'); b.disabled = true;
     const { error } = await sb.auth.verifyOtp({ email: $('em').value.trim(), token, type: 'email' });
     b.disabled = false;
     if (error) { m.innerHTML = `<div class="msg err">${esc(LERR(error))}</div>`; $('cd').select(); }
   };
   $('cf').onsubmit = e => { e.preventDefault(); verify(); };
-  $('cd').oninput = () => { $('cd').value = $('cd').value.replace(/\D/g, '').slice(0, 6); if ($('cd').value.length === 6) verify(); };
+  $('cd').oninput = async () => { $('cd').value = $('cd').value.replace(/\D/g, '').slice(0, 8); const n = window.PSDB && (await PSDB.mode()) === 'sb' ? 8 : 6; if ($('cd').value.length === n) verify(); };
   $('cr').onclick = async () => { $('cr').disabled = true; await send(); };
-  $('cx').onclick = () => { clearTimeout(timer); $('cf').hidden = true; $('lf').hidden = false; $('lp').textContent = 'נשלח לאימייל שלך קוד כניסה בן 6 ספרות. אין סיסמה.'; m.innerHTML = ''; $('em').focus(); };
+  $('cx').onclick = () => { clearTimeout(timer); $('cf').hidden = true; $('lf').hidden = false; $('lp').textContent = 'נשלח לאימייל שלך קוד כניסה. אין סיסמה.'; m.innerHTML = ''; $('em').focus(); };
 }
 /* ---------- shell ---------- */
 const ICO = {
