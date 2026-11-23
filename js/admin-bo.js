@@ -216,20 +216,46 @@ function boChart(series) {
 function boOrdersTable(rows, opt = {}) {
   const O = BO.orders;
   const th = (k, label, cls = '') => opt.compact ? `<th class="${cls}">${label}</th>` : `<th class="${cls}"><button class="bo-sort" data-sort="${k}" aria-sort="${O.sort === k ? (O.dir === 'asc' ? 'ascending' : 'descending') : 'none'}">${label}${O.sort === k ? (O.dir === 'asc' ? ' ▲' : ' ▼') : ''}</button></th>`;
-  return `<div class="sp-tw"><table class="sp-table bo-t bo-orders"><thead><tr>${th('number', 'הזמנה')}${th('created_at', 'תאריך')}${opt.noCustomer ? '' : th('customer_name', 'לקוח')}<th class="hm">פריטים</th>${th('discount', 'קופון')}<th>תשלום</th>${th('paid_at', 'שולם ב-', 'hm')}${th('total', 'סה"כ', 'num')}</tr></thead><tbody>
-    ${rows.map(o => `<tr data-order="${esc(o.id)}" tabindex="0"><td class="bo-num"><span dir="ltr">${esc(o.number)}</span>${boSrc(o)}</td><td class="mute bo-nw">${boWhen(o.created_at)}</td>
+  return `<div class="sp-tw"><table class="sp-table bo-t bo-orders"><thead><tr>${th('number', 'הזמנה')}<th>סטטוס הזמנה</th>${th('created_at', 'תאריך')}${opt.noCustomer ? '' : th('customer_name', 'לקוח')}<th class="hm">פריטים</th>${th('discount', 'קופון')}<th>תשלום</th>${th('paid_at', 'שולם ב-', 'hm')}${th('total', 'סה"כ', 'num')}</tr></thead><tbody>
+    ${rows.map(o => `<tr data-order="${esc(o.id)}" tabindex="0"><td class="bo-num"><span dir="ltr">${esc(o.number)}</span>${boSrc(o)}</td><td class="bo-stc">${boStatusSelect(o)}</td><td class="mute bo-nw">${boWhen(o.created_at)}</td>
       ${opt.noCustomer ? '' : `<td><div class="bo-name">${esc(o.customer_name)}</div><div class="mute" dir="ltr" style="text-align:end">${esc(o.phone)}</div></td>`}
       <td class="hm mute">${(o.thumbs || []).length ? `<span class="bo-thumbs">${o.thumbs.map(t => boImg(t, 'bo-th')).join('')}</span>` : ''}${o.items != null ? o.items + ' יח׳' : ''}${o.delivery === 'pickup' ? '<div>איסוף עצמי</div>' : ''}</td>
       <td>${o.coupon_code ? `<span class="bo-code" dir="ltr">${esc(o.coupon_code)}</span><div class="neg">−${boMoney(o.discount)}</div>` : '<span class="mute">—</span>'}</td>
-      <td>${boBadge(o.status)} ${boFul(o.fulfillment)}${o.payment_provider ? `<div class="mute">${esc(o.payment_provider === 'payplus' ? 'PayPlus' : o.payment_provider)}</div>` : ''}</td>
+      <td>${boBadge(o.status)}${o.payment_provider ? `<div class="mute">${esc(o.payment_provider === 'payplus' ? 'PayPlus' : o.payment_provider)}</div>` : ''}</td>
       <td class="hm mute bo-nw">${o.paid_at ? boWhen(o.paid_at) : '—'}</td><td class="num"><b>${boMoney(o.total)}</b></td></tr>`).join('')}
   </tbody></table></div>`;
 }
+/* one "order status" per order, changeable right in the list: pending → processing → shipped → completed, or cancelled.
+   Cancelling also cancels the payment status, which returns the items to stock (and the coupon use, if it was paid). */
+const BO_CLOSED = ['cancelled', 'refunded', 'failed'];
+const boOrderStatus = o => BO_CLOSED.includes(o.status) ? o.status : (o.fulfillment || 'pending');
+function boStatusSelect(o) {
+  const cur = boOrderStatus(o);
+  if (BO_CLOSED.includes(o.status)) return `<span class="badge ${esc(o.status)}">${esc(STATUS[o.status] || o.status)}</span>`;
+  return `<select class="bo-stsel ful-${esc(cur)}" data-st-id="${esc(o.id)}" data-st-num="${esc(o.number)}" data-st-pay="${esc(o.status)}" data-st-cur="${esc(cur)}" aria-label="סטטוס הזמנה ${esc(o.number)}">${Object.entries(FUL).map(([k, v]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
+}
+async function boChangeStatus(sel) {
+  const next = sel.value, prev = sel.dataset.stCur, id = sel.dataset.stId, num = sel.dataset.stNum, pay = sel.dataset.stPay;
+  if (next === prev) return;
+  let values = { fulfillment: next };
+  if (next === 'cancelled') {
+    if (!confirm(`לבטל את הזמנה ${num}? המוצרים יחזרו למלאי${pay === 'paid' ? '. אם הלקוח שילם, צריך לבצע לו זיכוי בנפרד ב-PayPlus' : ''}.`)) { sel.value = prev; return; }
+    values = { fulfillment: 'cancelled', status: 'cancelled' };
+  }
+  sel.disabled = true;
+  const { error } = await sb.from('orders').update(values).eq('id', id);
+  sel.disabled = false;
+  if (error) { sel.value = prev; toast('השמירה נכשלה: ' + error.message); return; }
+  toast(`הזמנה ${num}: ${FUL[next]}`);
+  if (next === 'cancelled') { const td = sel.closest('td'); const row = sel.closest('tr'); td.innerHTML = `<span class="badge cancelled">${esc(STATUS.cancelled)}</span>`; const b = row && row.querySelector('.badge.' + pay); if (b) { b.className = 'badge cancelled'; b.textContent = STATUS.cancelled; } return; }
+  sel.dataset.stCur = next; sel.className = 'bo-stsel ful-' + next;
+}
 function boBindOrderRows(root) {
   root.querySelectorAll('tr[data-order]').forEach(tr => {
-    tr.onclick = () => boOrder(tr.dataset.order);
-    tr.onkeydown = e => { if (e.key === 'Enter') boOrder(tr.dataset.order); };
+    tr.onclick = e => { if (e.target.closest('.bo-stc')) return; boOrder(tr.dataset.order); };
+    tr.onkeydown = e => { if (e.target.closest('.bo-stc')) return; if (e.key === 'Enter') boOrder(tr.dataset.order); };
   });
+  root.querySelectorAll('select.bo-stsel').forEach(s => { s.onchange = () => boChangeStatus(s); });
 }
 
 async function boOrders() {
