@@ -139,7 +139,8 @@ function showLogin(note) {
     <img src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק">
     <h1>כניסה לניהול</h1><p id="lp">נשלח לאימייל שלך קוד כניסה. אין סיסמה.</p>
     <form id="lf"><input type="email" id="em" placeholder="האימייל שלך" autocomplete="email" required dir="ltr" style="text-align:start">
-    <button class="btn pri" style="width:100%;margin-top:10px" id="lb">שלחו לי קוד</button></form>
+    <button class="btn pri" style="width:100%;margin-top:10px" id="lb">שלחו לי קוד</button>
+    <button type="button" class="btn sm link" id="hc" style="margin-top:8px">כבר יש לי קוד</button></form>
     <form id="cf" hidden><input type="text" id="cd" placeholder="______" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="8" dir="ltr" aria-label="קוד הכניסה מהמייל" style="text-align:center;letter-spacing:.5em;font-size:1.5rem;font-weight:700">
     <button class="btn pri" style="width:100%;margin-top:10px" id="cb">כניסה</button>
     <div style="display:flex;justify-content:space-between;gap:8px;margin-top:10px"><button type="button" class="btn sm link" id="cr" disabled>שליחה חוזרת</button><button type="button" class="btn sm link" id="cx">שינוי אימייל</button></div></form>
@@ -176,6 +177,11 @@ function showLogin(note) {
   $('cf').onsubmit = e => { e.preventDefault(); verify(); };
   $('cd').oninput = async () => { $('cd').value = $('cd').value.replace(/\D/g, '').slice(0, 8); const n = window.PSDB && (await PSDB.mode()) === 'sb' ? 8 : 6; if ($('cd').value.length === n) verify(); };
   $('cr').onclick = async () => { $('cr').disabled = true; await send(); };
+  $('hc').onclick = () => {   // a code received another way (or an earlier email): skip sending
+    if (!$('em').checkValidity()) { $('em').reportValidity(); return; }
+    $('lf').hidden = true; $('cf').hidden = false; m.innerHTML = '';
+    $('lp').textContent = `הזינו את קוד הכניסה של ${$('em').value.trim()}.`; $('cd').value = ''; $('cd').focus();
+  };
   $('cx').onclick = () => { clearTimeout(timer); $('cf').hidden = true; $('lf').hidden = false; $('lp').textContent = 'נשלח לאימייל שלך קוד כניסה. אין סיסמה.'; m.innerHTML = ''; $('em').focus(); };
 }
 /* ---------- shell ---------- */
