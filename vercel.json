@@ -1476,6 +1476,14 @@
   },
   "rewrites": [
     {
+      "source": "/api/v1",
+      "destination": "https://yplzliqpohqehypllxdq.supabase.co/functions/v1/store-api"
+    },
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://yplzliqpohqehypllxdq.supabase.co/functions/v1/store-api/:path*"
+    },
+    {
       "source": "/product-feed.xml",
       "destination": "/api/product-feed"
     },
