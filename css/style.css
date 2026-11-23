@@ -769,7 +769,7 @@ input[type=tel]:placeholder-shown,input[type=email]:placeholder-shown{direction:
 /* page subtitle */
 .ph-sub{color:var(--muted);margin-top:6px}
 /* business page */
-.biz{padding:36px 0 80px}
+.biz{padding-top:36px;padding-bottom:80px}
 .biz-hero{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;background:var(--light);border:1px solid var(--light-2);border-radius:var(--r);padding:22px}
 .biz-hero p{max-width:640px;margin:0;font-size:1.05rem}
 .biz-h{font-size:var(--t-lg);margin:44px 0 14px}
@@ -801,3 +801,7 @@ input[type=tel]:placeholder-shown,input[type=email]:placeholder-shown{direction:
 .art-note{color:var(--muted);font-size:.9rem}
 .art-more{margin-top:36px;padding-top:18px;border-top:1px solid var(--border);display:grid;gap:6px}
 .art-more h3{margin:0 0 4px}
+/* header nav: keep every link on one line between tablet and wide desktop */
+@media (min-width:901px){.nav a,.nav button{white-space:nowrap}}
+@media (min-width:901px) and (max-width:1180px){.nav a,.nav button{padding:0 7px;font-size:.92rem}.nav{margin-inline-start:6px}.hsearch{max-width:160px}}
+@media (min-width:901px) and (max-width:1040px){.hsearch{display:none}}
