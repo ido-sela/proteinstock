@@ -608,6 +608,8 @@ function initSearchDD(){
   document.addEventListener('click',e=>{ if(!form.contains(e.target)) close(); });
 }
 setTimeout(initSearchDD,0); document.addEventListener('DOMContentLoaded',initSearchDD); window.addEventListener('load',initSearchDD);
+/* ---------- coupon link: any page opened with ?coupon=CODE fills it in at checkout ---------- */
+(function(){ try{ const c=(new URLSearchParams(location.search).get('coupon')||'').trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'').slice(0,40); if(c) sessionStorage.setItem('ps_coupon',c); }catch(e){} })();
 /* ---------- return from the payment page ---------- */
 (function(){
   const q=new URLSearchParams(location.search), s=q.get('pay'), o=(q.get('order')||'').replace(/[^A-Z0-9]/gi,'').slice(0,12);

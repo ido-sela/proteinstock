@@ -54,6 +54,31 @@ create index if not exists orders_created_idx on orders (created_at desc);
 create index if not exists orders_ip_idx      on orders (ip_hash, created_at desc);
 create index if not exists orders_status_idx  on orders (status);
 
+alter table orders add column if not exists discount    numeric not null default 0 check (discount >= 0);
+alter table orders add column if not exists coupon_code text;
+create index if not exists orders_coupon_idx on orders (coupon_code) where coupon_code is not null;
+
+-- Discount coupons (moved from the old Zappy store). uses_count counts paid orders;
+-- pending orders from the last 2 hours also hold a use, so a one-time code can't be used twice at once.
+create table if not exists coupons (
+  code             text primary key check (code = upper(code) and length(code) between 2 and 40),
+  type             text not null default 'percentage' check (type in ('percentage','fixed')),
+  value            numeric not null check (value > 0),
+  applies_to       text not null default 'all' check (applies_to in ('all','categories','products')),
+  category_ids     text[] not null default '{}',
+  product_ids      text[] not null default '{}',
+  min_order_amount numeric check (min_order_amount is null or min_order_amount >= 0),
+  max_uses         integer check (max_uses is null or max_uses > 0),
+  uses_count       integer not null default 0 check (uses_count >= 0),
+  starts_at        timestamptz,
+  ends_at          timestamptz,
+  active           boolean not null default true,
+  description      text not null default '',
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now(),
+  check (type <> 'percentage' or value <= 100)
+);
+
 create table if not exists order_items (
   id         bigint generated always as identity primary key,
   order_id   uuid not null references orders(id) on delete cascade,
@@ -163,6 +188,32 @@ begin
   return new;
 end; $$;
 
+create or replace function coupon_check(p_code text) returns jsonb language plpgsql stable as $$
+declare c coupons%rowtype; held int;
+begin
+  select * into c from coupons where code = upper(trim(p_code));
+  if not found or not c.active then return jsonb_build_object('error', 'coupon_invalid'); end if;
+  if c.starts_at is not null and now() < c.starts_at then return jsonb_build_object('error', 'coupon_not_started'); end if;
+  if c.ends_at is not null and now() > c.ends_at then return jsonb_build_object('error', 'coupon_expired'); end if;
+  if c.max_uses is not null then
+    select count(*) into held from orders where coupon_code = c.code and status = 'pending' and created_at > now() - interval '2 hours';
+    if c.uses_count + held >= c.max_uses then return jsonb_build_object('error', 'coupon_used_up'); end if;
+  end if;
+  return jsonb_build_object('code', c.code, 'type', c.type, 'value', c.value, 'applies_to', c.applies_to,
+    'category_ids', to_jsonb(c.category_ids), 'product_ids', to_jsonb(c.product_ids), 'min_order_amount', c.min_order_amount);
+end; $$;
+
+create or replace function coupon_usage() returns trigger language plpgsql as $$
+begin
+  if new.coupon_code is null then return new; end if;
+  if new.status = 'paid' and old.status is distinct from 'paid' then
+    update coupons set uses_count = uses_count + 1 where code = new.coupon_code;
+  elsif old.status = 'paid' and new.status in ('cancelled','refunded') then
+    update coupons set uses_count = greatest(uses_count - 1, 0) where code = new.coupon_code;
+  end if;
+  return new;
+end; $$;
+
 create or replace function touch_product() returns trigger language plpgsql as $$
 begin new.updated_at := now(); return new; end; $$;
 
@@ -190,6 +241,10 @@ drop trigger if exists products_status_sync on products;
 create trigger products_status_sync before insert or update on products for each row execute function sync_product_status();
 drop trigger if exists orders_paid_at on orders;
 create trigger orders_paid_at before update on orders for each row execute function touch_order_paid();
+drop trigger if exists coupons_touch on coupons;
+create trigger coupons_touch before update on coupons for each row execute function touch_product();
+drop trigger if exists orders_coupon_usage on orders;
+create trigger orders_coupon_usage after update of status on orders for each row execute function coupon_usage();
 drop trigger if exists orders_restock on orders;
 create trigger orders_restock after update of status on orders for each row execute function restock_on_cancel();
 

@@ -26,7 +26,7 @@ const wa = text => `https://wa.me/${SITE.wa}?text=${encodeURIComponent(text)}`;
 const orderLine = order ? `<p class="ty-num">מספר הזמנה <b dir="ltr">${esc(order)}</b>${last.total ? ` · סה"כ ${money(last.total)}` : ''}</p>` : '';
 let h = '';
 if (status === 'success') {
-  Cart.items = []; Cart.stored = []; try { localStorage.setItem('ps_cart', '[]'); sessionStorage.removeItem('ps_last'); } catch (e) { /* ignore */ }
+  Cart.items = []; Cart.stored = []; try { localStorage.setItem('ps_cart', '[]'); sessionStorage.removeItem('ps_last'); sessionStorage.removeItem('ps_coupon'); } catch (e) { /* ignore */ }
   Cart.render();
   document.title = 'תודה על ההזמנה — פרוטאין סטוק';
   h = `<div class="ty-i ok">✓</div><h1>תודה${last.name ? ', ' + esc(last.name.split(' ')[0]) : ''}! ההזמנה התקבלה</h1>${orderLine}

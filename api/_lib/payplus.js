@@ -18,7 +18,15 @@ const payplus = {
     if (!k.api || !k.secret) throw new Error('payplus_keys_missing');
     if (!pageUid) throw new Error('payplus_page_uid_missing');
 
-    const items = order.items.map((i) => ({ name: i.title.slice(0, 120), quantity: i.qty, price: i.unit_price }));
+    // A coupon lowers line totals; PayPlus needs the items to add up to the amount, so a discounted line is sent
+    // at its discounted unit price, or as one line for the whole quantity when the price doesn't divide evenly.
+    const items = order.items.map((i) => {
+      const full = Math.round(i.unit_price * 100) * i.qty;
+      const paid = i.line_total == null ? full : Math.round(i.line_total * 100);
+      if (paid === full) return { name: i.title.slice(0, 120), quantity: i.qty, price: i.unit_price };
+      if (paid % i.qty === 0) return { name: i.title.slice(0, 120), quantity: i.qty, price: paid / i.qty / 100 };
+      return { name: `${i.title.slice(0, 110)} ×${i.qty}`, quantity: 1, price: paid / 100 };
+    });
     const sum = Math.round(items.reduce((s, i) => s + i.price * i.quantity, 0) * 100);
     const diff = Math.round(order.total * 100) - sum;
     if (diff > 0) items.push({ name: 'משלוח', quantity: 1, price: diff / 100 });

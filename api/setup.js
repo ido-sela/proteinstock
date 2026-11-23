@@ -12,6 +12,7 @@ const TABLES = [
   ['admins', 'email'],
   ['site_settings', 'key'],
   ['products', 'id'],
+  ['coupons', 'code'],
   ['orders', 'id'],
   ['order_items', 'id'],
   ['payment_events', 'id'],

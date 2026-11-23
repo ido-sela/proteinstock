@@ -35,6 +35,11 @@ const save = () => {
 };
 const note = () => { try { return sessionStorage.getItem('ps_note') || ''; } catch (e) { return ''; } };
 let busy = false, built = false, openStep = 1, giveUp = false, method = 'shipping';
+let coupon = null;   // { code, discount } — the discount is always priced by the server for the current cart
+const CP_ERR = { coupon_invalid: 'קוד הקופון לא קיים או שאינו פעיל', coupon_expired: 'תוקף הקופון פג', coupon_not_started: 'הקופון עדיין לא בתוקף', coupon_used_up: 'הקופון כבר נוצל', coupon_not_applicable: 'הקופון לא חל על המוצרים שבעגלה', coupon_min_order: 'הקופון תקף בהזמנה מעל ', network: 'אין חיבור לשרת, נסו שוב' };
+const cpMsg = d => d.error === 'coupon_min_order' ? CP_ERR.coupon_min_order + money(d.min || 0) : (CP_ERR[d.error] || 'לא הצלחנו לבדוק את הקופון, נסו שוב');
+const savedCoupon = () => { try { return sessionStorage.getItem('ps_coupon') || ''; } catch (e) { return ''; } };
+const keepCoupon = c => { try { c ? sessionStorage.setItem('ps_coupon', c) : sessionStorage.removeItem('ps_coupon'); } catch (e) { /* ignore */ } };
 setTimeout(() => { giveUp = true; if (!built) buildForm(); }, 4000);
 const pending = () => Cart.stored.length > Cart.items.filter(i => byId(i.id)).length && !window.__liveReady && !giveUp;
 
@@ -53,9 +58,50 @@ const field = (id, label, opts = {}) => `<div class="ck-f"><label for="f-${id}">
 function mergedItems() { const m = new Map(); Cart.items.forEach(i => m.set(i.id, (m.get(i.id) || 0) + i.q)); return [...m].map(([id, qty]) => ({ id, qty })); }
 function packNotes() { const l = Cart.items.filter(i => i.v).map(i => `${byId(i.id).name.slice(0, 40)} ×${i.q}: ${i.v}`); return l.length ? 'הרכב מארז — ' + l.join(' | ') + '\n' : ''; }
 function totals() {
-  const sub = Cart.total(), ship = method === 'pickup' ? 0 : shipCost(sub), total = sub + ship;
-  return { sub, ship, total, vat: Math.round(total * VAT / (1 + VAT) * 100) / 100 };
+  const sub = Cart.total(), disc = coupon ? Math.min(coupon.discount, sub) : 0;
+  const ship = method === 'pickup' ? 0 : shipCost(sub - disc), total = Math.round((sub - disc + ship) * 100) / 100;   // free shipping counts the total after the discount
+  return { sub, disc, ship, total, vat: Math.round(total * VAT / (1 + VAT) * 100) / 100 };
 }
+
+/* coupon: priced by the same server function that creates the order ({ action: 'quote' } stores nothing) */
+async function quote(code) {
+  const body = JSON.stringify({ action: 'quote', coupon: code, delivery: method, items: mergedItems() });
+  let r, d = {};
+  try {
+    r = await fetch('/api/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    if (r.status === 404 || r.status === 503)   // new database not set up yet: legacy Supabase function (remove after the move)
+      r = await fetch(LEGACY_SB.url + '/functions/v1/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: LEGACY_SB.key }, body });
+    try { d = await r.json(); } catch (x) { /* empty */ }
+  } catch (x) { return { error: 'network' }; }
+  return r.ok ? d : { error: d.error || 'server', min: d.min };
+}
+let cpSeq = 0;
+async function applyCoupon(code, quiet) {
+  code = String(code || '').trim().toUpperCase().slice(0, 40);
+  const e = document.getElementById('e-coupon'), btn = document.getElementById('cp-apply');
+  if (!code) { if (e) e.textContent = 'נא להזין קוד קופון'; return; }
+  const seq = ++cpSeq;
+  if (btn) { btn.disabled = true; btn.textContent = 'בודקים…'; }
+  const d = await quote(code);
+  if (seq !== cpSeq) return;
+  if (btn) { btn.disabled = false; btn.textContent = 'החלה'; }
+  if (d.error) {
+    const had = coupon; coupon = null; keepCoupon(''); paintCoupon();
+    if (!quiet || had) { const el = document.getElementById('e-coupon'); if (el) el.textContent = had ? 'הקופון ' + had.code + ' הוסר: ' + cpMsg(d) : cpMsg(d); openCoupon(true); }
+    refresh(); return;
+  }
+  coupon = { code: d.coupon, discount: Number(d.discount) || 0 };
+  keepCoupon(coupon.code); paintCoupon(); refresh();
+}
+function removeCoupon() { cpSeq++; coupon = null; keepCoupon(''); paintCoupon(); refresh(); }
+function openCoupon(on) { const r = document.getElementById('cp-row'), t = document.getElementById('cp-toggle'); if (r) r.hidden = !on; if (t) t.setAttribute('aria-expanded', on); }
+function paintCoupon() {
+  const box = document.getElementById('ck-coupon'), row = document.getElementById('s-disc-row'); if (!box || !row) return;
+  box.hidden = !!coupon; row.hidden = !coupon;
+  if (coupon) { document.getElementById('s-cp').textContent = coupon.code; document.getElementById('e-coupon').textContent = ''; const i = document.getElementById('f-coupon'); if (i) i.value = ''; }
+}
+let rq = 0;
+function requote() { if (!coupon) return; clearTimeout(rq); const c = coupon.code; rq = setTimeout(() => applyCoupon(c, true), 350); }
 function itemsHtml() {
   return Cart.items.filter(i => byId(i.id)).map(i => { const p = byId(i.id); return `<div class="ck-item"><div class="ck-thumb"><img src="${p.img}" alt="" width="64" height="64"><i>${i.q}</i></div><div class="ck-iname"><span>${esc(p.name)}</span>${i.v ? `<small>הרכב: ${esc(i.v)}</small>` : ''}${p.brand ? `<small>${esc(p.brand)}</small>` : ''}</div><b>${money(p.price * i.q)}</b></div>`; }).join('');
 }
@@ -98,7 +144,11 @@ function buildForm() {
     ${step(4, 'items', 'פריטים', I.tag, `<div class="ck-items" id="ck-items">${itemsHtml()}</div><a class="ck-edit" href="cart">עריכת העגלה</a>`)}
   </form>
   <aside class="ck-sum" aria-label="פרטי ההזמנה"><h2>פרטי ההזמנה</h2><hr>
+    <div class="ck-coupon" id="ck-coupon"><button type="button" class="ck-cp-toggle" id="cp-toggle" aria-expanded="false" aria-controls="cp-row">יש לך קוד קופון?</button>
+      <div class="ck-cp-row" id="cp-row" hidden><label for="f-coupon" class="sr-only">קוד קופון</label><input id="f-coupon" type="text" placeholder="קוד קופון" dir="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40"><button type="button" id="cp-apply">החלה</button></div>
+      <small class="ck-e" id="e-coupon" role="alert"></small></div>
     <div class="ck-sl"><span>סכום ביניים:</span><b id="s-sub">${money(t.sub)}</b></div>
+    <div class="ck-sl ck-disc" id="s-disc-row" hidden><span>הנחת קופון <b id="s-cp" dir="ltr"></b> <button type="button" class="ck-cp-x" id="cp-remove" aria-label="הסרת הקופון">הסרה</button></span><b id="s-disc">−${money(t.disc)}</b></div>
     <div class="ck-sl vat"><span>כולל מע"מ:</span><span id="s-vat">${money(t.vat)}</span></div>
     <div class="ck-sl"><span>משלוח:</span><b id="s-ship">${t.ship ? money(t.ship) : 'חינם'}</b></div>
     <hr>
@@ -120,8 +170,15 @@ function buildForm() {
   });
   document.getElementById('f-terms').addEventListener('change', e => { document.getElementById('ck-go').disabled = !e.target.checked || busy; document.getElementById('e-terms').textContent = ''; });
   form.addEventListener('change', e => { if (e.target.name === 'ship') setMethod(e.target.value); });
+  document.getElementById('cp-toggle').addEventListener('click', () => { openCoupon(true); document.getElementById('f-coupon').focus(); });
+  document.getElementById('cp-apply').addEventListener('click', () => applyCoupon(document.getElementById('f-coupon').value));
+  document.getElementById('f-coupon').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyCoupon(e.target.value); } });
+  document.getElementById('f-coupon').addEventListener('input', () => { document.getElementById('e-coupon').textContent = ''; });
+  document.getElementById('cp-remove').addEventListener('click', removeCoupon);
+  paintCoupon();
   setMethod(method, true);
   paintLines(); paintBag();
+  if (!coupon && savedCoupon()) applyCoupon(savedCoupon(), true);
 }
 
 function setMethod(m, silent) {
@@ -132,11 +189,11 @@ function setMethod(m, silent) {
   if (a) a.hidden = m === 'pickup';
   if (pk) pk.hidden = m !== 'pickup';
   paintShipLabels();
-  if (!silent) refresh();
+  if (!silent) { refresh(); requote(); }
   paintLines();
 }
 function paintShipLabels() {
-  const c = shipCost(Cart.total());
+  const c = shipCost(totals().sub - totals().disc);
   const row = document.getElementById('ck-shiprow'); if (row) row.textContent = c ? money(c) : 'חינם';
   const nt = document.getElementById('ck-shipnote'); if (nt) nt.textContent = SHIP.free_over > 0 ? ('חינם בהזמנה מעל ' + money(SHIP.free_over) + ' · זמן האספקה יאושר בעת אישור ההזמנה') : 'זמן האספקה יאושר בעת אישור ההזמנה';
   const po = document.getElementById('ck-pickopt'); if (po) po.hidden = SHIP.pickup === false;
@@ -164,6 +221,7 @@ function refresh() {
   const t = totals();
   document.getElementById('ck-items').innerHTML = itemsHtml();
   document.getElementById('s-sub').textContent = money(t.sub);
+  document.getElementById('s-disc').textContent = '−' + money(t.disc);
   document.getElementById('s-vat').textContent = money(t.vat);
   document.getElementById('s-ship').textContent = t.ship ? money(t.ship) : 'חינם';
   document.getElementById('s-tot').textContent = money(t.total);
@@ -187,14 +245,14 @@ function validate(n) {
   return !first;
 }
 
-const ERR = { ...ORDER_ERR, invalid_email: 'נא להזין כתובת דוא"ל תקינה', invalid_items: 'העגלה אינה תקינה, רעננו את הדף', rate_limited: 'יותר מדי הזמנות בזמן קצר. נסו שוב בעוד כמה דקות.', unavailable: 'חלק מהמוצרים כבר לא זמינים. חזרו לעגלה כדי לעדכן.' };
+const ERR = { ...ORDER_ERR, ...CP_ERR, invalid_email: 'נא להזין כתובת דוא"ל תקינה', invalid_items: 'העגלה אינה תקינה, רעננו את הדף', rate_limited: 'יותר מדי הזמנות בזמן קצר. נסו שוב בעוד כמה דקות.', unavailable: 'חלק מהמוצרים כבר לא זמינים. חזרו לעגלה כדי לעדכן.' };
 
 async function submit(e) {
   e.preventDefault();
   if (busy) return;
   if (!document.getElementById('f-terms').checked) { document.getElementById('e-terms').textContent = 'יש לאשר את התנאים כדי להמשיך'; return; }
   for (const n of [1, 2]) { if (!validate(n)) { openAt(n); return; } }
-  const body = { name: val('name'), phone: val('phone'), email: val('email'), delivery: method, address: method === 'pickup' ? '' : (val('address') + (val('apt') ? ' — ' + val('apt') : '')), notes: (packNotes() + val('notes')).slice(0, 300), items: mergedItems() };
+  const body = { name: val('name'), phone: val('phone'), email: val('email'), delivery: method, address: method === 'pickup' ? '' : (val('address') + (val('apt') ? ' — ' + val('apt') : '')), notes: (packNotes() + val('notes')).slice(0, 300), items: mergedItems(), coupon: coupon ? coupon.code : undefined };
   const btn = document.getElementById('ck-go'), t = document.getElementById('ck-go-t'), err = document.getElementById('ck-err');
   busy = true; btn.disabled = true; t.textContent = 'שולחים…'; err.hidden = true;
   let res, d = {};
@@ -206,12 +264,13 @@ async function submit(e) {
   } catch (x) { res = null; }
   if (!res || !res.ok) {
     busy = false; btn.disabled = false; t.textContent = 'בצע הזמנה';
-    err.textContent = !res ? 'אין חיבור לשרת. בדקו את האינטרנט ונסו שוב.' : (ERR[d.error] || 'לא הצלחנו לשלוח את ההזמנה. נסו שוב או פנו אלינו בוואטסאפ.');
+    err.textContent = !res ? 'אין חיבור לשרת. בדקו את האינטרנט ונסו שוב.' : (String(d.error || '').startsWith('coupon_') ? 'הקופון ' + (coupon ? coupon.code + ' ' : '') + 'לא הופעל: ' + cpMsg(d) + '. הסרנו אותו — אפשר לבצע את ההזמנה בלעדיו.' : (ERR[d.error] || 'לא הצלחנו לשלוח את ההזמנה. נסו שוב או פנו אלינו בוואטסאפ.'));
+    if (String(d.error || '').startsWith('coupon_')) removeCoupon();
     err.hidden = false; err.scrollIntoView({ block: 'center', behavior: 'smooth' });
     return;
   }
   const pay = typeof d.payment_url === 'string' && d.payment_url.startsWith('https://') ? d.payment_url : '';
-  try { sessionStorage.setItem('ps_last', JSON.stringify({ number: d.order_number, total: d.total, name: body.name, paid: !!pay })); sessionStorage.removeItem('ps_note'); } catch (x) { /* ignore */ }
+  try { sessionStorage.setItem('ps_last', JSON.stringify({ number: d.order_number, total: d.total, name: body.name, paid: !!pay })); sessionStorage.removeItem('ps_note'); if (!pay) sessionStorage.removeItem('ps_coupon'); } catch (x) { /* ignore */ }
   if (pay) { t.textContent = 'מעבירים לתשלום…'; location.href = pay; return; }   // the cart stays until the payment succeeds
   Cart.items = []; Cart.stored = []; try { localStorage.setItem('ps_cart', '[]'); } catch (x) { /* ignore */ }
   location.href = 'thank-you?status=received&order=' + encodeURIComponent(d.order_number);
@@ -219,7 +278,7 @@ async function submit(e) {
 
 Cart.load();
 buildForm();
-window.__rerender = refresh;
+window.__rerender = () => { refresh(); requote(); };
 initLive();
 </script>
 </body>

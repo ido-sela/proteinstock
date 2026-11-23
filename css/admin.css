@@ -205,3 +205,14 @@ input[type=email],input[type=text],input[type=number],input[type=search],input[t
 .sh-back:hover{background:#4a4a4a}
 .sh-back svg{width:14px;height:14px;flex:none}
 #em:placeholder-shown{direction:rtl;text-align:right!important}
+/* coupons */
+.cp-table td{font-size:13px}
+.cp-code{font-weight:650;white-space:nowrap}
+.cp-dates{white-space:nowrap;color:var(--mute)}
+.cp-desc{color:var(--mute);max-width:320px}
+.cp-st{font-size:12px;font-weight:650;padding:2px 9px;border-radius:99px;background:var(--chip);white-space:nowrap}
+.cp-st.on{background:#d9f2e3;color:#0c5132}.cp-st.used{background:#e3e3e3;color:#4a4a4a}.cp-st.exp,.cp-st.off{background:#fde8e6;color:#8e1f0b}.cp-st.soon{background:#fff1d6;color:#5e4200}
+.cp-pg{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px;color:var(--mute);font-size:13px}
+.cp-form{display:grid;gap:12px;max-width:720px}
+.cp-picks{display:grid;gap:6px;padding:10px;border:1px solid var(--line);border-radius:10px}
+.cp-plist{display:grid;gap:4px;max-height:260px;overflow:auto}

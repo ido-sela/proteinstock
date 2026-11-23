@@ -20,11 +20,17 @@ const T = {
   },
   orders: {
     pk: 'id',
-    cols: ['id', 'number', 'status', 'customer_name', 'phone', 'email', 'address', 'notes', 'subtotal', 'shipping', 'total', 'currency', 'payment_provider', 'payment_ref', 'paid_at', 'delivery', 'created_at'],
+    cols: ['id', 'number', 'status', 'customer_name', 'phone', 'email', 'address', 'notes', 'subtotal', 'discount', 'coupon_code', 'shipping', 'total', 'currency', 'payment_provider', 'payment_ref', 'paid_at', 'delivery', 'created_at'],
     write: ['status'], ops: ['select', 'update'],
     embed: { order_items: { fk: 'order_id', cols: ['id', 'product_id', 'title', 'unit_price', 'qty', 'line_total'] } },
   },
   order_items: { pk: 'id', cols: ['id', 'order_id', 'product_id', 'title', 'unit_price', 'qty', 'line_total'], ops: ['select'] },
+  coupons: {
+    pk: 'code',
+    cols: ['code', 'type', 'value', 'applies_to', 'category_ids', 'product_ids', 'min_order_amount', 'max_uses', 'uses_count', 'starts_at', 'ends_at', 'active', 'description', 'created_at', 'updated_at'],
+    write: ['code', 'type', 'value', 'applies_to', 'category_ids', 'product_ids', 'min_order_amount', 'max_uses', 'starts_at', 'ends_at', 'active', 'description'],
+    ops: ['select', 'insert', 'update', 'delete'],
+  },
   admins: { pk: 'email', cols: ['email', 'added_at'], ops: ['select'] },
   payment_events: { pk: 'id', cols: ['id', 'provider', 'event_id', 'order_number', 'payload', 'received_at'], ops: ['select'] },
   admin_log: { pk: 'id', cols: ['id', 'at', 'admin_email', 'kind', 'detail'], ops: ['select'] },
