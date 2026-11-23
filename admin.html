@@ -158,6 +158,10 @@ function showLogin(note) {
     if (error) { m.innerHTML = `<div class="msg err">לא הצלחנו לשלוח: ${esc(LERR(error))}</div>`; return false; }
     $('lf').hidden = true; $('cf').hidden = false; $('lp').textContent = `שלחנו קוד בן 6 ספרות אל ${$('em').value.trim()}. אפשר להעתיק אותו מהמייל ולהדביק כאן.`;
     m.innerHTML = '<div class="msg ok">הקוד נשלח. אם לא הגיע, בדקו בספאם.</div>';
+    if (window.PSDB && (await PSDB.mode()) === 'sb') {   // Supabase emails a sign-in link (sometimes with a code too)
+      $('lp').textContent = `שלחנו מייל אל ${$('em').value.trim()}. לחצו על הקישור שבמייל, באותו מחשב ובאותו דפדפן, והפאנל ייפתח. אם במייל יש קוד, אפשר גם להזין אותו כאן.`;
+      m.innerHTML = '<div class="msg ok">המייל נשלח מ-noreply@mail.app.supabase.io. אם לא הגיע תוך דקה, בדקו בספאם.</div>';
+    }
     cool = 45; clearTimeout(timer); tick(); $('cd').value = ''; $('cd').focus(); return true;
   };
   $('lf').onsubmit = async e => { e.preventDefault(); const b = $('lb'); b.disabled = true; await send(); b.disabled = false; };

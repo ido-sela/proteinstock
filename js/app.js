@@ -1,4 +1,6 @@
 /* Protein Stock — shared logic: product model, cart, header/footer */
+/* An admin login link from the email can land on the home page (Supabase's site address): pass it on to the admin panel. */
+if (/[#&]access_token=/.test(location.hash) && /type=(magiclink|signup|invite|recovery)/.test(location.hash) && !/\/admin/.test(location.pathname)) location.replace('/admin' + location.hash);
 const SITE = { phone:'0556650400', wa:'972556650400', email:'info@proteinstock.co.il',
   address:'שדרות הראשונים 20, ראשון לציון', freeShip:499, currency:'₪' };
 /* Backend: our own API on the same domain (/api/*, PostgreSQL behind it). Prices and totals are always computed on the server.

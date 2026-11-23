@@ -147,7 +147,7 @@
     auth: {
       getSession: via(m => (m === 'api' ? auth : sbc.auth).getSession()),
       onAuthStateChange(cb) { let sub = null; mode().then(m => { sub = (m === 'api' ? auth : sbc.auth).onAuthStateChange(cb); }); return { data: { subscription: { unsubscribe() { const s = sub && sub.data && sub.data.subscription; if (s) s.unsubscribe(); } } } }; },
-      signInWithOtp: via((m, o) => (m === 'api' ? auth.signInWithOtp(o) : sbc.auth.signInWithOtp({ email: o.email, options: { shouldCreateUser: true } }))),
+      signInWithOtp: via((m, o) => (m === 'api' ? auth.signInWithOtp(o) : sbc.auth.signInWithOtp({ email: o.email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + '/admin' } }))),
       verifyOtp: via((m, o) => (m === 'api' ? auth : sbc.auth).verifyOtp({ type: 'email', ...o })),
       signOut: via(m => (m === 'api' ? auth : sbc.auth).signOut()),
     },
