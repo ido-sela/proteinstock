@@ -805,3 +805,12 @@ input[type=tel]:placeholder-shown,input[type=email]:placeholder-shown{direction:
 @media (min-width:901px){.nav a,.nav button{white-space:nowrap}}
 @media (min-width:901px) and (max-width:1180px){.nav a,.nav button{padding:0 7px;font-size:.92rem}.nav{margin-inline-start:6px}.hsearch{max-width:160px}}
 @media (min-width:901px) and (max-width:1040px){.hsearch{display:none}}
+
+/* product gallery (all photos of a product) */
+.pp-gal{position:sticky;top:100px;align-self:start;min-width:0}
+.pp-gal .pp-img{position:static}
+.pp-thumbs{display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
+.pp-th{flex:0 0 72px;height:72px;border:1px solid var(--border);border-radius:10px;background:#fff;padding:4px;cursor:pointer;scroll-snap-align:start}
+.pp-th img{width:100%;height:100%;object-fit:contain;display:block}
+.pp-th.on{border-color:currentColor;box-shadow:0 0 0 1px currentColor}
+@media (max-width:860px){.pp-gal{position:static}.pp-th{flex-basis:60px;height:60px}}

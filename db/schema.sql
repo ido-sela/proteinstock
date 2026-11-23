@@ -17,6 +17,7 @@ create table if not exists products (
   category     text,
   tags         text[] not null default '{}',
   image        text,
+  images       text[] not null default '{}',   -- all photos (gallery), main first
   quantity     integer check (quantity is null or quantity >= 0),
   sku          text,
   status       text not null default 'active' check (status in ('active','draft','archived')),
@@ -54,6 +55,7 @@ create index if not exists orders_created_idx on orders (created_at desc);
 create index if not exists orders_ip_idx      on orders (ip_hash, created_at desc);
 create index if not exists orders_status_idx  on orders (status);
 
+alter table products add column if not exists images text[] not null default '{}';
 alter table orders add column if not exists discount    numeric not null default 0 check (discount >= 0);
 alter table orders add column if not exists coupon_code text;
 -- shipping status / tracking, and where the order came from ('site' or 'zappy' for orders imported from the old store)

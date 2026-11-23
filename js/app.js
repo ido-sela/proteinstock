@@ -228,7 +228,7 @@ async function initLive(){
    If the request fails the built-in catalog (data.js) is used. */
 async function remoteCatalog(){
   try{
-    const rows = await apiRead('products', 'id,title,description,price,old_price,out_of_stock,vendor,category,tags,image');
+    const rows = await apiRead('products', 'id,title,description,price,old_price,out_of_stock,vendor,category,tags,image,images');
     if(!Array.isArray(rows) || !rows.length) return;
     const m = new Map(rows.map(x => [x.id, x]));
     const apply = (p, x, isNew) => {
@@ -240,6 +240,7 @@ async function remoteCatalog(){
       if(full && x.category && CATS.some(c => c.id === x.category)) p.cat = x.category;
       if(full && Array.isArray(x.tags) && x.tags.length) p.tags = x.tags.filter(t => t !== 'אזל');
       if(x.image) p.img = x.image;
+      p.imgs = [p.img, ...(Array.isArray(x.images) ? x.images : []).filter(u => u && u !== p.img)];   // all product photos (gallery); the main photo chosen in the admin always first
       p.desc = x.description || '';
     };
     for(let i = BASE.length - 1; i >= 0; i--){

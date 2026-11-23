@@ -134,7 +134,7 @@ else{
   const specs=productSpecs(p);
   const q=1; let qty=1;
   host.innerHTML=`<div class="crumbs" style="padding-top:24px"><a href="/">בית</a> / <a href="products">מוצרים</a> / <a href="category/${p.cat}">${catName(p.cat)}</a></div>
-  <div class="pp"><div class="pp-img"><img src="${p.img}" alt="${esc(p.name)}" width="800" height="800"></div>
+  <div class="pp"><div class="pp-gal"><div class="pp-img"><img id="pp-main" src="${p.img}" alt="${esc(p.name)}" width="800" height="800"></div>${(p.imgs||[]).length>1?`<div class="pp-thumbs" role="list">${p.imgs.map((u,i)=>`<button type="button" class="pp-th${i?'':' on'}" data-src="${esc(u)}" aria-label="תמונה ${i+1} מתוך ${p.imgs.length}" role="listitem"><img src="${esc(u)}" alt="" loading="lazy" width="120" height="120"></button>`).join('')}</div>`:''}</div>
   <div><span class="pbrand">${esc(p.brand)}</span><h1>${esc(p.name)}</h1>
   <div class="ptags" style="position:static;flex-direction:row;flex-wrap:wrap;margin-bottom:12px">${p.sale?`<span class="tag sale">${p.pct}%- הנחה</span>`:''}${p.tags.map(t=>`<span class="tag green">${esc(t)}</span>`).join('')}</div>
   <div class="price">${money(p.price)}${p.sale?`<s>${money(p.old)}</s>`:''}</div><p class="vat">המחיר כולל מע"מ</p>
@@ -150,6 +150,7 @@ else{
   const packs=packOptions(p); let pack=0;
   const pk=document.getElementById('pack'); if(pk) pk.onclick=e=>{ const b=e.target.closest('[data-pack]'); if(!b) return; pack=+b.dataset.pack; pk.querySelectorAll('.vopt').forEach(x=>x.classList.toggle('on',x===b)); document.getElementById('pack-cur').textContent=packs[pack]; };
   document.getElementById('buy').onclick=()=>{Cart.add(p.id,qty,pack?packs[pack]:'');Cart.open();};
+  const th=host.querySelector('.pp-thumbs'); if(th) th.onclick=e=>{ const b=e.target.closest('.pp-th'); if(!b) return; document.getElementById('pp-main').src=b.dataset.src; th.querySelectorAll('.pp-th').forEach(x=>x.classList.toggle('on',x===b)); };
   const rel=PRODUCTS.filter(x=>x.cat===p.cat&&x.id!==p.id&&!x.out).slice(0,4);
   document.getElementById('rel').innerHTML=rel.map(card).join('');
   if(relSec) relSec.hidden=!rel.length;
