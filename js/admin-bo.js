@@ -28,6 +28,7 @@ const BO_ICO = {
   home: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 16.5V9l6.5-5.5L16.5 9v7.5h-4.5v-4.5h-4v4.5z"/></svg>',
   customers: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 16.5c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/><path d="M13 4.2a3 3 0 0 1 0 5.6M15 12.3c1.3.6 2.2 2 2.5 4.2"/></svg>',
   couponUse: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 16.5h13"/><path d="M5.5 13.5v-4M10 13.5v-8M14.5 13.5v-6"/></svg>',
+  abandoned: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3.5h2l2 9h9l1.5-6.5H6"/><circle cx="8" cy="16" r="1"/><circle cx="14" cy="16" r="1"/><path d="M10.5 7.5l3 3M13.5 7.5l-3 3"/></svg>',
   print: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 7.5v-4h9v4M5.5 13.5h-2v-6h13v6h-2"/><path d="M5.5 11.5h9v5h-9z"/></svg>',
   dl: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5v9M6.5 9l3.5 3.5L13.5 9M4 15.5h12"/></svg>',
 };
@@ -478,6 +479,37 @@ async function boCoupon(code, back) {
   boBindOrderRows(pane());
 }
 
+/* ---------- abandoned carts (checkout drafts with phone/email that did not become an order) ---------- */
+async function boAbandoned() {
+  setBar('abandoned', 'עגלות נטושות');
+  document.getElementById('panel').classList.add('gray');
+  boHash('');
+  const R = pane();
+  if (!(window.PSDB && (await PSDB.mode()) === 'sb')) { R.innerHTML = boError('עגלות נטושות זמינות כרגע רק כשהנתונים ב-Supabase.'); return; }
+  const show = BO.abShow || 'open';
+  R.innerHTML = boLoading();
+  const { data, error } = await PSDB.rpc('admin_abandoned', { p: { show } });
+  if (error) { R.innerHTML = boError(error.message); return; }
+  const rows = data.rows || [];
+  const waText = a => `היי ${a.name ? a.name.split(' ')[0] : ''}, ראינו שהתחלת הזמנה בפרוטאין סטוק ולא סיימת 🙂\nהמוצרים מחכים לך בעגלה: ${(a.items || []).map(i => i.name ? i.name.split('|')[0].trim() : i.id).slice(0, 3).join(', ')}\nאפשר להשלים כאן: https://proteinstock.co.il/checkout\nצריך עזרה? אנחנו כאן.`;
+  R.innerHTML = `<div class="bo-tiles bo-tiles4">
+      <div class="bo-tile"><span class="bo-tl">עגלות פתוחות</span><span class="bo-tv">${data.open}</span><span class="bo-ts">לא הושלמו 30+ דקות</span></div>
+      <div class="bo-tile"><span class="bo-tl">שווי העגלות הפתוחות</span><span class="bo-tv">${boMoney(data.open_value)}</span><span class="bo-ts"></span></div>
+      <div class="bo-tile"><span class="bo-tl">עגלות שהושלמו להזמנה</span><span class="bo-tv">${data.recovered}</span><span class="bo-ts">הלקוח חזר וקנה</span></div>
+      <div class="bo-tile"><span class="bo-tl">הכנסות מעגלות שחזרו</span><span class="bo-tv">${boMoney(data.recovered_value)}</span><span class="bo-ts"></span></div></div>
+    <section class="sp-card"><div class="sp-tabbar"><div class="tb" role="tablist"><button role="tab" data-ab="open" aria-selected="${show === 'open'}">פתוחות</button><button role="tab" data-ab="all" aria-selected="${show === 'all'}">הכל</button></div></div>
+    ${rows.length ? `<div class="sp-tw"><table class="sp-table bo-t"><thead><tr><th>לקוח</th><th>מוצרים בעגלה</th><th class="num">שווי</th><th>עודכן</th><th>מצב</th><th></th></tr></thead><tbody>
+      ${rows.map(a => `<tr data-ab-id="${esc(a.id)}"><td><div class="bo-name">${esc(a.name || '—')}</div><div class="mute" dir="ltr" style="text-align:end">${esc(a.phone || '')}${a.phone && a.email ? ' · ' : ''}${esc(a.email || '')}</div></td>
+        <td><span class="bo-thumbs">${(a.items || []).slice(0, 4).map(i => { const p = typeof byId === 'function' ? null : null; return `<span class="mute">${esc((i.name || i.id).split('|')[0].trim().slice(0, 40))} ×${i.q}</span>`; }).join('<br>')}</span></td>
+        <td class="num"><b>${boMoney(a.total)}</b></td><td class="mute bo-nw">${boWhen(a.updated_at)}</td>
+        <td>${a.recovered_order ? `<span class="badge paid">הושלמה · ${esc(a.recovered_order)}</span>` : a.contacted_at ? '<span class="badge pending">נשלחה תזכורת</span>' : '<span class="badge">פתוחה</span>'}</td>
+        <td class="bo-nw">${!a.recovered_order && a.phone ? `<a class="btn sm" data-wa="${esc(a.id)}" target="_blank" rel="noopener" href="${esc(boWa(a.phone) + '?text=' + encodeURIComponent(waText(a)))}">תזכורת בוואטסאפ</a>` : ''}${!a.recovered_order && a.email ? ` <a class="btn sm" data-wa="${esc(a.id)}" href="mailto:${esc(a.email)}?subject=${encodeURIComponent('העגלה שלך מחכה לך — פרוטאין סטוק')}&body=${encodeURIComponent(waText(a))}">מייל</a>` : ''}</td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="sp-empty">אין כרגע עגלות נטושות. עגלה נשמרת כשלקוח מזין טלפון או אימייל בקופה ולא מסיים הזמנה תוך 30 דקות.</p>'}</section>
+    <p class="who">לקוח שחוזר וקונה עם אותו טלפון או אימייל מסומן אוטומטית כ"הושלמה". אירועי AddToCart ו-InitiateCheckout נשלחים גם לפייסבוק ולגוגל לקהלי רימרקטינג.</p>`;
+  R.querySelectorAll('[data-ab]').forEach(b => b.onclick = () => { BO.abShow = b.dataset.ab; boAbandoned(); });
+  R.querySelectorAll('[data-wa]').forEach(a => a.addEventListener('click', () => { sb.from('abandoned_checkouts').update({ contacted_at: new Date().toISOString() }).eq('id', a.dataset.wa).then(() => {}); }));
+}
+
 /* ---------- navigation helpers ---------- */
 let boCur = { view: 'home' };
 function boBack() { return boCur; }
@@ -504,6 +536,7 @@ const home = () => { boCur = { view: 'home' }; boHash(''); boHome(); };
 const orders = () => { boCur = { view: 'orders' }; boHash(''); boOrders(); };
 const customers = () => { boCur = { view: 'customers' }; boHash(''); boCustomers(); };
 const couponUse = () => { boCur = { view: 'couponUse' }; boHash(''); boCouponUse(); };
+const abandoned = () => { boCur = { view: 'abandoned' }; boHash(''); boAbandoned(); };
 /* deep links: #order=<id>, #customer=<phone>, #coupon=<code> */
 function boDeepLink() {
   const m = location.hash.match(/^#(order|customer|coupon)=(.+)$/); if (!m) return false;

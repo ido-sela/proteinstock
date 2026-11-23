@@ -6,6 +6,10 @@ const SITE = { phone:'0556650400', wa:'972556650400', email:'info@proteinstock.c
 /* Backend: our own API on the same domain (/api/*, PostgreSQL behind it). Prices and totals are always computed on the server.
    LEGACY_SB is the old Supabase project, used only as a fallback while the new database is being set up — remove after the move. */
 const LEGACY_SB = { url:'https://yplzliqpohqehypllxdq.supabase.co', key:'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };
+/* Marketing & analytics tags (Meta Pixel, GA4, Cloudflare, store events, cart abandonment): js/track.js.
+   The paid order is read now, before order-success clears it, for the Purchase event. */
+try{ if(/order-success/.test(location.pathname)){ const l=JSON.parse(sessionStorage.getItem('ps_last')||'null'), o=(new URLSearchParams(location.search).get('order')||'').toUpperCase(); if(l&&String(l.number).toUpperCase()===o) window.__psLastOrder=l; } }catch(e){}
+(function(){ const s=document.createElement('script'); s.src='/js/track.js?v=1'; s.async=true; document.head.appendChild(s); })();
 /* Read rows from the public data API: apiRead('products', 'id,title', [['eq','key','x']]) -> array, or null on failure. */
 async function apiRead(table, select, filters){
   try{
@@ -56,7 +60,7 @@ const Cart = {
   load(){ try{ this.stored=JSON.parse(localStorage.getItem('ps_cart')||'[]'); if(!Array.isArray(this.stored)) this.stored=[]; this.items=this.stored.filter(i=>byId(i.id)); }catch(e){ this.stored=[]; this.items=[]; } },
   save(){ this.stored=this.items.concat(this.stored.filter(s=>!byId(s.id))); try{ localStorage.setItem('ps_cart',JSON.stringify(this.stored)); }catch(e){} this.orderId=null; this.render(); },
   /* v = optional pack composition chosen on the product page (e.g. "8 שוקולד + 4 גולדן סירופ"); same product, same price */
-  add(id,q=1,v=''){ const p=byId(id); if(!p||p.out) return; const it=this.items.find(i=>i.id===id&&(i.v||'')===v); it?it.q+=q:this.items.push(v?{id,q,v}:{id,q}); this.save(); toast('נוסף לעגלה ✓'); },
+  add(id,q=1,v=''){ const p=byId(id); if(!p||p.out) return; const it=this.items.find(i=>i.id===id&&(i.v||'')===v); it?it.q+=q:this.items.push(v?{id,q,v}:{id,q}); this.save(); toast('נוסף לעגלה ✓'); if(window.PSTrack) PSTrack.addToCart(p,q,v); },
   set(idx,q){ const it=this.items[idx]; if(!it) return; it.q=q; if(q<=0) this.items.splice(idx,1); this.save(); },
   count(){ return this.items.reduce((s,i)=>s+i.q,0); },
   total(){ return this.items.reduce((s,i)=>s+byId(i.id).price*i.q,0); },

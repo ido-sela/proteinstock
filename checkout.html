@@ -31,6 +31,9 @@ const save = () => {
     sessionStorage.setItem(FKEY, JSON.stringify(o));
     const keep = document.getElementById('f-keep');
     if (keep && keep.checked) localStorage.setItem(FKEY, JSON.stringify(o)); else localStorage.removeItem(FKEY);
+    // cart abandonment: keep the draft (phone or email + cart) so the store can follow up if no order comes
+    if (window.PSTrack && Cart.items.length) PSTrack.draft({ name: o.name, phone: o.phone, email: o.email, step: String(openStep), total: totals().total,
+      items: Cart.items.filter(i => byId(i.id)).map(i => ({ id: i.id, q: i.q, v: i.v || undefined, name: byId(i.id).name.slice(0, 120), price: byId(i.id).price })) });
   } catch (e) { /* ignore */ }
 };
 const note = () => { try { return sessionStorage.getItem('ps_note') || ''; } catch (e) { return ''; } };
@@ -270,7 +273,7 @@ async function submit(e) {
     return;
   }
   const pay = typeof d.payment_url === 'string' && d.payment_url.startsWith('https://') ? d.payment_url : '';
-  try { sessionStorage.setItem('ps_last', JSON.stringify({ number: d.order_number, total: d.total, name: body.name, paid: !!pay })); sessionStorage.removeItem('ps_note'); if (!pay) sessionStorage.removeItem('ps_coupon'); } catch (x) { /* ignore */ }
+  try { sessionStorage.setItem('ps_last', JSON.stringify({ number: d.order_number, total: d.total, name: body.name, paid: !!pay, coupon: d.coupon || undefined, shipping: d.shipping, items: body.items.map(i => ({ id: i.id, q: i.qty })) })); sessionStorage.removeItem('ps_note'); if (!pay) sessionStorage.removeItem('ps_coupon'); } catch (x) { /* ignore */ }
   if (pay) { t.textContent = 'מעבירים לתשלום…'; location.href = pay; return; }   // the cart stays until the payment succeeds
   Cart.items = []; Cart.stored = []; try { localStorage.setItem('ps_cart', '[]'); } catch (x) { /* ignore */ }
   location.href = 'order-success?status=received&order=' + encodeURIComponent(d.order_number);
