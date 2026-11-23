@@ -322,3 +322,4 @@ button.bo-code{cursor:pointer}button.bo-code:hover{border-color:var(--line2)}
 .bo-pimg{width:52px;height:52px;border-radius:8px;object-fit:contain;background:#fff;border:1px solid var(--line);flex:none}
 .bo-thumbs{display:flex;gap:4px;margin-bottom:3px}
 .bo-th{width:30px;height:30px;border-radius:6px;object-fit:contain;background:#fff;border:1px solid var(--line)}
+.sh-panel{scrollbar-gutter:stable both-edges;overflow-anchor:none}.bo-chart{overflow:hidden}.bo-chart svg{width:100%;height:auto}#bo-body,#bo-list,#bo-clist,#bo-ubody{min-height:60vh}

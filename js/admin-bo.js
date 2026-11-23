@@ -196,9 +196,16 @@ function boChart(series) {
   host.querySelector('svg').onmouseleave = hide;
   const tbl = document.getElementById('bo-ctbl');
   if (tbl) tbl.innerHTML = `<div class="sp-tw"><table class="sp-table bo-t"><thead><tr><th>${unit === 'day' ? 'יום' : unit === 'week' ? 'שבוע' : 'חודש'}</th><th class="num">הכנסות</th><th class="num">הזמנות ששולמו</th><th class="num">כל ההזמנות</th></tr></thead><tbody>${pts.slice().reverse().map(p => `<tr><td>${esc(unit === 'day' ? boFmtDay(p.key) : p.label)}</td><td class="num">${boMoney(p.revenue)}</td><td class="num">${p.paid}</td><td class="num">${p.orders}</td></tr>`).join('')}</tbody></table></div>`;
-  if (!host.__ro) { host.__ro = new ResizeObserver(() => { clearTimeout(host.__t); host.__t = setTimeout(() => boChart(series), 120); }); host.__ro.observe(host); host.__w = W; }
-  else if (Math.abs((host.__w || 0) - W) < 2) return;
-  host.__w = W;
+  host.__w = W; host.__series = series;
+  // redraw only when the card really changes width (window resize), never in response to our own redraw
+  if (!host.__ro) {
+    host.__ro = new ResizeObserver(() => {
+      const w = host.clientWidth;
+      if (!w || Math.abs(w - (host.__w || 0)) < 8) return;
+      clearTimeout(host.__t); host.__t = setTimeout(() => boChart(host.__series), 150);
+    });
+    host.__ro.observe(host);
+  }
 }
 
 /* ---------- orders ---------- */
