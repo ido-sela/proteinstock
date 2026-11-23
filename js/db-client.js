@@ -109,7 +109,56 @@
     },
   };
 
-  const client = { from: t => new Query(t), auth, functions, storage };
+  const api = { from: t => new Query(t), auth, functions, storage };
+
+  /* ---- Until the server has its own database (/api/health ok), talk to the store's Supabase project directly,
+     like the old admin did: Supabase Auth login code + row level security (admins only) + admin_report() for reports.
+     Only the public (publishable) key is used here. Once DATABASE_URL is set on Vercel, everything goes through /api. */
+  const SB = { url: 'https://yplzliqpohqehypllxdq.supabase.co', key: 'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };
+  const SB_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
+  let sbc = null, modeP = null;
+  const ours = { createClient: () => client };
+  const loadSb = () => new Promise((ok, bad) => {
+    const s = document.createElement('script'); s.src = SB_JS; s.crossOrigin = 'anonymous';
+    s.onload = () => { const real = window.supabase; window.supabase = ours; sbc = real.createClient(SB.url, SB.key); ok(); };
+    s.onerror = () => { window.supabase = ours; bad(new Error('supabase-js failed to load')); };
+    document.head.appendChild(s);
+  });
+  const mode = () => modeP || (modeP = fetch('/api/health', { credentials: 'same-origin', cache: 'no-store' })
+    .then(r => (r.ok ? 'api' : 'sb'), () => 'sb')
+    .then(m => (m === 'sb' ? loadSb().then(() => 'sb') : m)));
+
+  // Records a query chain and replays it on whichever backend is in use.
+  const OPS = ['select', 'insert', 'upsert', 'update', 'delete', 'eq', 'neq', 'gte', 'lte', 'ilike', 'in', 'order', 'limit', 'single', 'maybeSingle'];
+  class Lazy {
+    constructor(make) { this.make = make; this.ops = []; }
+    then(ok, bad) {
+      return mode().then(m => { let q = this.make(m); for (const [n, a] of this.ops) q = q[n](...a); return q; })
+        .then(r => r, e => ({ data: null, error: { message: e.message || String(e) } })).then(ok, bad);
+    }
+  }
+  OPS.forEach(n => { Lazy.prototype[n] = function (...a) { this.ops.push([n, a]); return this; }; });
+
+  const via = (fn) => (...a) => mode().then(m => fn(m, ...a));
+  const client = {
+    from: t => new Lazy(m => (m === 'api' ? api.from(t) : sbc.from(t))),
+    rpc: via((m, name, args) => (m === 'sb' ? sbc.rpc(name, args) : { data: null, error: { message: 'rpc needs supabase' } })),
+    mode,
+    auth: {
+      getSession: via(m => (m === 'api' ? auth : sbc.auth).getSession()),
+      onAuthStateChange(cb) { let sub = null; mode().then(m => { sub = (m === 'api' ? auth : sbc.auth).onAuthStateChange(cb); }); return { data: { subscription: { unsubscribe() { const s = sub && sub.data && sub.data.subscription; if (s) s.unsubscribe(); } } } }; },
+      signInWithOtp: via((m, o) => (m === 'api' ? auth.signInWithOtp(o) : sbc.auth.signInWithOtp({ email: o.email, options: { shouldCreateUser: true } }))),
+      verifyOtp: via((m, o) => (m === 'api' ? auth : sbc.auth).verifyOtp({ type: 'email', ...o })),
+      signOut: via(m => (m === 'api' ? auth : sbc.auth).signOut()),
+    },
+    functions: { invoke: via((m, name, opts) => (m === 'api' ? functions : sbc.functions).invoke(name, opts)) },
+    storage: {
+      from: b => ({
+        upload: via((m, ...a) => (m === 'api' ? storage.from(b) : sbc.storage.from(b)).upload(...a)),
+        getPublicUrl: p => (sbc ? sbc.storage.from(b) : storage.from(b)).getPublicUrl(p),
+      }),
+    },
+  };
   window.PSDB = client;
-  window.supabase = { createClient: () => client };
+  window.supabase = ours;
 })();

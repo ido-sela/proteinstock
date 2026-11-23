@@ -30,6 +30,11 @@ const BO_ICO = {
 
 /* ---------- data ---------- */
 async function boApi(action, params) {
+  if (window.PSDB && (await PSDB.mode()) === 'sb') {   // no server database yet: same reports from Supabase (admin_report)
+    const { data, error } = await PSDB.rpc('admin_report', { p: { action, ...params } });
+    if (error) return { error: /unauthorized|42501|JWT/i.test(error.message || '') ? 'ההתחברות פגה. התנתקו והתחברו שוב.' : error.message };
+    return { data };
+  }
   let r;
   try {
     r = await fetch('/api/reports', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...params }) });
