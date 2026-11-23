@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import { tx, one, q } from './_lib/db.js';
 import { json, readJson, handler, clientIp, origin } from './_lib/http.js';
 import { sha256 } from './_lib/auth.js';
-import { getProvider, webhookUrl } from './_lib/payplus.js';
+import { getProvider, webhookUrl, paymentKeysPresent } from './_lib/payplus.js';
 import { priceCoupon, normCode } from './_lib/coupons.js';
 
 const clean = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
@@ -16,6 +16,14 @@ const newNumber = () => 'PS' + Array.from(crypto.randomBytes(6), (x) => ALPHABET
 export default handler(['POST'], async (req, res) => {
   const body = await readJson(req, 20000);
   const quote = body.action === 'quote';
+
+  // Card payments are on but the PayPlus keys aren't on this server yet: answer 503 so checkout.html uses the
+  // Supabase checkout function (which has the keys) instead of taking an order the customer couldn't pay.
+  if (!quote) {
+    const pay = (await one(`select value from site_settings where key = 'payment'`))?.value ?? {};
+    const k = paymentKeysPresent();
+    if (pay.enabled && pay.provider === 'payplus' && !(k.api_key && k.secret_key)) return json(res, { error: 'payment_not_configured' }, 503);
+  }
 
   const name = clean(body.name, 80);
   const phone = clean(body.phone, 20);

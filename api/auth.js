@@ -25,6 +25,17 @@ async function sendMail(to, code) {
   if (!r.ok) { const t = await r.text().catch(() => ''); const e = new Error('mail_failed: ' + t.slice(0, 200)); e.code = 'mail_failed'; throw e; }
 }
 
+// Without RESEND_API_KEY the code is sent and checked by Supabase Auth (the store's Supabase project, which already
+// emails admin codes). Only the public (publishable) key is used; the admins list in our database still decides access.
+const SB_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+const SB_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB';
+const viaSupabase = () => !process.env.RESEND_API_KEY && !!SB_URL;
+async function sbAuth(path, body) {
+  const r = await fetch(`${SB_URL}/auth/v1/${path}`, { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  return { ok: r.ok, status: r.status, j };
+}
+
 export default handler(['GET', 'POST'], async (req, res) => {
   if (req.method === 'GET') {
     const email = await adminEmail(req);
@@ -38,13 +49,22 @@ export default handler(['GET', 'POST'], async (req, res) => {
   if (!EMAIL.test(email) || email.length > 200) return err(res, 'invalid_email', 'כתובת אימייל לא תקינה');
 
   if (b.action === 'send') {
-    const recent = await one(`select count(*)::int n, max(created_at) last from admin_otps where email = $1 and created_at > now() - interval '1 hour'`, [email]);
+    const recent = await one(`select count(*)::int n, max(created_at) last from admin_otps where email = $1 and code_hash <> 'supabase-fail' and created_at > now() - interval '1 hour'`, [email]);
     if (recent.n >= 6 || (recent.last && Date.now() - new Date(recent.last).getTime() < 40000)) {
       return err(res, 'over_email_send_rate_limit', 'rate limit', 429);
     }
     const admin = await one('select email from admins where email = $1', [email]);
     // Same answer whether or not the address is an admin, so the list of admins can't be probed.
     if (!admin) return json(res, { ok: true });
+    if (viaSupabase()) {
+      await q(`insert into admin_otps (email, code_hash, expires_at) values ($1, 'supabase', now() + interval '10 minutes')`, [email]);   // rate limit only
+      const r = await sbAuth('otp', { email, create_user: true });
+      if (!r.ok) {
+        console.error('supabase otp failed', r.status, r.j);
+        return r.status === 429 ? err(res, 'over_email_send_rate_limit', 'rate limit', 429) : err(res, 'mail_failed', 'שליחת המייל נכשלה', 500);
+      }
+      return json(res, { ok: true });
+    }
     const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
     await q(`insert into admin_otps (email, code_hash, expires_at) values ($1, $2, now() + interval '10 minutes')`, [email, sha256(email + ':' + code)]);
     try { await sendMail(email, code); } catch (e) {
@@ -57,6 +77,21 @@ export default handler(['GET', 'POST'], async (req, res) => {
 
   if (b.action === 'verify') {
     const token = String(b.token ?? '').replace(/\D/g, '');
+    if (token.length < 6 || token.length > 10) return err(res, 'otp_expired', 'invalid');
+    if (viaSupabase()) {
+      const tries = await one(`select count(*)::int n from admin_otps where email = $1 and code_hash = 'supabase-fail' and created_at > now() - interval '15 minutes'`, [email]);
+      if (tries.n >= 8) return err(res, 'otp_expired', 'too many attempts');
+      const r = await sbAuth('verify', { type: 'email', email, token });
+      const got = String(r.j?.user?.email || '').toLowerCase();
+      if (!r.ok || got !== email) {
+        await q(`insert into admin_otps (email, code_hash, expires_at) values ($1, 'supabase-fail', now())`, [email]);
+        return err(res, 'otp_expired', 'invalid');
+      }
+      const ok = await one('select email from admins where email = $1', [email]);
+      if (!ok) return err(res, 'forbidden', 'not an admin', 403);
+      setSession(res, email);
+      return json(res, { session: { user: { id: email, email } } });
+    }
     if (token.length !== 6) return err(res, 'otp_expired', 'invalid');
     const row = await one(`select id, code_hash, attempts from admin_otps where email = $1 and not used and expires_at > now() order by created_at desc limit 1`, [email]);
     if (!row || row.attempts >= 5) return err(res, 'otp_expired', 'expired');
