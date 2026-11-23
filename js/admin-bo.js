@@ -86,17 +86,64 @@ const boLoading = t => `<div class="sp-card"><p class="sp-empty">${esc(t || 'ט�
 const boError = m => `<div class="msg err">${esc(m)}</div>`;
 
 /* ---------- dashboard ---------- */
-async function boHome() {
-  setBar('home', 'לוח בקרה', `<button class="btn" id="bo-csv-h">${ICO.dl}ייצוא הזמנות</button>`);
-  document.getElementById('bo-csv-h').onclick = () => { const { from, to } = boRange(); boExportOrders({ from, to }); };
-  document.getElementById('panel').classList.add('gray');
-  const R = pane();
-  R.innerHTML = `<div class="bo-top">${boRangeHtml('bo-r')}</div><div id="bo-body">${boLoading('טוען נתונים…')}</div>`;
-  boBindRange('bo-r', boHome);
+/* small helpers for the dashboard's motion: numbers count up, live refresh, skeletons */
+const BO_TILE_ICO = {
+  paid: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5l1-3h11l1 3"/><path d="M3.5 6.5v10h13v-10"/><path d="M7.5 10.5l2 2 3.5-4"/></svg>',
+  aov: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M12.5 7.5h-3.2a1.6 1.6 0 0 0 0 3.2h1.4a1.6 1.6 0 0 1 0 3.2H7.5M10 6v1.5M10 13.9v1.5"/></svg>',
+  customers: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 16.5c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/><path d="M13 4.2a3 3 0 0 1 0 5.6M15 12.3c1.3.6 2.2 2 2.5 4.2"/></svg>',
+  coupon: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7V5.5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1V7a3 3 0 0 0 0 6v1.5a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1V13a3 3 0 0 0 0-6z"/><path d="M8 12.5l4-5"/></svg>',
+  pending: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2"/></svg>',
+  lost: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M7.5 7.5l5 5M12.5 7.5l-5 5"/></svg>',
+  stock: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l7 3.5v8l-7 3.5-7-3.5v-8z"/><path d="M3 6l7 3.5L17 6M10 9.5v8"/></svg>',
+  cart: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3.5h2l2 9h9l1.5-6.5H6"/><circle cx="8" cy="16" r="1"/><circle cx="14" cy="16" r="1"/></svg>',
+};
+function boCountUp(root) {
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  root.querySelectorAll('[data-count]').forEach(el => {
+    const to = Number(el.dataset.count) || 0, fmt = el.dataset.fmt === 'money' ? boMoney : v => Math.round(v).toLocaleString('he-IL');
+    if (reduce || !to) { el.textContent = fmt(to); return; }
+    const t0 = performance.now(), dur = 900;
+    const step = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(el.dataset.fmt === 'money' ? to * e : Math.round(to * e)); if (k < 1) requestAnimationFrame(step); else el.textContent = fmt(to); };
+    requestAnimationFrame(step);
+  });
+}
+const boSkel = () => `<div class="bo-skel-wrap"><div class="bo-skel bo-skel-hero"></div><div class="bo-tiles bo-tiles4">${'<div class="bo-skel bo-skel-tile"></div>'.repeat(4)}</div><div class="bo-skel bo-skel-card"></div></div>`;
+const boGreet = () => { const h = Number(new Intl.DateTimeFormat('en-GB', { timeZone: BO_TZ, hour: 'numeric', hour12: false }).format(new Date())); return h < 5 ? 'לילה טוב' : h < 12 ? 'בוקר טוב' : h < 17 ? 'צהריים טובים' : h < 21 ? 'ערב טוב' : 'לילה טוב'; };
+let boLiveTimer = null;
+function boLive() {   // refresh the dashboard every 60 seconds while it is open and visible
+  clearInterval(boLiveTimer);
+  boLiveTimer = setInterval(() => { if (boCur.view !== 'home' || document.hidden || !document.getElementById('bo-body')) return; boHome({ silent: true }); }, 60000);
+}
+
+async function boHome(opt = {}) {
+  const silent = !!opt.silent && !!document.getElementById('bo-body');
+  if (!silent) {
+    setBar('home', 'לוח בקרה', `<button class="btn" id="bo-csv-h">${ICO.dl}ייצוא הזמנות</button>`);
+    document.getElementById('bo-csv-h').onclick = () => { const { from, to } = boRange(); boExportOrders({ from, to }); };
+    document.getElementById('panel').classList.add('gray');
+    const R = pane();
+    const now = new Date().toLocaleDateString('he-IL', { timeZone: BO_TZ, weekday: 'long', day: 'numeric', month: 'long' });
+    R.innerHTML = `<div class="bo-hello"><div><h1>${boGreet()} 👋</h1><p>${esc(now)} · <span class="bo-live" title="הנתונים מתעדכנים כל דקה"><i></i>מתעדכן בזמן אמת</span> <span class="bo-upd" id="bo-upd"></span></p></div>${boRangeHtml('bo-r')}</div><div id="bo-body">${boSkel()}</div>`;
+    boBindRange('bo-r', () => boHome());
+  }
   const { from, to } = boRange();
-  const { data, error } = await boApi('summary', { from, to });
+  const [{ data, error }, inv, ab] = await Promise.all([
+    boApi('summary', { from, to }),
+    sb.from('products').select('quantity,low_stock_threshold,status').then(r => r, () => ({ data: null })),
+    (window.PSDB && PSDB.mode ? PSDB.mode().then(m => (m === 'sb' ? PSDB.rpc('admin_abandoned', { p: { show: 'open' } }) : { data: null })) : Promise.resolve({ data: null })).catch(() => ({ data: null })),
+  ]);
   const body = document.getElementById('bo-body'); if (!body) return;
-  if (error) { body.innerHTML = boError(error); return; }
+  if (error) { if (!silent) body.innerHTML = boError(error); return; }
+  // new orders since the last look -> a toast
+  const nums = new Set((data.recent || []).map(o => o.number));
+  if (BO.seen && silent) { const fresh = (data.recent || []).filter(o => !BO.seen.has(o.number)); if (fresh.length) toast(`🎉 הזמנה חדשה: ${fresh[0].customer_name} · ${boMoney(fresh[0].total)}`); }
+  BO.seen = nums;
+  const upd = document.getElementById('bo-upd'); if (upd) upd.textContent = 'עודכן ' + new Date().toLocaleTimeString('he-IL', { timeZone: BO_TZ, hour: '2-digit', minute: '2-digit' });
+  if (silent) { const y = document.getElementById('panel').scrollTop; boHomeRender(body, data, inv, ab, true); document.getElementById('panel').scrollTop = y; }
+  else { boHomeRender(body, data, inv, ab, false); boLive(); }
+}
+
+function boHomeRender(body, data, inv, ab, silent) {
   const k = data.kpi, p = data.prev;
   const aov = k.paid_orders ? k.revenue / k.paid_orders : 0, paov = p.paid_orders ? p.revenue / p.paid_orders : 0;
   const delta = (a, b, goodUp = true) => {
@@ -108,24 +155,32 @@ async function boHome() {
     const good = (pct > 0) === goodUp;
     return `<span class="bo-d ${good ? 'up' : 'down'}" title="לעומת ${esc(boFmtDay(p.from))}–${esc(boFmtDay(p.to))}">${pct > 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>`;
   };
-  const tile = (label, value, d, sub, go) => `<button class="bo-tile" ${go ? `data-go="${esc(go)}"` : 'disabled'}><span class="bo-tl">${label}</span><span class="bo-tv">${value}</span><span class="bo-ts">${d || ''}${sub ? `<span>${sub}</span>` : ''}</span></button>`;
+  const cnt = (v, money) => `<span data-count="${Number(v) || 0}" data-fmt="${money ? 'money' : 'int'}">${money ? boMoney(silent ? v : 0) : (silent ? Number(v).toLocaleString('he-IL') : '0')}</span>`;
+  const tile = (label, value, d, sub, go, ico, tone) => `<button class="bo-tile bo-tile-i" ${go ? `data-go="${esc(go)}"` : 'disabled'}><span class="bo-ti ${tone || ''}">${BO_TILE_ICO[ico] || ''}</span><span class="bo-tl">${label}</span><span class="bo-tv">${value}</span><span class="bo-ts">${d || ''}${sub ? `<span>${sub}</span>` : ''}</span></button>`;
+  const P = (inv && inv.data) || [];
+  const low = P.filter(x => x.status !== 'archived' && x.quantity != null && x.quantity > 0 && x.low_stock_threshold != null && x.quantity <= x.low_stock_threshold).length;
+  const out = P.filter(x => x.status !== 'archived' && x.quantity != null && x.quantity <= 0).length;
+  const abd = ab && ab.data;
   const maxP = Math.max(1, ...data.products.map(x => Number(x.revenue)));
   const maxC = Math.max(1, ...data.coupons.map(x => x.uses));
   const st = Object.fromEntries(data.statuses.map(s => [s.status, s]));
   const allN = data.statuses.reduce((s, x) => s + x.n, 0);
   body.innerHTML = `
-    <section class="bo-hero sp-card sp-pad"><div class="bo-hl">הכנסות מהזמנות ששולמו · ${esc(boRangeLabel())}</div>
-      <div class="bo-hv">${boMoney(k.revenue)}</div><div class="bo-hs">${delta(k.revenue, p.revenue)}<span>תקופה קודמת: ${boMoney(p.revenue)}</span></div>
+    <section class="bo-hero2"><div class="bo-hero2-main"><div class="bo-hl">הכנסות מהזמנות ששולמו · ${esc(boRangeLabel())}</div>
+        <div class="bo-hv">${cnt(k.revenue, true)}</div><div class="bo-hs">${delta(k.revenue, p.revenue)}<span>תקופה קודמת: ${boMoney(p.revenue)}</span></div></div>
+      <div class="bo-hero2-mini">
+        <button class="bo-mini" data-go="paid"><span>הזמנות ששולמו</span><b>${cnt(k.paid_orders)}</b>${delta(k.paid_orders, p.paid_orders)}</button>
+        <button class="bo-mini" data-go="paid"><span>ממוצע להזמנה</span><b>${cnt(aov, true)}</b>${delta(aov, paov)}</button>
+        <button class="bo-mini" data-go="customers"><span>לקוחות שקנו</span><b>${cnt(k.customers)}</b><small>${k.new_customers} חדשים</small></button></div></section>
+    <section class="sp-card sp-pad bo-chart-card">
       <div class="bo-chart-h"><div class="tb" role="tablist" aria-label="מה להציג בגרף"><button role="tab" data-m="revenue" aria-selected="${BO.metric === 'revenue'}">הכנסות</button><button role="tab" data-m="paid" aria-selected="${BO.metric === 'paid'}">הזמנות ששולמו</button><button role="tab" data-m="orders" aria-selected="${BO.metric === 'orders'}">כל ההזמנות</button></div>
         <button class="btn link" id="bo-tbl" aria-expanded="false">הצגה כטבלה</button></div>
       <div class="bo-chart" id="bo-chart"></div><div id="bo-ctbl" hidden></div></section>
-    <div class="bo-tiles">
-      ${tile('הזמנות ששולמו', k.paid_orders.toLocaleString('he-IL'), delta(k.paid_orders, p.paid_orders), `מתוך ${k.all_orders} הזמנות`, 'paid')}
-      ${tile('ממוצע להזמנה', boMoney(aov), delta(aov, paov), '', 'paid')}
-      ${tile('לקוחות שקנו', k.customers.toLocaleString('he-IL'), delta(k.customers, p.customers), `${k.new_customers} לקוחות חדשים`, 'customers')}
-      ${tile('הנחות בקופונים', boMoney(k.discounts), delta(k.discounts, p.discounts, false), `${k.coupon_orders} הזמנות עם קופון`, 'couponUse')}
-      ${tile('ממתינות לתשלום', k.pending_orders.toLocaleString('he-IL'), '', `בשווי ${boMoney(k.pending_value)}`, 'pending')}
-      ${tile('נכשלו / בוטלו / הוחזרו', k.lost_orders.toLocaleString('he-IL'), '', '', 'lost')}
+    <div class="bo-tiles bo-tiles-dash">
+      ${tile('ממתינות לתשלום', cnt(k.pending_orders), '', `בשווי ${boMoney(k.pending_value)}`, 'pending', 'pending', 't-amber')}
+      ${tile('הנחות בקופונים', cnt(k.discounts, true), delta(k.discounts, p.discounts, false), `${k.coupon_orders} הזמנות עם קופון`, 'couponUse', 'coupon', 't-violet')}
+      ${tile('מלאי נמוך', cnt(low), out ? `<span class="bo-d down">${out} אזלו</span>` : '', 'בסף ההתראה או מתחתיו', 'inventory', 'stock', 't-rose')}
+      ${abd ? tile('עגלות נטושות', cnt(abd.open), '', `בשווי ${boMoney(abd.open_value)}`, 'abandoned', 'cart', 't-sky') : tile('נכשלו / בוטלו', cnt(k.lost_orders), '', '', 'lost', 'lost', 't-rose')}
     </div>
     <div class="bo-grid2">
       <section class="sp-card"><div class="bo-ch"><h2>מוצרים מובילים</h2><span class="mute">לפי הכנסה, הזמנות ששולמו</span></div>
@@ -137,13 +192,16 @@ async function boHome() {
     </div>
     <section class="sp-card"><div class="bo-ch"><h2>הזמנות אחרונות</h2><span class="bo-stat">${Object.keys(STATUS).filter(s => st[s]).map(s => `${boBadge(s)} ${st[s].n}`).join(' ')}${allN ? '' : ''}</span><button class="btn link" data-go="all">לכל ההזמנות</button></div>
       ${data.recent.length ? boOrdersTable(data.recent, { compact: true }) : '<p class="sp-empty">אין הזמנות בתקופה הזו.</p>'}</section>`;
-  boChart(data.series);
-  body.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { BO.metric = b.dataset.m; body.querySelectorAll('[data-m]').forEach(x => x.setAttribute('aria-selected', x === b)); boChart(data.series); });
+  boChart(data.series, !silent);
+  if (!silent) boCountUp(body);
+  body.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { BO.metric = b.dataset.m; body.querySelectorAll('[data-m]').forEach(x => x.setAttribute('aria-selected', x === b)); boChart(data.series, true); });
   document.getElementById('bo-tbl').onclick = e => { const t = document.getElementById('bo-ctbl'); t.hidden = !t.hidden; e.target.setAttribute('aria-expanded', !t.hidden); e.target.textContent = t.hidden ? 'הצגה כטבלה' : 'הסתרת הטבלה'; };
   body.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
     const g = b.dataset.go, O = BO.orders;
     if (g === 'customers') return boGo('customers');
     if (g === 'couponUse') return boGo('couponUse');
+    if (g === 'inventory') { BO.inv = { tab: 'low', q: '' }; return boGo('inventory'); }
+    if (g === 'abandoned') return boGo('abandoned');
     Object.assign(O, { q: '', coupon: '', delivery: '', customer: '', page: 0, status: g === 'lost' ? 'failed,cancelled,refunded' : g === 'all' ? 'all' : g });
     boGo('orders');
   });
@@ -153,7 +211,7 @@ async function boHome() {
 }
 
 /* columns chart, one series: revenue / paid orders / all orders per day (weeks or months on long ranges) */
-function boChart(series) {
+function boChart(series, animate) {
   const host = document.getElementById('bo-chart'); if (!host) return;
   const m = BO.metric, isMoney = m === 'revenue';
   let unit = 'day', pts = series.map(s => ({ key: s.day, label: boFmtDay(s.day), v: Number(s[m]) || 0, revenue: Number(s.revenue), paid: s.paid, orders: s.orders }));
@@ -178,9 +236,9 @@ function boChart(series) {
   const bar = (p, i) => {
     if (!p.v) return '';
     const h = Math.max(2, plotH - (y(p.v) - padT)), x0 = x(i), y0 = padT + plotH - h, r = Math.min(4, bw / 2, h);
-    return `<path d="M${x0},${y0 + h}V${y0 + r}Q${x0},${y0} ${x0 + r},${y0}H${x0 + bw - r}Q${x0 + bw},${y0} ${x0 + bw},${y0 + r}V${y0 + h}Z" class="bo-bar"/>`;
+    return `<path d="M${x0},${y0 + h}V${y0 + r}Q${x0},${y0} ${x0 + r},${y0}H${x0 + bw - r}Q${x0 + bw},${y0} ${x0 + bw},${y0 + r}V${y0 + h}Z" class="bo-bar" style="--i:${i}"/>`;
   };
-  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${isMoney ? 'הכנסות' : 'הזמנות'} לפי ${unit === 'day' ? 'יום' : unit === 'week' ? 'שבוע' : 'חודש'}">
+  host.innerHTML = `<svg class="${animate ? 'bo-anim' : ''}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${isMoney ? 'הכנסות' : 'הזמנות'} לפי ${unit === 'day' ? 'יום' : unit === 'week' ? 'שבוע' : 'חודש'}">
     ${ticks.map(t => `<line x1="${padS}" x2="${W - 8}" y1="${y(t)}" y2="${y(t)}" class="${t ? 'bo-grid' : 'bo-base'}"/><text x="${padS - 6}" y="${y(t) + 4}" text-anchor="end" class="bo-ax">${fmtTick(t)}</text>`).join('')}
     ${pts.map(bar).join('')}
     ${pts.map((p, i) => i % every === 0 ? `<text x="${x(i) + bw / 2}" y="${H - 8}" text-anchor="middle" class="bo-ax">${esc(unit === 'week' ? boFmtDay(p.key).slice(0, -3) : p.label.replace(/\.\d\d$/, ''))}</text>` : '').join('')}
