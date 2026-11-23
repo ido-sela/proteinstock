@@ -18,6 +18,7 @@ const boMoney = n => { const v = Math.round(Number(n || 0) * 100) / 100; return 
 const boCompact = n => { n = Number(n) || 0; return Math.abs(n) >= 10000 ? '₪' + (n / 1000).toLocaleString('he-IL', { maximumFractionDigits: 1 }) + 'K' : boMoney(n); };
 const boPhone = p => String(p || '').replace(/\D/g, '').replace(/^972/, '0');
 const boWa = p => 'https://wa.me/' + boPhone(p).replace(/^0/, '972');
+const boImg = (src, cls) => `<img class="${cls || 'bo-pimg'}" src="${esc(src ? (/^(https?:)?\/\//.test(src) || src.startsWith('/') ? src : '/' + src) : '/img/protein-stock-sports-nutrition-e-commerce-logo.webp')}" alt="" loading="lazy" onerror="this.onerror=null;this.src='/img/protein-stock-sports-nutrition-e-commerce-logo.webp'">`;
 const boBadge = s => `<span class="badge ${esc(s)}">${esc(STATUS[s] || s)}</span>`;
 const BO_PRESETS = [['today', 'היום'], ['yesterday', 'אתמול'], ['7d', '7 הימים האחרונים'], ['30d', '30 הימים האחרונים'], ['90d', '90 הימים האחרונים'], ['month', 'החודש הנוכחי'], ['lastmonth', 'החודש הקודם'], ['year', 'השנה הנוכחית'], ['all', 'כל הזמנים'], ['custom', 'טווח מותאם…']];
 const BO_ICO = {
@@ -207,7 +208,7 @@ function boOrdersTable(rows, opt = {}) {
   return `<div class="sp-tw"><table class="sp-table bo-t bo-orders"><thead><tr>${th('number', 'הזמנה')}${th('created_at', 'תאריך')}${opt.noCustomer ? '' : th('customer_name', 'לקוח')}<th class="hm">פריטים</th>${th('discount', 'קופון')}<th>תשלום</th>${th('paid_at', 'שולם ב-', 'hm')}${th('total', 'סה"כ', 'num')}</tr></thead><tbody>
     ${rows.map(o => `<tr data-order="${esc(o.id)}" tabindex="0"><td class="bo-num" dir="ltr">${esc(o.number)}</td><td class="mute bo-nw">${boWhen(o.created_at)}</td>
       ${opt.noCustomer ? '' : `<td><div class="bo-name">${esc(o.customer_name)}</div><div class="mute" dir="ltr" style="text-align:end">${esc(o.phone)}</div></td>`}
-      <td class="hm mute">${o.items != null ? o.items + ' יח׳' : ''}${o.delivery === 'pickup' ? '<div>איסוף עצמי</div>' : ''}</td>
+      <td class="hm mute">${(o.thumbs || []).length ? `<span class="bo-thumbs">${o.thumbs.map(t => boImg(t, 'bo-th')).join('')}</span>` : ''}${o.items != null ? o.items + ' יח׳' : ''}${o.delivery === 'pickup' ? '<div>איסוף עצמי</div>' : ''}</td>
       <td>${o.coupon_code ? `<span class="bo-code" dir="ltr">${esc(o.coupon_code)}</span><div class="neg">−${boMoney(o.discount)}</div>` : '<span class="mute">—</span>'}</td>
       <td>${boBadge(o.status)}${o.payment_provider ? `<div class="mute">${esc(o.payment_provider === 'payplus' ? 'PayPlus' : o.payment_provider)}</div>` : ''}</td>
       <td class="hm mute bo-nw">${o.paid_at ? boWhen(o.paid_at) : '—'}</td><td class="num"><b>${boMoney(o.total)}</b></td></tr>`).join('')}
@@ -287,7 +288,7 @@ async function boOrder(id, back) {
     <div>
       <section class="sp-card"><div class="bo-ch"><h2>פריטים</h2><span class="mute">${o.order_items.reduce((s, i) => s + i.qty, 0)} יחידות</span></div>
         <div class="sp-tw"><table class="sp-table bo-t bo-items"><thead><tr><th>מוצר</th><th class="num">מחיר</th><th class="num">כמות</th><th class="num">סה"כ</th></tr></thead><tbody>
-        ${o.order_items.map(i => `<tr><td><a class="bo-name" href="/product?id=${encodeURIComponent(i.product_id)}" target="_blank" rel="noopener">${esc(i.title)}</a><div class="mute" dir="ltr" style="text-align:end">${esc(i.product_id)}</div></td><td class="num">${boMoney(i.unit_price)}</td><td class="num">${i.qty}</td><td class="num">${boMoney(i.line_total)}</td></tr>`).join('')}
+        ${o.order_items.map(i => `<tr><td><div class="bo-line">${boImg(i.image)}<div><a class="bo-name" href="/product?id=${encodeURIComponent(i.product_id)}" target="_blank" rel="noopener">${esc(i.title)}</a><div class="mute" dir="ltr" style="text-align:end">${esc(i.product_id)}</div></div></div></td><td class="num">${boMoney(i.unit_price)}</td><td class="num">${i.qty}</td><td class="num">${boMoney(i.line_total)}</td></tr>`).join('')}
         </tbody></table></div>
         <div class="bo-sum"><div><span>סכום ביניים</span><b>${boMoney(o.subtotal)}</b></div>
           ${Number(o.discount) || o.coupon_code ? `<div><span>הנחת קופון <button class="bo-code" dir="ltr" data-coupon="${esc(o.coupon_code || '')}">${esc(o.coupon_code || '')}</button></span><b class="neg">−${boMoney(o.discount)}</b></div>` : ''}

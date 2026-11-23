@@ -49,6 +49,8 @@ const whereOf = (w) => (w.length ? ' where ' + w.join(' and ') : '');
 
 const ORDER_COLS = `o.id, o.number, o.status, o.customer_name, o.phone, o.email, o.address, o.delivery, o.notes,
   o.subtotal, o.discount, o.coupon_code, o.shipping, o.total, o.currency, o.payment_provider, o.payment_ref, o.paid_at, o.created_at`;
+// up to 4 product images per order, for the thumbnails in order lists
+const THUMBS = `(select coalesce(json_agg(x.image), '[]') from (select p.image from order_items i join products p on p.id = i.product_id where i.order_id = o.id and p.image is not null order by i.id limit 4) x) thumbs`;
 const SORTS = { created_at: 'o.created_at', total: 'o.total', number: 'o.number', customer_name: 'o.customer_name', paid_at: 'o.paid_at', discount: 'o.discount' };
 
 async function summary(b) {
@@ -92,7 +94,7 @@ async function summary(b) {
        where ${LOCAL_DAY} between $1::date and $2::date group by o.status`, [from, to]),
     q(`select o.delivery, count(*)::int n from orders o
        where o.status = 'paid' and ${LOCAL_DAY} between $1::date and $2::date group by o.delivery`, [from, to]),
-    q(`select ${ORDER_COLS}, (select coalesce(sum(qty),0)::int from order_items i where i.order_id = o.id) items from orders o where ${LOCAL_DAY} between $1::date and $2::date order by o.created_at desc limit 8`, [from, to]),
+    q(`select ${ORDER_COLS}, (select coalesce(sum(qty),0)::int from order_items i where i.order_id = o.id) items, ${THUMBS} from orders o where ${LOCAL_DAY} between $1::date and $2::date order by o.created_at desc limit 8`, [from, to]),
     // customers whose first paid order falls in the period
     one(`select count(*)::int n from (select ${PHONE_KEY} as k, min(o.created_at) as first from orders o where o.status = 'paid' group by 1) c
        where (c.first at time zone '${TZ}')::date between $1::date and $2::date`, [from, to]),
@@ -107,7 +109,7 @@ async function orders(b) {
   const sort = SORTS[b.sort] || 'o.created_at', dir = b.dir === 'asc' ? 'asc' : 'desc';
   const where = whereOf(w);
   const [rows, tot] = await Promise.all([
-    q(`select ${ORDER_COLS}, (select coalesce(sum(qty),0)::int from order_items i where i.order_id = o.id) items
+    q(`select ${ORDER_COLS}, (select coalesce(sum(qty),0)::int from order_items i where i.order_id = o.id) items, ${THUMBS}
        from orders o${where} order by ${sort} ${dir} nulls last, o.created_at desc limit ${size} offset ${page * size}`, params),
     one(`select count(*)::int n, coalesce(sum(o.total),0) total, coalesce(sum(o.total) filter (where o.status='paid'),0) paid,
          coalesce(sum(o.discount),0) discount, count(*) filter (where o.coupon_code is not null)::int with_coupon
@@ -127,7 +129,7 @@ async function order(b) {
   const o = await one(`select ${ORDER_COLS}, o.ip_hash is not null has_ip from orders o where ${id ? 'o.id::text = $1' : 'o.number = $1'}`, [id || number]);
   if (!o) return { order: null };
   const [items, events, history] = await Promise.all([
-    q('select product_id, title, unit_price, qty, line_total from order_items where order_id = $1 order by id', [o.id]),
+    q('select i.product_id, i.title, i.unit_price, i.qty, i.line_total, p.image from order_items i left join products p on p.id = i.product_id where i.order_id = $1 order by i.id', [o.id]),
     q(`select id, provider, event_id, received_at,
          payload #>> '{transaction,status_code}' status_code, coalesce(payload #>> '{transaction,amount}', payload ->> 'amount') amount,
          coalesce(payload #>> '{transaction,four_digits}', payload #>> '{data,card_information,four_digits}') card_last4,
