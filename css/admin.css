@@ -328,3 +328,7 @@ button.bo-code{cursor:pointer}button.bo-code:hover{border-color:var(--line2)}
 .badge.ful-pending{background:var(--chip);color:var(--mute)}.badge.ful-processing{background:var(--infobg);color:var(--info)}.badge.ful-shipped{background:#e9e3ff;color:#4b2fb3}.badge.ful-completed{background:var(--okbg);color:var(--ok)}.badge.ful-cancelled{background:var(--badbg);color:var(--bad)}
 .bo-stc{white-space:nowrap}.bo-stsel{min-height:28px;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:650;border:1px solid var(--line);cursor:pointer;background:var(--chip);color:var(--ink)}.bo-stsel.ful-pending{background:var(--warnbg);color:var(--warn);border-color:transparent}.bo-stsel.ful-processing{background:var(--infobg);color:var(--info);border-color:transparent}.bo-stsel.ful-shipped{background:#e9e3ff;color:#4b2fb3;border-color:transparent}.bo-stsel.ful-completed{background:var(--okbg);color:var(--ok);border-color:transparent}.bo-stsel:disabled{opacity:.6}
 .bo-stsel{min-width:128px}
+
+.bo-qin{width:84px;min-height:30px;padding:3px 8px;border:1px solid var(--line2);border-radius:8px;text-align:center;font-variant-numeric:tabular-nums}
+.bo-qin:disabled{background:var(--row);color:var(--mute)}
+.bo-inv .bo-line{min-width:260px}

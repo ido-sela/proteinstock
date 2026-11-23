@@ -55,6 +55,7 @@ create index if not exists orders_created_idx on orders (created_at desc);
 create index if not exists orders_ip_idx      on orders (ip_hash, created_at desc);
 create index if not exists orders_status_idx  on orders (status);
 
+alter table products add column if not exists low_stock_threshold integer check (low_stock_threshold is null or low_stock_threshold >= 0);   -- low-stock alert baseline
 alter table products add column if not exists images text[] not null default '{}';
 alter table orders add column if not exists discount    numeric not null default 0 check (discount >= 0);
 alter table orders add column if not exists coupon_code text;

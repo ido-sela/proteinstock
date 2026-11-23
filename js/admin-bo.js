@@ -28,6 +28,7 @@ const BO_ICO = {
   home: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 16.5V9l6.5-5.5L16.5 9v7.5h-4.5v-4.5h-4v4.5z"/></svg>',
   customers: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 16.5c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/><path d="M13 4.2a3 3 0 0 1 0 5.6M15 12.3c1.3.6 2.2 2 2.5 4.2"/></svg>',
   couponUse: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 16.5h13"/><path d="M5.5 13.5v-4M10 13.5v-8M14.5 13.5v-6"/></svg>',
+  inventory: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l7 3.5v8l-7 3.5-7-3.5v-8z"/><path d="M3 6l7 3.5L17 6M10 9.5v8"/></svg>',
   abandoned: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3.5h2l2 9h9l1.5-6.5H6"/><circle cx="8" cy="16" r="1"/><circle cx="14" cy="16" r="1"/><path d="M10.5 7.5l3 3M13.5 7.5l-3 3"/></svg>',
   print: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 7.5v-4h9v4M5.5 13.5h-2v-6h13v6h-2"/><path d="M5.5 11.5h9v5h-9z"/></svg>',
   dl: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5v9M6.5 9l3.5 3.5L13.5 9M4 15.5h12"/></svg>',
@@ -536,6 +537,65 @@ async function boAbandoned() {
   R.querySelectorAll('[data-wa]').forEach(a => a.addEventListener('click', () => { sb.from('abandoned_checkouts').update({ contacted_at: new Date().toISOString() }).eq('id', a.dataset.wa).then(() => {}); }));
 }
 
+/* ---------- inventory (Zappy's per-product "Quantity on hand" + "Alert baseline", all products in one table) ---------- */
+async function boInventory() {
+  setBar('inventory', 'מלאי', `<button class="btn" id="bo-icsv">${ICO.dl}ייצוא ל-Excel</button>`);
+  document.getElementById('panel').classList.add('gray');
+  boHash('');
+  const R = pane(); R.innerHTML = boLoading('טוען מלאי…');
+  const { data, error } = await sb.from('products').select('id,title,image,sku,quantity,low_stock_threshold,out_of_stock,price,status').order('title');
+  if (error) { R.innerHTML = boError(error.message); return; }
+  const rows = (data || []).filter(p => p.status !== 'archived');
+  const I = BO.inv || (BO.inv = { tab: 'all', q: '' });
+  const state = p => p.quantity == null ? 'untracked' : p.quantity <= 0 ? 'out' : (p.low_stock_threshold != null && p.quantity <= p.low_stock_threshold) ? 'low' : 'ok';
+  const LBL = { ok: ['paid', 'במלאי'], low: ['pending', 'מלאי נמוך'], out: ['cancelled', 'אזל'], untracked: ['', 'ללא מעקב'] };
+  const draw = () => {
+    const q = I.q.toLowerCase();
+    const list = rows.filter(p => (I.tab === 'all' || state(p) === I.tab) && (!q || p.title.toLowerCase().includes(q) || String(p.sku || '').includes(q) || p.id.includes(q)));
+    const cnt = k => rows.filter(p => state(p) === k).length;
+    const units = rows.reduce((s, p) => s + (p.quantity > 0 ? p.quantity : 0), 0), value = rows.reduce((s, p) => s + (p.quantity > 0 ? p.quantity * Number(p.price) : 0), 0);
+    R.innerHTML = `<div class="bo-tiles bo-tiles4">
+        <div class="bo-tile"><span class="bo-tl">יחידות במלאי</span><span class="bo-tv">${units.toLocaleString('he-IL')}</span><span class="bo-ts">${rows.length} מוצרים</span></div>
+        <div class="bo-tile"><span class="bo-tl">שווי המלאי (במחיר מכירה)</span><span class="bo-tv">${boMoney(value)}</span><span class="bo-ts"></span></div>
+        <button class="bo-tile" data-it="low"><span class="bo-tl">מלאי נמוך</span><span class="bo-tv">${cnt('low')}</span><span class="bo-ts">בסף ההתראה או מתחתיו</span></button>
+        <button class="bo-tile" data-it="out"><span class="bo-tl">אזלו</span><span class="bo-tv">${cnt('out')}</span><span class="bo-ts"></span></button></div>
+      <section class="sp-card"><div class="sp-tabbar"><div class="tb" role="tablist">${[['all', 'הכל'], ['ok', 'במלאי'], ['low', 'מלאי נמוך'], ['out', 'אזלו'], ['untracked', 'ללא מעקב']].map(([k, v]) => `<button role="tab" data-it="${k}" aria-selected="${I.tab === k}">${v} (${k === 'all' ? rows.length : cnt(k)})</button>`).join('')}</div></div>
+      <div class="bo-filters"><input type="search" id="bo-iq" placeholder="חיפוש לפי שם, ברקוד או מזהה" value="${esc(I.q)}" aria-label="חיפוש במלאי"></div>
+      <div class="sp-tw"><table class="sp-table bo-t bo-inv"><thead><tr><th>מוצר</th><th>ברקוד</th><th class="num">כמות במלאי</th><th class="num">סף התראה</th><th>מצב</th><th class="hm">מעקב מלאי</th></tr></thead><tbody>
+      ${list.map(p => { const [cls, lbl] = LBL[state(p)]; const tracked = p.quantity != null; return `<tr data-pid="${esc(p.id)}"><td><div class="bo-line">${boImg(p.image, 'bo-th')}<a class="bo-name" href="/product?id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener">${esc(p.title.split('|')[0].trim())}</a></div></td>
+        <td class="mute" dir="ltr">${esc(p.sku || '—')}</td>
+        <td class="num"><input class="bo-qin" type="number" min="0" step="1" inputmode="numeric" data-f="quantity" value="${tracked ? p.quantity : ''}" ${tracked ? '' : 'disabled'} aria-label="כמות במלאי"></td>
+        <td class="num"><input class="bo-qin" type="number" min="0" step="1" inputmode="numeric" data-f="low_stock_threshold" value="${p.low_stock_threshold ?? ''}" ${tracked ? '' : 'disabled'} aria-label="סף התראה"></td>
+        <td><span class="badge ${cls}">${lbl}</span></td>
+        <td class="hm"><label class="chk" style="margin:0"><input type="checkbox" data-f="track"${tracked ? ' checked' : ''}> מעקב</label></td></tr>`; }).join('') || '<tr><td colspan="6" class="sp-empty">אין מוצרים להצגה</td></tr>'}
+      </tbody></table></div></section>
+      <p class="who">הכמות יורדת אוטומטית בכל הזמנה וחוזרת כשהזמנה מבוטלת. בכמות 0 המוצר מסומן "אזל" ולא ניתן לקנות אותו; כשמוסיפים מלאי הוא חוזר למכירה. השינוי נשמר כשיוצאים מהשדה או לוחצים Enter.</p>`;
+    R.querySelectorAll('[data-it]').forEach(b => b.onclick = () => { I.tab = b.dataset.it; draw(); });
+    const qi = R.querySelector('#bo-iq'); qi.oninput = () => { I.q = qi.value.trim(); const pos = qi.selectionStart; draw(); const n = R.querySelector('#bo-iq'); n.focus(); n.setSelectionRange(pos, pos); };
+    R.querySelectorAll('tr[data-pid]').forEach(tr => {
+      const p = rows.find(x => x.id === tr.dataset.pid);
+      const save = async patch => {
+        const { error } = await sb.from('products').update(patch).eq('id', p.id);
+        if (error) { toast('השמירה נכשלה: ' + error.message); return false; }
+        Object.assign(p, patch); toast('המלאי עודכן'); draw(); return true;
+      };
+      tr.querySelectorAll('input.bo-qin').forEach(inp => {
+        const commit = () => {
+          const v = inp.value.trim() === '' ? null : Math.max(0, parseInt(inp.value, 10) || 0);
+          if (inp.dataset.f === 'quantity') { if (v == null || v === p.quantity) { inp.value = p.quantity ?? ''; return; } save({ quantity: v, out_of_stock: v <= 0 }); }
+          else if (v !== p.low_stock_threshold) save({ low_stock_threshold: v });
+        };
+        inp.onchange = commit; inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } };
+      });
+      const tk = tr.querySelector('input[data-f=track]');
+      tk.onchange = () => tk.checked ? save({ quantity: 0, out_of_stock: true }).then(ok => ok && toast('הופעל מעקב מלאי — הזינו כמות')) : save({ quantity: null });
+    });
+  };
+  draw();
+  document.getElementById('bo-icsv').onclick = () => boCsv('inventory.csv', ['מזהה', 'מוצר', 'ברקוד', 'כמות במלאי', 'סף התראה', 'מצב', 'מחיר'],
+    rows.map(p => [p.id, p.title, p.sku || '', p.quantity ?? '', p.low_stock_threshold ?? '', LBL[state(p)][1], p.price]));
+}
+
 /* ---------- navigation helpers ---------- */
 let boCur = { view: 'home' };
 function boBack() { return boCur; }
@@ -563,6 +623,7 @@ const orders = () => { boCur = { view: 'orders' }; boHash(''); boOrders(); };
 const customers = () => { boCur = { view: 'customers' }; boHash(''); boCustomers(); };
 const couponUse = () => { boCur = { view: 'couponUse' }; boHash(''); boCouponUse(); };
 const abandoned = () => { boCur = { view: 'abandoned' }; boHash(''); boAbandoned(); };
+const inventory = () => { boCur = { view: 'inventory' }; boHash(''); boInventory(); };
 /* deep links: #order=<id>, #customer=<phone>, #coupon=<code> */
 function boDeepLink() {
   const m = location.hash.match(/^#(order|customer|coupon)=(.+)$/); if (!m) return false;
