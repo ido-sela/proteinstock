@@ -20,8 +20,8 @@ const T = {
   },
   orders: {
     pk: 'id',
-    cols: ['id', 'number', 'status', 'customer_name', 'phone', 'email', 'address', 'notes', 'subtotal', 'discount', 'coupon_code', 'shipping', 'total', 'currency', 'payment_provider', 'payment_ref', 'paid_at', 'delivery', 'created_at'],
-    write: ['status'], ops: ['select', 'update'],
+    cols: ['id', 'number', 'status', 'customer_name', 'phone', 'email', 'address', 'notes', 'subtotal', 'discount', 'coupon_code', 'shipping', 'total', 'currency', 'payment_provider', 'payment_ref', 'paid_at', 'delivery', 'created_at', 'fulfillment', 'tracking_number', 'source', 'shipping_method'],
+    write: ['status', 'fulfillment', 'tracking_number'], ops: ['select', 'update'],
     embed: { order_items: { fk: 'order_id', cols: ['id', 'product_id', 'title', 'unit_price', 'qty', 'line_total'] } },
   },
   order_items: { pk: 'id', cols: ['id', 'order_id', 'product_id', 'title', 'unit_price', 'qty', 'line_total'], ops: ['select'] },

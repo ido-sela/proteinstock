@@ -3,7 +3,7 @@
    Days are Israel days; "revenue" counts paid orders only. */
 const BO = {
   range: { preset: '30d', from: '', to: '' },
-  orders: { q: '', status: 'all', coupon: '', delivery: '', sort: 'created_at', dir: 'desc', page: 0, customer: '' },
+  orders: { q: '', status: 'all', coupon: '', delivery: '', fulfillment: '', sort: 'created_at', dir: 'desc', page: 0, customer: '' },
   customers: { q: '', sort: 'last', dir: 'desc', page: 0 },
   metric: 'revenue',
 };
@@ -19,6 +19,9 @@ const boCompact = n => { n = Number(n) || 0; return Math.abs(n) >= 10000 ? '₪'
 const boPhone = p => String(p || '').replace(/\D/g, '').replace(/^972/, '0');
 const boWa = p => 'https://wa.me/' + boPhone(p).replace(/^0/, '972');
 const boImg = (src, cls) => `<img class="${cls || 'bo-pimg'}" src="${esc(src ? (/^(https?:)?\/\//.test(src) || src.startsWith('/') ? src : '/' + src) : '/img/protein-stock-sports-nutrition-e-commerce-logo.webp')}" alt="" loading="lazy" onerror="this.onerror=null;this.src='/img/protein-stock-sports-nutrition-e-commerce-logo.webp'">`;
+const FUL = { pending: 'ממתינה לטיפול', processing: 'בטיפול', shipped: 'נשלחה', completed: 'הושלמה', cancelled: 'בוטלה' };
+const boFul = f => f ? `<span class="badge ful-${esc(f)}">${esc(FUL[f] || f)}</span>` : '';
+const boSrc = o => o.source === 'zappy' ? '<span class="bo-src" title="הזמנה מהחנות הקודמת ב-Zappy">Zappy</span>' : '';
 const boBadge = s => `<span class="badge ${esc(s)}">${esc(STATUS[s] || s)}</span>`;
 const BO_PRESETS = [['today', 'היום'], ['yesterday', 'אתמול'], ['7d', '7 הימים האחרונים'], ['30d', '30 הימים האחרונים'], ['90d', '90 הימים האחרונים'], ['month', 'החודש הנוכחי'], ['lastmonth', 'החודש הקודם'], ['year', 'השנה הנוכחית'], ['all', 'כל הזמנים'], ['custom', 'טווח מותאם…']];
 const BO_ICO = {
@@ -213,11 +216,11 @@ function boOrdersTable(rows, opt = {}) {
   const O = BO.orders;
   const th = (k, label, cls = '') => opt.compact ? `<th class="${cls}">${label}</th>` : `<th class="${cls}"><button class="bo-sort" data-sort="${k}" aria-sort="${O.sort === k ? (O.dir === 'asc' ? 'ascending' : 'descending') : 'none'}">${label}${O.sort === k ? (O.dir === 'asc' ? ' ▲' : ' ▼') : ''}</button></th>`;
   return `<div class="sp-tw"><table class="sp-table bo-t bo-orders"><thead><tr>${th('number', 'הזמנה')}${th('created_at', 'תאריך')}${opt.noCustomer ? '' : th('customer_name', 'לקוח')}<th class="hm">פריטים</th>${th('discount', 'קופון')}<th>תשלום</th>${th('paid_at', 'שולם ב-', 'hm')}${th('total', 'סה"כ', 'num')}</tr></thead><tbody>
-    ${rows.map(o => `<tr data-order="${esc(o.id)}" tabindex="0"><td class="bo-num" dir="ltr">${esc(o.number)}</td><td class="mute bo-nw">${boWhen(o.created_at)}</td>
+    ${rows.map(o => `<tr data-order="${esc(o.id)}" tabindex="0"><td class="bo-num"><span dir="ltr">${esc(o.number)}</span>${boSrc(o)}</td><td class="mute bo-nw">${boWhen(o.created_at)}</td>
       ${opt.noCustomer ? '' : `<td><div class="bo-name">${esc(o.customer_name)}</div><div class="mute" dir="ltr" style="text-align:end">${esc(o.phone)}</div></td>`}
       <td class="hm mute">${(o.thumbs || []).length ? `<span class="bo-thumbs">${o.thumbs.map(t => boImg(t, 'bo-th')).join('')}</span>` : ''}${o.items != null ? o.items + ' יח׳' : ''}${o.delivery === 'pickup' ? '<div>איסוף עצמי</div>' : ''}</td>
       <td>${o.coupon_code ? `<span class="bo-code" dir="ltr">${esc(o.coupon_code)}</span><div class="neg">−${boMoney(o.discount)}</div>` : '<span class="mute">—</span>'}</td>
-      <td>${boBadge(o.status)}${o.payment_provider ? `<div class="mute">${esc(o.payment_provider === 'payplus' ? 'PayPlus' : o.payment_provider)}</div>` : ''}</td>
+      <td>${boBadge(o.status)} ${boFul(o.fulfillment)}${o.payment_provider ? `<div class="mute">${esc(o.payment_provider === 'payplus' ? 'PayPlus' : o.payment_provider)}</div>` : ''}</td>
       <td class="hm mute bo-nw">${o.paid_at ? boWhen(o.paid_at) : '—'}</td><td class="num"><b>${boMoney(o.total)}</b></td></tr>`).join('')}
   </tbody></table></div>`;
 }
@@ -238,6 +241,7 @@ async function boOrders() {
     <div class="sp-card"><div class="sp-tabbar"><div class="tb" role="tablist">${tabs.map(([k, v]) => `<button role="tab" data-st="${k}" aria-selected="${O.status === k}">${v}</button>`).join('')}</div></div>
     <div class="bo-filters"><input type="search" id="bo-q" placeholder="חיפוש: מספר הזמנה, שם, טלפון, מייל, מוצר או קוד קופון" value="${esc(O.q)}" aria-label="חיפוש הזמנות">
       <select id="bo-cp" aria-label="קופון"><option value="">כל ההזמנות</option><option value="any"${O.coupon === 'any' ? ' selected' : ''}>עם קופון</option><option value="none"${O.coupon === 'none' ? ' selected' : ''}>בלי קופון</option>${O.coupon && !['any', 'none'].includes(O.coupon) ? `<option value="${esc(O.coupon)}" selected>קופון ${esc(O.coupon)}</option>` : ''}</select>
+      <select id="bo-fl" aria-label="סטטוס משלוח"><option value="">כל סטטוסי המשלוח</option>${Object.entries(FUL).map(([k, v]) => `<option value="${k}"${O.fulfillment === k ? ' selected' : ''}>${v}</option>`).join('')}<option value="none"${O.fulfillment === 'none' ? ' selected' : ''}>ללא סטטוס משלוח</option></select>
       <select id="bo-dl" aria-label="משלוח"><option value="">משלוח ואיסוף</option><option value="shipping"${O.delivery === 'shipping' ? ' selected' : ''}>משלוח בלבד</option><option value="pickup"${O.delivery === 'pickup' ? ' selected' : ''}>איסוף עצמי בלבד</option></select></div>
     ${O.customer ? `<div class="bo-chipbar">מציג הזמנות של לקוח אחד <button class="btn link" id="bo-cx">הצגת כל הלקוחות</button></div>` : ''}
     <div id="bo-list">${'<p class="sp-empty">טוען הזמנות…</p>'}</div></div>`;
@@ -247,13 +251,14 @@ async function boOrders() {
   qi.oninput = () => { clearTimeout(t); t = setTimeout(() => { O.q = qi.value.trim(); O.page = 0; boOrdersLoad(); }, 300); };
   R.querySelector('#bo-cp').onchange = e => { O.coupon = e.target.value; O.page = 0; boOrdersLoad(); };
   R.querySelector('#bo-dl').onchange = e => { O.delivery = e.target.value; O.page = 0; boOrdersLoad(); };
+  R.querySelector('#bo-fl').onchange = e => { O.fulfillment = e.target.value; O.page = 0; boOrdersLoad(); };
   const cx = R.querySelector('#bo-cx'); if (cx) cx.onclick = () => { O.customer = ''; O.page = 0; boOrders(); };
   document.getElementById('bo-csv').onclick = () => boExportOrders(boOrderParams());
   boOrdersLoad();
 }
 function boOrderParams() {
   const O = BO.orders, { from, to } = boRange();
-  return { from, to, status: O.status, q: O.q, coupon: O.coupon, delivery: O.delivery, customer: O.customer, sort: O.sort, dir: O.dir };
+  return { from, to, status: O.status, q: O.q, coupon: O.coupon, delivery: O.delivery, fulfillment: O.fulfillment, customer: O.customer, sort: O.sort, dir: O.dir };
 }
 async function boOrdersLoad() {
   const O = BO.orders, box = document.getElementById('bo-list'); if (!box) return;
@@ -290,7 +295,7 @@ async function boOrder(id, back) {
   const c = data.customer, ev = data.events;
   const paidLine = o.status === 'paid' ? `שולמה ${boWhen(o.paid_at)}${o.payment_provider ? ' דרך ' + esc(o.payment_provider === 'payplus' ? 'PayPlus' : o.payment_provider) : ' (סומנה ידנית)'}`
     : o.status === 'pending' ? (o.payment_provider ? 'נוצר דף תשלום, התשלום עוד לא אושר' : 'ממתינה לתשלום (ללא סליקה באתר — תיאום מול הלקוח)') : STATUS[o.status] || o.status;
-  pane().innerHTML = `<div class="bo-oh"><span class="bo-num" dir="ltr">${esc(o.number)}</span>${boBadge(o.status)}${o.coupon_code ? `<span class="bo-code" dir="ltr">${esc(o.coupon_code)}</span>` : ''}<span class="mute">${boWhen(o.created_at)}</span></div>
+  pane().innerHTML = `<div class="bo-oh"><span class="bo-num" dir="ltr">${esc(o.number)}</span>${boSrc(o)}${boBadge(o.status)}${boFul(o.fulfillment)}${o.coupon_code ? `<span class="bo-code" dir="ltr">${esc(o.coupon_code)}</span>` : ''}<span class="mute">${boWhen(o.created_at)}</span></div>
   <div class="sp-grid">
     <div>
       <section class="sp-card"><div class="bo-ch"><h2>פריטים</h2><span class="mute">${o.order_items.reduce((s, i) => s + i.qty, 0)} יחידות</span></div>
@@ -319,6 +324,11 @@ async function boOrder(id, back) {
           ${o.email ? `<div><span>אימייל</span><a href="mailto:${esc(o.email)}" dir="ltr">${esc(o.email)}</a></div>` : ''}
           <div><span>${o.delivery === 'pickup' ? 'מסירה' : 'כתובת למשלוח'}</span>${o.delivery === 'pickup' ? 'איסוף עצמי מהחנות' : esc(o.address || '—')}</div>
           ${o.notes ? `<div><span>הערות הלקוח</span>${esc(o.notes)}</div>` : ''}</div></section>
+      <section class="sp-card sp-pad"><h2>משלוח</h2>
+        <div class="bo-kv bo-kv1"><div><span>אופן מסירה</span>${o.delivery === 'pickup' ? 'איסוף עצמי' : esc(o.shipping_method || 'משלוח')}</div></div>
+        <label class="fld" style="margin-top:10px"><span>סטטוס משלוח</span><select id="bo-ful"><option value="">—</option>${Object.entries(FUL).map(([k, v]) => `<option value="${k}"${k === o.fulfillment ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+        <label class="fld"><span>מספר מעקב</span><input type="text" id="bo-trk" dir="ltr" maxlength="80" value="${esc(o.tracking_number || '')}" placeholder="למשל RR123456789IL"></label>
+        <button class="btn pri" id="bo-ship-save">שמירה</button></section>
       <section class="sp-card sp-pad"><h2>ציר זמן</h2><ol class="bo-tl">
         <li><b>ההזמנה נוצרה</b> <span class="mute">${boWhen(o.created_at)}</span></li>
         ${ev.map(e => `<li><b>${e.status_code === '000' ? 'אישור תשלום מ-PayPlus' : 'הודעת סליקה'}</b> <span class="mute">${boWhen(e.received_at)}</span></li>`).join('')}
@@ -330,6 +340,14 @@ async function boOrder(id, back) {
   document.getElementById('bo-print').onclick = () => window.print();
   P.querySelector('#bo-cust').onclick = () => boCustomer(boPhone(o.phone), o.customer_name, { view: 'order', id: o.id });
   P.querySelectorAll('[data-coupon]').forEach(b => b.onclick = () => b.dataset.coupon && boCoupon(b.dataset.coupon, { view: 'order', id: o.id }));
+  P.querySelector('#bo-ship-save').onclick = async e => {
+    const fulfillment = P.querySelector('#bo-ful').value || null, tracking_number = P.querySelector('#bo-trk').value.trim() || null;
+    e.target.disabled = true;
+    const { error } = await sb.from('orders').update({ fulfillment, tracking_number }).eq('id', o.id);
+    e.target.disabled = false;
+    if (error) { toast('השמירה נכשלה: ' + error.message); return; }
+    toast('נשמר'); boOrder(o.id, from);
+  };
   const sel = P.querySelector('#bo-status');
   sel.onchange = async () => {
     const next = sel.value, prev = o.status;
@@ -511,8 +529,8 @@ async function boExportOrders(params) {
   if (error) { toast('הייצוא נכשל: ' + error); return; }
   if (data.count > data.rows.length) toast(`יוצאו ${data.rows.length} מתוך ${data.count} הזמנות. צמצמו את הטווח כדי לייצא את כולן.`);
   boCsv(`orders-${params.from || ''}_${params.to || ''}.csv`,
-    ['מספר הזמנה', 'תאריך', 'סטטוס', 'לקוח', 'טלפון', 'אימייל', 'משלוח', 'כתובת', 'פריטים', 'סכום ביניים', 'קופון', 'הנחה', 'דמי משלוח', 'סה"כ', 'ספק סליקה', 'מזהה עסקה', 'תאריך תשלום', 'הערות'],
-    data.rows.map(o => [o.number, boWhen(o.created_at), STATUS[o.status] || o.status, o.customer_name, o.phone, o.email || '', o.delivery === 'pickup' ? 'איסוף עצמי' : 'משלוח', o.delivery === 'pickup' ? '' : o.address || '',
+    ['מספר הזמנה', 'מקור', 'תאריך', 'סטטוס', 'סטטוס משלוח', 'מספר מעקב', 'לקוח', 'טלפון', 'אימייל', 'משלוח', 'כתובת', 'פריטים', 'סכום ביניים', 'קופון', 'הנחה', 'דמי משלוח', 'סה"כ', 'ספק סליקה', 'מזהה עסקה', 'תאריך תשלום', 'הערות'],
+    data.rows.map(o => [o.number, o.source === 'zappy' ? 'Zappy' : 'האתר', boWhen(o.created_at), STATUS[o.status] || o.status, FUL[o.fulfillment] || '', o.tracking_number || '', o.customer_name, o.phone, o.email || '', o.delivery === 'pickup' ? 'איסוף עצמי' : 'משלוח', o.delivery === 'pickup' ? '' : o.address || '',
       (o.order_items || []).map(i => `${i.title} ×${i.qty}`).join(' | '), o.subtotal, o.coupon_code || '', o.discount, o.shipping, o.total, o.payment_provider || '', o.payment_ref || '', o.paid_at ? boWhen(o.paid_at) : '', o.notes || '']));
 }
 async function boExportCustomers() {

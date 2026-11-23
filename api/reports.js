@@ -31,7 +31,9 @@ function orderFilters(b, params = []) {
   if (b.coupon === 'any') w.push('o.coupon_code is not null');
   else if (b.coupon === 'none') w.push('o.coupon_code is null');
   else if (b.coupon) { params.push(str(b.coupon, 40).toUpperCase()); w.push(`o.coupon_code = $${params.length}`); }
-  if (b.delivery === 'pickup' || b.delivery === 'shipping') { params.push(b.delivery); w.push(`o.delivery = $${params.length}`); }
+  if (b.delivery === 'pickup' || b.delivery === 'shipping') { params.push(b.delivery); w.push(`o.delivery = ${params.length}`); }
+  if (b.fulfillment === 'none') w.push('o.fulfillment is null');
+  else if (['pending', 'processing', 'shipped', 'completed', 'cancelled'].includes(b.fulfillment)) { params.push(b.fulfillment); w.push(`o.fulfillment = ${params.length}`); }
   if (b.customer) { params.push(str(b.customer, 30).replace(/\D/g, '').replace(/^972/, '0')); w.push(`${PHONE_KEY} = $${params.length}`); }
   const text = str(b.q, 100);
   if (text) {
@@ -48,7 +50,8 @@ function orderFilters(b, params = []) {
 const whereOf = (w) => (w.length ? ' where ' + w.join(' and ') : '');
 
 const ORDER_COLS = `o.id, o.number, o.status, o.customer_name, o.phone, o.email, o.address, o.delivery, o.notes,
-  o.subtotal, o.discount, o.coupon_code, o.shipping, o.total, o.currency, o.payment_provider, o.payment_ref, o.paid_at, o.created_at`;
+  o.subtotal, o.discount, o.coupon_code, o.shipping, o.total, o.currency, o.payment_provider, o.payment_ref, o.paid_at, o.created_at,
+  o.fulfillment, o.tracking_number, o.source, o.shipping_method`;
 // up to 4 product images per order, for the thumbnails in order lists
 const THUMBS = `(select coalesce(json_agg(x.image), '[]') from (select p.image from order_items i join products p on p.id = i.product_id where i.order_id = o.id and p.image is not null order by i.id limit 4) x) thumbs`;
 const SORTS = { created_at: 'o.created_at', total: 'o.total', number: 'o.number', customer_name: 'o.customer_name', paid_at: 'o.paid_at', discount: 'o.discount' };

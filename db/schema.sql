@@ -56,6 +56,11 @@ create index if not exists orders_status_idx  on orders (status);
 
 alter table orders add column if not exists discount    numeric not null default 0 check (discount >= 0);
 alter table orders add column if not exists coupon_code text;
+-- shipping status / tracking, and where the order came from ('site' or 'zappy' for orders imported from the old store)
+alter table orders add column if not exists fulfillment text check (fulfillment is null or fulfillment in ('pending','processing','shipped','completed','cancelled'));
+alter table orders add column if not exists tracking_number text;
+alter table orders add column if not exists source text not null default 'site';
+alter table orders add column if not exists shipping_method text;
 create index if not exists orders_coupon_idx on orders (coupon_code) where coupon_code is not null;
 
 -- Discount coupons (moved from the old Zappy store). uses_count counts paid orders;
