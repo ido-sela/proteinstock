@@ -2,6 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
+<base href="/">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>מוצר — פרוטאין סטוק</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -107,7 +108,10 @@ function productDetails(p){
 <script>
 layout('products');
 const QS=new URLSearchParams(location.search);
-let PID=QS.get('id')||window.PS_PID||null;
+/* /product/<old-slug>: the slug ends with the product id; other slugs are matched by name */
+const pathSlug=(location.pathname.match(/^\/product\/([^/]+)/)||[])[1]||'';
+const slugId=s=>{ const m=decodeURIComponent(s||'').match(/-([a-z0-9]{6})$/i); return m?m[1].toLowerCase():null; };
+let PID=QS.get('id')||window.PS_PID||slugId(pathSlug)||slugId(QS.get('slug'))||null;
 function bySlug(slug){   // old site links: /product/<product-name-with-dashes>
   const norm=t=>t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
   const w=norm(decodeURIComponent(slug)).split(' ').filter(Boolean); if(!w.length) return null;
@@ -118,8 +122,9 @@ function bySlug(slug){   // old site links: /product/<product-name-with-dashes>
 const host=document.getElementById('pp');
 let giveUp=false; setTimeout(()=>{ giveUp=true; if(!byId(PID)) draw(); },4000);
 function draw(){
-if(!PID&&QS.get('slug')){ const m=bySlug(QS.get('slug')); if(m){ PID=m.id; history.replaceState(null,'',purl(m.id)); } }
+if(!PID&&(pathSlug||QS.get('slug'))){ const m=bySlug(pathSlug||QS.get('slug')); if(m){ PID=m.id; try{ history.replaceState(null,'',purl(m.id)); }catch(x){} } }   // only slugs without a product id are matched by name
 const p=byId(PID);
+if(p&&pathSlug&&typeof SLUGS!=='undefined'&&SLUGS[p.id]&&decodeURIComponent(pathSlug)!==SLUGS[p.id]){ try{ history.replaceState(null,'',purl(p.id)); }catch(x){} }   // an older address of the same product -> its current one
 const relSec=document.querySelector('section');
 if(!p&&!window.__liveReady&&!giveUp){ host.innerHTML='<div class="empty"><p style="padding:60px 0">טוען מוצר…</p></div>'; if(relSec) relSec.hidden=true; return; }
 if(!p){ host.innerHTML='<div class="empty"><h1>המוצר לא נמצא</h1><p style="margin:12px 0 22px">ייתכן שהמוצר הוסר מהקטלוג.</p><a class="btn btn-dark" href="products">לכל המוצרים</a></div>'; if(relSec) relSec.hidden=true; }
@@ -128,7 +133,7 @@ else{
   document.title=p.name+' — פרוטאין סטוק';
   const specs=productSpecs(p);
   const q=1; let qty=1;
-  host.innerHTML=`<div class="crumbs" style="padding-top:24px"><a href="/">בית</a> / <a href="products">מוצרים</a> / <a href="products?cat=${p.cat}">${catName(p.cat)}</a></div>
+  host.innerHTML=`<div class="crumbs" style="padding-top:24px"><a href="/">בית</a> / <a href="products">מוצרים</a> / <a href="category/${p.cat}">${catName(p.cat)}</a></div>
   <div class="pp"><div class="pp-img"><img src="${p.img}" alt="${esc(p.name)}" width="800" height="800"></div>
   <div><span class="pbrand">${esc(p.brand)}</span><h1>${esc(p.name)}</h1>
   <div class="ptags" style="position:static;flex-direction:row;flex-wrap:wrap;margin-bottom:12px">${p.sale?`<span class="tag sale">${p.pct}%- הנחה</span>`:''}${p.tags.map(t=>`<span class="tag green">${esc(t)}</span>`).join('')}</div>

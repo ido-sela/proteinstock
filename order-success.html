@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ההזמנה התקבלה! — פרוטאין סטוק - PROTEIN STOCK</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main id="main"><div class="wrap"><div class="ty" id="ty"></div></div></main>
+<script src="js/data.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/app.js"></script>
+<script>
+layout('');
+const q = new URLSearchParams(location.search);
+const status = ['success', 'received', 'failure', 'cancel'].includes(q.get('status')) ? q.get('status') : 'received';
+const order = (q.get('order') || '').replace(/[^A-Z0-9]/gi, '').slice(0, 12).toUpperCase();
+let last = {}; try { last = JSON.parse(sessionStorage.getItem('ps_last') || '{}'); } catch (e) { /* ignore */ }
+if (last.number !== order) last = {};
+const wa = text => `https://wa.me/${SITE.wa}?text=${encodeURIComponent(text)}`;
+const orderLine = order ? `<p class="ty-num">מספר הזמנה <b dir="ltr">${esc(order)}</b>${last.total ? ` · סה"כ ${money(last.total)}` : ''}</p>` : '';
+let h = '';
+if (status === 'success') {
+  Cart.items = []; Cart.stored = []; try { localStorage.setItem('ps_cart', '[]'); sessionStorage.removeItem('ps_last'); sessionStorage.removeItem('ps_coupon'); } catch (e) { /* ignore */ }
+  Cart.render();
+  document.title = 'תודה על ההזמנה — פרוטאין סטוק';
+  h = `<div class="ty-i ok">✓</div><h1>תודה${last.name ? ', ' + esc(last.name.split(' ')[0]) : ''}! ההזמנה התקבלה</h1>${orderLine}
+    <p>התשלום התקבל. נאשר את ההזמנה ונעדכן אתכם על המשלוח בהקדם. אם הזנתם אימייל, תישלח אליו קבלה.</p>
+    <div class="ty-a"><a class="btn btn-primary" href="products">להמשך קנייה</a><a class="btn btn-outline" target="_blank" rel="noopener" href="${wa('שלום, ביצעתי הזמנה באתר. מספר הזמנה: ' + order)}">שאלה על ההזמנה בוואטסאפ</a></div>`;
+} else if (status === 'received') {
+  Cart.render();
+  document.title = 'ההזמנה נקלטה — פרוטאין סטוק';
+  h = `<div class="ty-i ok">✓</div><h1>ההזמנה נקלטה</h1>${orderLine}
+    <p>ההזמנה נשמרה אצלנו וממתינה לתשלום. ניצור איתכם קשר בהקדם להשלמת התשלום ולאישור המשלוח.</p>
+    <div class="ty-a"><a class="btn btn-primary" target="_blank" rel="noopener" href="${wa('שלום, ביצעתי הזמנה באתר. מספר הזמנה: ' + order + (last.total ? ' · סה"כ ' + money(last.total) : ''))}">שלחו לנו את ההזמנה בוואטסאפ</a><a class="btn btn-outline" href="products">להמשך קנייה</a></div>`;
+} else {
+  document.title = 'התשלום לא הושלם — פרוטאין סטוק';
+  const cancelled = status === 'cancel';
+  h = `<div class="ty-i bad">!</div><h1>${cancelled ? 'התשלום בוטל' : 'התשלום לא הושלם'}</h1>${orderLine}
+    <p>${cancelled ? 'לא בוצע חיוב.' : 'לא בוצע חיוב, או שהכרטיס לא אושר.'} העגלה שלכם נשמרה, אפשר לנסות שוב או לפנות אלינו ונעזור.</p>
+    <div class="ty-a"><a class="btn btn-primary" href="checkout">חזרה לתשלום</a><a class="btn btn-outline" target="_blank" rel="noopener" href="${wa('שלום, נתקלתי בבעיה בתשלום באתר' + (order ? '. מספר הזמנה: ' + order : ''))}">עזרה בוואטסאפ</a></div>`;
+}
+document.getElementById('ty').innerHTML = h;
+</script>
+</body>
+</html>

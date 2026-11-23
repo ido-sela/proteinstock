@@ -23,6 +23,8 @@ Until then, orders are saved as `pending` and the customer gets the order number
 
 ## Product pages
 
-Every product in `js/data.js` has a static page at `p/<id>.html` (served as `/p/<id>`) with its own `<title>`, meta description, canonical URL, Open Graph tags and Product JSON-LD, so search engines and link previews see the product name. Old `/product?id=<id>` links redirect there (`vercel.json`). Products added in the admin keep using `product?id=`.
+Product pages keep the old store's addresses: every product in `js/data.js` has a static page at `product/<slug>.html` (served as `/product/<slug>`; the slugs are in `SLUGS` at the end of `js/data.js` and end with the product id) with its own `<title>`, meta description, canonical URL, Open Graph tags and Product JSON-LD. The addresses this site used for a few days (`/p/<id>`, `/product?id=<id>`) redirect there (`vercel.json`). Any other `/product/<something>-<id>` address still opens the right product (`product.html` reads the id at the end). Products added in the admin use `product?id=`.
 
-After changing `js/data.js` or `product.html`, rebuild: `node tools/build-product-pages.mjs` (also updates `sitemap.xml` and the redirect in `vercel.json`).
+Categories live at `/category/<id>` (also the old store's addresses), served by `products.html`.
+
+After changing `js/data.js` or `product.html`, rebuild: `node tools/build-product-pages.mjs` (also updates `sitemap.xml` and the redirects in `vercel.json`). A new product needs a slug in `SLUGS` first.

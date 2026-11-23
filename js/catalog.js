@@ -4,7 +4,7 @@ const CATS = [
   {id:'protein-cookies', name:'עוגיות חלבון', icon:'🍪', desc:'עוגיות רכות ואפויות של Snickers ו-Mars עם 15 גרם חלבון.'},
   {id:'protein-beverages', name:'משקאות חלבון', icon:'🥤', desc:'משקאות חלבון מוכנים לשתייה — עד 50 גרם חלבון בבקבוק.'},
   {id:'energy-drinks', name:'משקאות אנרגיה', icon:'⚡', desc:'מארזי Monster במגוון טעמים — אנרגיה ומיקוד לכל אימון.'},
-  {id:'protein-fortified-oatmeal', name:'שיבולת שועל עם חלבון', icon:'🥣', desc:'דייסות Critical Oats — ארוחת בוקר עם 23 גרם חלבון.'},
+  {id:'protein-fortified-oatmeal', name:'שיבולת שועל בתוספת חלבון', icon:'🥣', desc:'דייסות Critical Oats — ארוחת בוקר עם 23 גרם חלבון.'},
   {id:'protein-powders', name:'אבקות חלבון', icon:'💪', desc:'אבקות חלבון צלול לבניית שריר והתאוששות מהירה.'},
   {id:'protein-health-snacks', name:'חטיפי בריאות עם חלבון', icon:'🌱', desc:'נשנושים אורגניים וטבעוניים עשירים בחלבון.'},
   {id:'creatine-and-nutritional-supplements', name:'קריאטין ותוספי תזונה', icon:'🧪', desc:'גומי קריאטין וכל מה שתומך בביצועים.'}
@@ -13,9 +13,11 @@ const CATS = [
 const SUGAR = {'57yf4w':2};
 /* Virtual categories: computed from product data, shown in the store only (the admin keeps using CATS). */
 const VCATS = [
-  {id:'high-protein', name:'20 גרם חלבון ומעלה', icon:'🏋️', desc:'כל המוצרים עם 20 גרם חלבון ומעלה ביחידה — חטיפים, משקאות ודייסות.', test:p=>p.protein>=20}
+  {id:'over-20g-protein', name:'מעל 20 גרם חלבון', icon:'🏋️', desc:'כל המוצרים עם 20 גרם חלבון ומעלה ביחידה — חטיפים, משקאות ודייסות.', test:p=>p.protein>=20}
 ];
 const SHOP_CATS = [...VCATS, ...CATS];
+/* old store category addresses that have no category of their own here */
+const CAT_ALIAS = {'high-protein':'over-20g-protein','savory-protein-snacks':'protein-health-snacks','low-calorie-protein-powders':'protein-powders','weight-gain-supplement':'protein-powders'};
 const inCat = (p, id) => { const v=VCATS.find(c=>c.id===id); if(v) return v.test(p); return p.cat===id || (p.cats||[]).includes(id); };
 const catName = id => (SHOP_CATS.find(c=>c.id===id)||{}).name || '';
 

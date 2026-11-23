@@ -2,8 +2,9 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
+<base href="/">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>כל המוצרים — פרוטאין סטוק</title>
+<title>מוצרים — פרוטאין סטוק - PROTEIN STOCK</title>
 <meta name="description" content="קטלוג מלא: חטיפי חלבון, עוגיות חלבון, משקאות חלבון, משקאות אנרגיה, שיבולת שועל וקריאטין.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -34,7 +35,10 @@
 <script>
 layout('products');
 const P=new URLSearchParams(location.search);
-const st={cat:P.get('cat')||'',q:P.get('q')||'',brand:P.get('brand')||'',sort:'def',stock:false,p20:false};
+/* category pages live at /category/<id> (the old store's addresses); ?cat= still works */
+const pathCat=(location.pathname.match(/^\/category\/([^/]+)/)||[])[1]||'';
+const cat0=decodeURIComponent(pathCat||P.get('cat')||''), cat1=CAT_ALIAS[cat0]||cat0;
+const st={cat:SHOP_CATS.some(c=>c.id===cat1)?cat1:'',q:P.get('q')||'',brand:P.get('brand')||'',sort:'def',stock:false,p20:false};
 const $=id=>document.getElementById(id);
 $('chips').innerHTML=[{id:'',name:'הכל'},...SHOP_CATS].map(c=>`<button class="chip-btn" data-c="${c.id}">${c.name}</button>`).join('');
 const brands=[...new Set(PRODUCTS.map(p=>p.brand).filter(Boolean))].sort();
@@ -43,7 +47,7 @@ $('q').value=st.q; $('brand').value=st.brand;
 function render(){
   let l=PRODUCTS.filter(p=>(!st.cat||inCat(p,st.cat))&&(!st.brand||p.brand===st.brand)&&(!st.stock||!p.out)&&(!st.p20||p.protein>=20)&&(!st.q||(p.title+' '+p.brand+' '+catName(p.cat)).toLowerCase().includes(st.q.toLowerCase())));
   if(st.sort==='pa') l.sort((a,b)=>a.price-b.price); else if(st.sort==='pd') l.sort((a,b)=>b.price-a.price); else if(st.sort==='pr') l.sort((a,b)=>b.protein-a.protein);
-  else if(st.cat==='high-protein') l.sort((a,b)=>a.out-b.out||b.protein-a.protein);   // most protein first
+  else if(st.cat==='over-20g-protein') l.sort((a,b)=>a.out-b.out||b.protein-a.protein);   // most protein first
   else l.sort((a,b)=>a.out-b.out);
   document.querySelectorAll('.chip-btn').forEach(b=>b.classList.toggle('on',b.dataset.c===st.cat));
   const name=st.cat?catName(st.cat):(st.brand||'כל המוצרים');
@@ -51,7 +55,7 @@ function render(){
   $('count').textContent=l.length?`${l.length} מוצרים`:'';
   $('grid').innerHTML=l.length?l.map(card).join(''):'<div class="empty" style="grid-column:1/-1"><p style="font-size:2.4rem">🔍</p><p>לא נמצאו מוצרים. נסו לשנות את הסינון.</p></div>';
 }
-$('chips').onclick=e=>{const b=e.target.closest('[data-c]');if(b){st.cat=b.dataset.c;render();}};
+$('chips').onclick=e=>{const b=e.target.closest('[data-c]');if(b){st.cat=b.dataset.c;try{history.replaceState(null,'',st.cat?'/category/'+st.cat:'/products');}catch(x){}render();}};
 $('q').oninput=e=>{st.q=e.target.value;render();};
 $('brand').onchange=e=>{st.brand=e.target.value;render();};
 $('sort').onchange=e=>{st.sort=e.target.value;render();};

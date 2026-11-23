@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>פרוטאין סטוק — אבקות חלבון וחטיפי חלבון מיובאים במחיר השקה</title>
+<title>אבקות חלבון מובילות במחיר השקה — פרוטאין סטוק - PROTEIN STOCK</title>
 <meta name="description" content="אבקות חלבון, חטיפי חלבון, משקאות חלבון ומשקאות אנרגיה מהמותגים המובילים בעולם — Snickers, Mars, Warrior, Monster ועוד. משלוח מהיר לכל הארץ.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -17,7 +17,7 @@
       <span class="chip">🚀 מחירי השקה — לזמן מוגבל</span>
       <h1>תדלק את הגוף. <em>תנצח</em> כל אימון.</h1>
       <p>חטיפי חלבון, משקאות ותוספי תזונה מהמותגים הגדולים בעולם — מיובאים ישירות לישראל, במחירים שלא תמצאו בשום מקום אחר.</p>
-      <div class="cta"><a class="btn btn-primary" href="products">לקטלוג המוצרים</a><a class="btn btn-ghost" href="brands">המותגים שלנו</a></div>
+      <div class="cta"><a class="btn btn-primary" href="products">לקטלוג המוצרים</a><a class="btn btn-ghost" href="global-brands">המותגים שלנו</a></div>
     </div>
     <div class="hero-img" role="img" aria-label="חטיפי חלבון Snickers HI Protein"></div>
   </section>
@@ -38,7 +38,7 @@
       <div class="campaign-card">
         <h2>פרוטאין סטוק — מותגים מהעולם</h2>
         <p>אבקות חלבון, חטיפי אנרגיה ומשקאות מהמותגים המובילים בעולם — איכות בינלאומית, משלוח מהיר מישראל, במחיר המשתלם ביותר.</p>
-        <div class="row"><a class="btn btn-primary" href="brands">לכל המותגים</a><a class="btn btn-ghost" href="contact">צור קשר</a></div>
+        <div class="row"><a class="btn btn-primary" href="global-brands">לכל המותגים</a><a class="btn btn-ghost" href="contact">צור קשר</a></div>
       </div>
       <div class="campaign-img" role="img" aria-label="חטיפי Snickers HI Protein"></div>
     </div>
@@ -92,8 +92,8 @@
 <script src="js/app.js"></script>
 <script>
 layout('home');
-document.getElementById('catband').innerHTML=SHOP_CATS.map(c=>`<a href="products?cat=${c.id}">${c.name}</a>`).join('');
-document.getElementById('cats').innerHTML=SHOP_CATS.slice(0,4).map(c=>`<a class="cat" href="products?cat=${c.id}"><div class="ic" aria-hidden="true">${c.icon}</div><h3>${c.name}</h3><p>${c.desc}</p><span class="go">לכל ה${c.name}</span></a>`).join('');
+document.getElementById('catband').innerHTML=SHOP_CATS.map(c=>`<a href="category/${c.id}">${c.name}</a>`).join('');
+document.getElementById('cats').innerHTML=SHOP_CATS.slice(0,4).map(c=>`<a class="cat" href="category/${c.id}"><div class="ic" aria-hidden="true">${c.icon}</div><h3>${c.name}</h3><p>${c.desc}</p><span class="go">לכל ה${c.name}</span></a>`).join('');
 function paintHome(){
   const feat=['0zpa50','s5r79f','nho05h','vdx2p0','5g4sp7','wu794d','euudrs','24lhib'].map(byId).filter(Boolean);
   document.getElementById('featured').innerHTML=feat.map(card).join('');

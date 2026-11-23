@@ -1,7 +1,8 @@
-// Builds one static page per product at p/<id>.html from product.html, with the product's own
+// Builds one static page per product at product/<slug>.html (the old store's address, kept for Google and
+// old links; the slugs are in js/data.js → SLUGS) from product.html, with the product's own
 // <title>, meta description, canonical URL, Open Graph tags and Product JSON-LD in the HTML
 // (so Google, WhatsApp and Facebook see the product name without running JavaScript).
-// Also rewrites the product URLs in sitemap.xml.
+// Also rewrites the product URLs in sitemap.xml and the redirects in vercel.json (/p/<id> and /product?id=<id>).
 // Run after changing js/data.js:   node tools/build-product-pages.mjs
 import fs from 'node:fs';
 import vm from 'node:vm';
@@ -13,19 +14,22 @@ const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 const ctx = {};
 vm.createContext(ctx);
-vm.runInContext(read('js/data.js') + '\n' + read('js/catalog.js') + '\nthis.PRODUCTS = RAW.map(build); this.catName = catName;', ctx);
-const { PRODUCTS, catName } = ctx;
+vm.runInContext(read('js/data.js') + '\n' + read('js/catalog.js') + '\nthis.PRODUCTS = RAW.map(build); this.catName = catName; this.SLUGS = SLUGS;', ctx);
+const { PRODUCTS, catName, SLUGS } = ctx;
+const missing = PRODUCTS.filter(p => !SLUGS[p.id] || !SLUGS[p.id].endsWith('-' + p.id));
+if (missing.length) throw new Error('add a slug (ending with -<id>) to SLUGS in js/data.js for: ' + missing.map(p => p.id).join(', '));
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tpl = read('product.html');
 if (!tpl.includes('<title>מוצר — פרוטאין סטוק</title>')) throw new Error('product.html <title> changed; update the generator');
 
-const outDir = path.join(ROOT, 'p');
+const outDir = path.join(ROOT, 'product');
 fs.rmSync(outDir, { recursive: true, force: true });
+fs.rmSync(path.join(ROOT, 'p'), { recursive: true, force: true });   // pages used to live at p/<id>.html
 fs.mkdirSync(outDir);
 
 for (const p of PRODUCTS) {
-  const url = `${SITE}/p/${p.id}`;
+  const url = `${SITE}/product/${SLUGS[p.id]}`;
   const title = `${p.name} — פרוטאין סטוק`;
   const details = p.rest.join(' · ');
   const desc = `${p.name}${details ? ' · ' + details : ''}${p.brand ? ' · ' + p.brand : ''}. ${catName(p.cat)} במחיר ₪${p.price} כולל מע"מ, משלוח לכל הארץ — פרוטאין סטוק.`;
@@ -40,7 +44,6 @@ for (const p of PRODUCTS) {
       seller: { '@type': 'Organization', name: 'פרוטאין סטוק' } }
   };
   const head = [
-    '<base href="/">',
     `<title>${esc(title)}</title>`,
     `<meta name="description" content="${esc(desc)}">`,
     `<link rel="canonical" href="${url}">`,
@@ -56,17 +59,24 @@ for (const p of PRODUCTS) {
     `<script>window.PS_PID=${JSON.stringify(p.id)};</script>`
   ].join('\n');
   const html = tpl.replace('<title>מוצר — פרוטאין סטוק</title>', head);
-  fs.writeFileSync(path.join(outDir, `${p.id}.html`), html);
+  fs.writeFileSync(path.join(outDir, `${SLUGS[p.id]}.html`), html);
 }
 
-// sitemap: product?id=X -> p/X
-const sm = read('sitemap.xml').replace(/\/product\?id=([A-Za-z0-9_-]+)/g, '/p/$1');
+// sitemap: every product address -> /product/<slug>
+const sm = read('sitemap.xml')
+  .replace(/\/product\?id=([A-Za-z0-9_-]+)/g, (m, id) => SLUGS[id] ? '/product/' + SLUGS[id] : m)
+  .replace(/\/p\/([A-Za-z0-9_-]+)/g, (m, id) => SLUGS[id] ? '/product/' + SLUGS[id] : m);
 fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), sm);
 
-// vercel.json: permanent redirect from old product?id=X URLs to p/X for every static page
+// vercel.json: permanent redirects from the addresses this site used before (/p/<id>, /product?id=<id>) to /product/<slug>
 const vj = JSON.parse(read('vercel.json'));
-vj.redirects = vj.redirects.filter(r => !(r.source === '/product' && r.has));
-vj.redirects.unshift({ source: '/product', has: [{ type: 'query', key: 'id', value: `(?<pid>${PRODUCTS.map(p => p.id).join('|')})` }], destination: '/p/:pid', permanent: true });
+vj.redirects = vj.redirects.filter(r => !(r.source.startsWith('/p/') || (r.source === '/product' && r.has)));   // ours, rebuilt below
+const ours = [];
+for (const p of PRODUCTS) {
+  ours.push({ source: `/p/${p.id}`, destination: `/product/${SLUGS[p.id]}`, permanent: true });
+  ours.push({ source: '/product', has: [{ type: 'query', key: 'id', value: p.id }], destination: `/product/${SLUGS[p.id]}`, permanent: true });
+}
+vj.redirects = [...ours, ...vj.redirects];
 fs.writeFileSync(path.join(ROOT, 'vercel.json'), JSON.stringify(vj, null, 2) + '\n');
 
 console.log(`built ${PRODUCTS.length} product pages`);

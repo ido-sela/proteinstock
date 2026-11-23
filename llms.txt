@@ -13,29 +13,33 @@
 
 - [דף הבית](https://proteinstock.co.il/): מבצעים, קטגוריות ומותגים נבחרים
 - [כל המוצרים](https://proteinstock.co.il/products): קטלוג מלא עם סינון לפי קטגוריה, מותג, מלאי וכמות חלבון
-- [מותגים](https://proteinstock.co.il/brands): כל המותגים שבחנות
-- [למה פרוטאין סטוק](https://proteinstock.co.il/why): על החנות ועל היתרונות שלה
+- [מותגים מכל העולם](https://proteinstock.co.il/global-brands): כל המותגים שבחנות
+- [למה פרוטאין סטוק](https://proteinstock.co.il/why-protein-stock): על החנות ועל היתרונות שלה
+- [לעסקים](https://proteinstock.co.il/business-wholesale): הצעות מחיר לחדרי כושר, סטודיו, חנויות וסיטונאים
+- [מאמרים](https://proteinstock.co.il/articles): מאמרים על חלבון, קריאטין ותזונת ספורט
 - [צור קשר](https://proteinstock.co.il/contact): טלפון, וואטסאפ, מייל וכתובת
-- [משלוחים והחזרות](https://proteinstock.co.il/policies): מדיניות משלוחים וסיכום ביטול עסקה
-- [תנאי שימוש ורכישה](https://proteinstock.co.il/terms): הזמנות, מחירים, משלוחים, ביטול עסקה והחזרות
+- [מדיניות משלוחים](https://proteinstock.co.il/shipping-policy): עלות משלוח, זמני אספקה ואיסוף עצמי
+- [מדיניות החזרות](https://proteinstock.co.il/return-policy): זכות הביטול, מוצרים שלא ניתן להחזיר ומוצר פגום
+- [ביטול עסקה](https://proteinstock.co.il/transaction-cancellation): טופס ודרכים למסירת הודעת ביטול
+- [תנאי שימוש](https://proteinstock.co.il/terms): תנאי השימוש באתר
 - [מדיניות פרטיות](https://proteinstock.co.il/privacy): איזה מידע נאסף, שימוש, שיתוף וזכויות
 - [הצהרת נגישות](https://proteinstock.co.il/accessibility): התאמות נגישות ודרכי פנייה
 
 ## קטגוריות
 
-- [20 גרם חלבון ומעלה](https://proteinstock.co.il/products?cat=high-protein): כל המוצרים עם 20 גרם חלבון ומעלה ביחידה
-- [חטיפי חלבון](https://proteinstock.co.il/products?cat=protein-snacks): Snickers, Mars, Warrior, Muscle Moose ועוד
-- [עוגיות חלבון](https://proteinstock.co.il/products?cat=protein-cookies): עוגיות רכות ואפויות עם 15 גרם חלבון
-- [משקאות חלבון](https://proteinstock.co.il/products?cat=protein-beverages): משקאות מוכנים לשתייה, עד 50 גרם חלבון בבקבוק
-- [משקאות אנרגיה](https://proteinstock.co.il/products?cat=energy-drinks): מארזי Monster במגוון טעמים
-- [שיבולת שועל עם חלבון](https://proteinstock.co.il/products?cat=protein-fortified-oatmeal): דייסות Critical Oats עם 23 גרם חלבון
-- [אבקות חלבון](https://proteinstock.co.il/products?cat=protein-powders): חלבון צלול לבניית שריר והתאוששות
-- [חטיפי בריאות עם חלבון](https://proteinstock.co.il/products?cat=protein-health-snacks): נשנושים אורגניים וטבעוניים
-- [קריאטין ותוספי תזונה](https://proteinstock.co.il/products?cat=creatine-and-nutritional-supplements): גומי קריאטין ותוספים לביצועים
+- [מעל 20 גרם חלבון](https://proteinstock.co.il/category/over-20g-protein): כל המוצרים עם 20 גרם חלבון ומעלה ביחידה
+- [חטיפי חלבון](https://proteinstock.co.il/category/protein-snacks): Snickers, Mars, Warrior, Muscle Moose ועוד
+- [עוגיות חלבון](https://proteinstock.co.il/category/protein-cookies): עוגיות רכות ואפויות עם 15 גרם חלבון
+- [משקאות חלבון](https://proteinstock.co.il/category/protein-beverages): משקאות מוכנים לשתייה, עד 50 גרם חלבון בבקבוק
+- [משקאות אנרגיה](https://proteinstock.co.il/category/energy-drinks): מארזי Monster במגוון טעמים
+- [שיבולת שועל בתוספת חלבון](https://proteinstock.co.il/category/protein-fortified-oatmeal): דייסות Critical Oats עם 23 גרם חלבון
+- [אבקות חלבון](https://proteinstock.co.il/category/protein-powders): חלבון צלול לבניית שריר והתאוששות
+- [חטיפי בריאות עם חלבון](https://proteinstock.co.il/category/protein-health-snacks): נשנושים אורגניים וטבעוניים
+- [קריאטין ותוספי תזונה](https://proteinstock.co.il/category/creatine-and-nutritional-supplements): גומי קריאטין ותוספים לביצועים
 
 ## מוצרים
 
-- עמוד מוצר: `https://proteinstock.co.il/product?id=<מזהה>` — שם מלא, תמונה, מחיר, מחיר מקורי במבצע, ערכים תזונתיים ותיאור.
+- עמוד מוצר: `https://proteinstock.co.il/product/<שם-המוצר>-<מזהה>` — שם מלא, תמונה, מחיר, מחיר מקורי במבצע, ערכים תזונתיים ותיאור.
 - רשימת כל כתובות המוצרים נמצאת ב-[sitemap.xml](https://proteinstock.co.il/sitemap.xml).
 
 ## יצירת קשר והזמנות

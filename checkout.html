@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>תשלום — פרוטאין סטוק</title>
+<title>תשלום — פרוטאין סטוק - PROTEIN STOCK</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -273,7 +273,7 @@ async function submit(e) {
   try { sessionStorage.setItem('ps_last', JSON.stringify({ number: d.order_number, total: d.total, name: body.name, paid: !!pay })); sessionStorage.removeItem('ps_note'); if (!pay) sessionStorage.removeItem('ps_coupon'); } catch (x) { /* ignore */ }
   if (pay) { t.textContent = 'מעבירים לתשלום…'; location.href = pay; return; }   // the cart stays until the payment succeeds
   Cart.items = []; Cart.stored = []; try { localStorage.setItem('ps_cart', '[]'); } catch (x) { /* ignore */ }
-  location.href = 'thank-you?status=received&order=' + encodeURIComponent(d.order_number);
+  location.href = 'order-success?status=received&order=' + encodeURIComponent(d.order_number);
 }
 
 Cart.load();

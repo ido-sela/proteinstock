@@ -32,9 +32,8 @@ const ORDER_ERR = { unavailable:'חלק מהמוצרים כבר לא זמיני�
 
 const PRODUCTS = RAW.map(build);
 const byId = id => PRODUCTS.find(p=>p.id===id);
-/* Products from js/data.js have a static page at p/<id> (built by tools/build-product-pages.mjs); products added in the admin use product?id=. */
-const STATIC_PAGE = new Set(RAW.map(r=>r[0]));
-const purl = id => STATIC_PAGE.has(id) ? 'p/'+encodeURIComponent(id) : 'product?id='+encodeURIComponent(id);
+/* Products from js/data.js have a static page at product/<slug> (the old store's address; built by tools/build-product-pages.mjs); products added in the admin use product?id=. */
+const purl = id => (typeof SLUGS !== 'undefined' && SLUGS[id]) ? 'product/'+SLUGS[id] : 'product?id='+encodeURIComponent(id);   // product pages keep the old store's addresses
 
 const money = n => SITE.currency + (Math.round(n*100)/100).toLocaleString('he-IL',{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2});
 const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -93,9 +92,9 @@ function card(p){
 /* ---------- layout ---------- */
 function layout(active){
   const q=new URLSearchParams(location.search).get('q')||'';
-  const navCats=SHOP_CATS.map(c=>`<a href="products?cat=${c.id}">${c.name}</a>`).join('');
+  const navCats=SHOP_CATS.map(c=>`<a href="category/${c.id}">${c.name}</a>`).join('');
   document.body.insertAdjacentHTML('afterbegin',`
-  <a class="skip" href="#main">דלג לתוכן</a>
+  <a class="skip" href="${esc(location.pathname)}#main">דלג לתוכן</a>
   <div class="topbar" id="topbar">🚀 <b>מחירי השקה</b> — משלוחים לכל הארץ · משלוח חינם בקנייה מעל ${money(SITE.freeShip)}</div>
   <header class="header"><div class="wrap">
     <button class="icon-btn burger" id="burger" aria-label="תפריט" aria-expanded="false">${ICON.menu}</button>
@@ -103,8 +102,10 @@ function layout(active){
     <nav class="nav" id="nav" aria-label="ראשי">
       <a href="/" class="${active==='home'?'active':''}">בית</a>
       <div class="has-menu"><a href="products" class="${active==='products'?'active':''}">מוצרים ▾</a><div class="menu"><a href="products">כל המוצרים</a>${navCats}</div></div>
-      <a href="brands" class="${active==='brands'?'active':''}">מותגים</a>
-      <a href="why" class="${active==='why'?'active':''}">למה פרוטאין סטוק</a>
+      <a href="global-brands" class="${active==='brands'?'active':''}">מותגים מכל העולם</a>
+      <a href="why-protein-stock" class="${active==='why'?'active':''}">למה פרוטאין סטוק</a>
+      <a href="articles" class="${active==='articles'?'active':''}">מאמרים</a>
+      <a href="business-wholesale" class="${active==='business'?'active':''}">לעסקים</a>
       <a href="contact" class="${active==='contact'?'active':''}">צור קשר</a>
     </nav>
     <form class="hsearch" action="products" role="search"><input type="search" name="q" value="${esc(q)}" placeholder="חיפוש מוצרים…" aria-label="חיפוש מוצרים">${ICON.search}</form>
@@ -121,8 +122,8 @@ function layout(active){
   <footer><div class="wrap"><div class="fgrid">
     <div><img class="flogo" src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק" width="150" height="48"><p>אבקות חלבון, חטיפי אנרגיה ומשקאות מהמותגים המובילים בעולם — איכות בינלאומית, משלוח מהיר מישראל, במחיר המשתלם ביותר.</p>
       <div class="social"><a href="https://instagram.com/protein.stock" target="_blank" rel="noopener" aria-label="Instagram">IG</a><a href="https://facebook.com/profile.php?id=100063652643790" target="_blank" rel="noopener" aria-label="Facebook">FB</a><a href="https://tiktok.com/@proten.stock" target="_blank" rel="noopener" aria-label="TikTok">TT</a><a href="https://youtube.com/@proteinstock" target="_blank" rel="noopener" aria-label="YouTube">YT</a></div></div>
-    <div><h4>קטגוריות</h4>${SHOP_CATS.slice(0,6).map(c=>`<a href="products?cat=${c.id}">${c.name}</a>`).join('')}</div>
-    <div><h4>מידע</h4><a href="why">למה פרוטאין סטוק</a><a href="brands">מותגים מכל העולם</a><a href="shipping-policy">מדיניות משלוחים</a><a href="return-policy">מדיניות החזרות</a><a href="transaction-cancellation">ביטול עסקה</a><a href="privacy">מדיניות פרטיות</a><a href="terms">תנאי שימוש</a><a href="accessibility">הצהרת נגישות</a></div>
+    <div><h4>קטגוריות</h4>${SHOP_CATS.slice(0,6).map(c=>`<a href="category/${c.id}">${c.name}</a>`).join('')}</div>
+    <div><h4>מידע</h4><a href="why-protein-stock">למה פרוטאין סטוק</a><a href="global-brands">מותגים מכל העולם</a><a href="articles">מאמרים</a><a href="business-wholesale">לעסקים</a><a href="shipping-policy">מדיניות משלוחים</a><a href="return-policy">מדיניות החזרות</a><a href="transaction-cancellation">ביטול עסקה</a><a href="privacy">מדיניות פרטיות</a><a href="terms">תנאי שימוש</a><a href="accessibility">הצהרת נגישות</a></div>
     <div><h4>יצירת קשר</h4><a href="mailto:${SITE.email}">${SITE.email}</a><a href="tel:${SITE.phone}">${SITE.phone}</a><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SITE.address)}" target="_blank" rel="noopener">${SITE.address}</a><p style="margin-top:8px">א׳–ה׳ 09:00–16:00<br>ו׳–שבת סגור</p></div>
   </div><div class="fbottom"><span>© ${new Date().getFullYear()} פרוטאין סטוק — כל הזכויות שמורות</span><span>המחירים כוללים מע"מ</span></div></div></footer>`);
 
@@ -613,5 +614,5 @@ setTimeout(initSearchDD,0); document.addEventListener('DOMContentLoaded',initSea
 /* ---------- return from the payment page ---------- */
 (function(){
   const q=new URLSearchParams(location.search), s=q.get('pay'), o=(q.get('order')||'').replace(/[^A-Z0-9]/gi,'').slice(0,12);
-  if(s&&/^(success|failure|cancel)$/.test(s)) location.replace('thank-you?status='+s+'&order='+encodeURIComponent(o));
+  if(s&&/^(success|failure|cancel)$/.test(s)) location.replace('order-success?status='+s+'&order='+encodeURIComponent(o));
 })();

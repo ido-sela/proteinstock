@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>מותגי על כמו Snickers ו-Mars מחכים לך — פרוטאין סטוק - PROTEIN STOCK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main id="main">
+<div class="page-head"><div class="wrap"><div class="crumbs"><a href="/">בית</a> / מותגים</div><h1>מותגים מכל העולם</h1><p style="color:var(--muted);margin-top:6px;max-width:60ch">אנחנו מייבאים עבורכם את השמות הגדולים בעולם תזונת הספורט — כל מוצר עם הטעמים המוכרים והאיכות הבינלאומית.</p></div></div>
+<section><div class="wrap"><div class="cats" id="b"></div></div></section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/app.js"></script>
+<script>
+layout('brands');
+const brands=[...new Set(PRODUCTS.map(p=>p.brand).filter(Boolean))];
+document.getElementById('b').innerHTML=brands.map(b=>{const l=PRODUCTS.filter(p=>p.brand===b);const img=l.find(p=>!p.out)||l[0];
+return `<a class="cat" href="products?brand=${encodeURIComponent(b)}"><img src="${img.img}" alt="" loading="lazy" style="height:150px;object-fit:contain;margin:0 auto 6px"><h3>${esc(b)}</h3><p>${l.length} מוצרים</p><span class="go">לצפייה במוצרים ←</span></a>`}).join('');
+</script>
+</body>
+</html>
