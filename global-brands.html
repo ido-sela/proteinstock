@@ -20,7 +20,7 @@
 layout('brands');
 const brands=[...new Set(PRODUCTS.map(p=>p.brand).filter(Boolean))];
 document.getElementById('b').innerHTML=brands.map(b=>{const l=PRODUCTS.filter(p=>p.brand===b);const img=l.find(p=>!p.out)||l[0];
-return `<a class="cat" href="products?brand=${encodeURIComponent(b)}"><img src="${img.img}" alt="" loading="lazy" style="height:150px;object-fit:contain;margin:0 auto 6px"><h3>${esc(b)}</h3><p>${l.length} מוצרים</p><span class="go">לצפייה במוצרים ←</span></a>`}).join('');
+return `<a class="cat" href="products?brand=${encodeURIComponent(b)}"><img src="${brandLogo(b)||img.img}" alt="" loading="lazy" style="height:150px;width:100%;object-fit:contain;margin:0 auto 6px;padding:${brandLogo(b)?'18px':'0'}"><h3>${esc(b)}</h3><p>${l.length} מוצרים</p><span class="go">לצפייה במוצרים ←</span></a>`}).join('');
 </script>
 </body>
 </html>

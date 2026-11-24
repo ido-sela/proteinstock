@@ -10,6 +10,8 @@ const LEGACY_SB = { url:'https://yplzliqpohqehypllxdq.supabase.co', key:'sb_publ
    The paid order is read now, before order-success clears it, for the Purchase event. */
 try{ if(/order-success/.test(location.pathname)){ const l=JSON.parse(sessionStorage.getItem('ps_last')||'null'), o=(new URLSearchParams(location.search).get('order')||'').toUpperCase(); if(l&&String(l.number).toUpperCase()===o) window.__psLastOrder=l; } }catch(e){}
 (function(){ const s=document.createElement('script'); s.src='/js/track.js?v=3'; s.async=true; document.head.appendChild(s); })();
+/* Newsletter popup: js/news-popup.js */
+(function(){ if(/\/admin/.test(location.pathname)) return; const s=document.createElement('script'); s.src='/js/news-popup.js?v=1'; s.async=true; document.head.appendChild(s); })();
 /* Accessibility menu: js/a11y.js */
 (function(){ if(/\/admin/.test(location.pathname)) return; const s=document.createElement('script'); s.src='/js/a11y.js?v=1'; s.async=true; document.head.appendChild(s); })();
 /* Read rows from the public data API: apiRead('products', 'id,title', [['eq','key','x']]) -> array, or null on failure. */

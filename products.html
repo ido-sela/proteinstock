@@ -16,6 +16,7 @@
   <div class="wrap">
     <div class="toolbar">
       <div class="chips" id="chips" role="group" aria-label="קטגוריות"></div>
+      <div class="brand-strip" id="bstrip" aria-label="מותגים"></div>
       <div class="tools">
         <input type="search" id="q" placeholder="חיפוש…" aria-label="חיפוש">
         <select id="brand" aria-label="מותג"><option value="">כל המותגים</option></select>
@@ -50,10 +51,12 @@ function render(){
   else l.sort((a,b)=>a.out-b.out);
   document.querySelectorAll('.chip-btn').forEach(b=>b.classList.toggle('on',b.dataset.c===st.cat));
   const name=st.cat?catName(st.cat):(st.brand||'כל המוצרים');
-  $('title').textContent=name; $('crumb').textContent=name; document.title=name+' — פרוטאין סטוק';
+  $('title').innerHTML=(st.brand&&!st.cat&&brandLogo(st.brand)?`<span class="ph-logo"><img src="${brandLogo(st.brand)}" alt=""></span>`:'')+esc(name); $('crumb').textContent=name; document.title=name+' — פרוטאין סטוק';
   $('count').textContent=l.length?`${l.length} מוצרים`:'';
   $('grid').innerHTML=l.length?l.map(card).join(''):'<div class="empty" style="grid-column:1/-1"><p style="font-size:2.4rem">🔍</p><p>לא נמצאו מוצרים. נסו לשנות את הסינון.</p></div>';
 }
+$('bstrip').innerHTML=BRAND_ORDER.filter(b=>PRODUCTS.some(p=>p.brand===b)).map(b=>brandTile(b,'brand-tile sm')).join('');
+$('bstrip').onclick=e=>{const a=e.target.closest('a[href*="brand="]'); if(!a) return; e.preventDefault(); st.brand=decodeURIComponent(a.href.split('brand=')[1]); st.cat=''; $('brand').value=st.brand; try{history.replaceState(null,'','/products?brand='+encodeURIComponent(st.brand));}catch(x){} render(); window.scrollTo({top:0,behavior:'smooth'});};
 $('chips').onclick=e=>{const b=e.target.closest('[data-c]');if(b){st.cat=b.dataset.c;try{history.replaceState(null,'',st.cat?'/category/'+st.cat:'/products');}catch(x){}render();}};
 $('q').oninput=e=>{st.q=e.target.value;render();};
 $('brand').onchange=e=>{st.brand=e.target.value;render();};

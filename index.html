@@ -98,7 +98,7 @@ function paintHome(){
   document.getElementById('featured').innerHTML=feat.map(card).join('');
 }
 paintHome(); window.__rerender=paintHome; if(window.__liveReady) paintHome();
-document.getElementById('brands').innerHTML=['Snickers','Mars','Warrior','Monster',"M&M's",'Applied Nutrition','UFIT','Muscle Moose','Hubba Bubba'].map(b=>`<a class="brand-pill" href="products?brand=${encodeURIComponent(b)}">${b}</a>`).join('');
+document.getElementById('brands').innerHTML=BRAND_ORDER.filter(b=>BRAND_LOGOS[b]).map(b=>brandTile(b)).join('');
 /* newsletter: saved in the store database (admin → לקוחות); the welcome code is shown right away */
 document.getElementById('news').onsubmit=async e=>{
   e.preventDefault(); const f=e.target, b=f.querySelector('button'), email=f.querySelector('input').value.trim();

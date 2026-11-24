@@ -924,3 +924,19 @@ input[type=tel]:placeholder-shown,input[type=email]:placeholder-shown{direction:
 .art-card .art-img{width:calc(100% + 40px);margin:-20px -20px 6px;max-width:none;aspect-ratio:16/10;object-fit:cover;display:block;background:var(--light)}
 .art-hero{width:100%;height:auto;max-height:440px;object-fit:cover;border-radius:var(--r);margin:0 0 22px;display:block}
 @media(max-width:640px){.art-hero{max-height:260px;margin-bottom:16px}}
+
+/* brand logos: home section, strip under the shop chips, brand page header */
+.brands{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.brand-tile{display:grid;place-items:center;height:96px;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:14px;transition:border-color .15s,box-shadow .15s,transform .15s}
+.brand-tile:hover{border-color:var(--blue);box-shadow:0 6px 18px rgba(8,107,191,.12);transform:translateY(-2px)}
+.brand-tile img{max-width:100%;max-height:100%;object-fit:contain}
+.brand-tile span{font-weight:800;color:var(--navy);font-size:1rem;text-align:center}
+.brand-strip{display:flex;gap:10px;overflow-x:auto;flex:1 1 100%;padding:4px 2px 10px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.brand-tile.sm{flex:0 0 120px;height:64px;padding:8px 12px;border-radius:12px;scroll-snap-align:start}
+.ph-logo{display:inline-grid;place-items:center;width:84px;height:52px;background:#fff;border-radius:12px;padding:6px 10px;margin-inline-end:12px;vertical-align:middle}
+.ph-logo img{max-width:100%;max-height:100%;object-fit:contain}
+/* category chips with a bit of colour */
+.chip-btn{background:linear-gradient(180deg,#fff,#f2f7fd);border-color:#cfe0f3;color:var(--navy);font-weight:600;box-shadow:0 1px 0 rgba(10,25,41,.04)}
+.chip-btn:hover{background:#e8f2fd;border-color:var(--blue);color:var(--blue)}
+.chip-btn.on{background:linear-gradient(135deg,#1764d6,#0a3d8f);border-color:#1764d6;color:#fff;box-shadow:0 4px 12px rgba(23,100,214,.25)}
+@media(max-width:640px){.brand-strip{margin-inline:calc(var(--gut)*-1);padding-inline:var(--gut)}.brand-tile{height:80px}.brands{grid-template-columns:repeat(3,1fr);gap:8px}.ph-logo{width:64px;height:42px}}
