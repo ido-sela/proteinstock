@@ -39,26 +39,6 @@
   ],
   "redirects": [
     {
-      "source": "/category/low-calorie-protein-powders",
-      "destination": "/category/protein-powders",
-      "permanent": true
-    },
-    {
-      "source": "/category/weight-gain-supplement",
-      "destination": "/category/protein-powders",
-      "permanent": true
-    },
-    {
-      "source": "/category/savory-protein-snacks",
-      "destination": "/category/protein-health-snacks",
-      "permanent": true
-    },
-    {
-      "source": "/product/chtyp-chlbvn-dl-svkr-the-dinky-protein-bar-btam-bvtnym-vshvkvld-peanut-chocolate-35-grm-11-grm-chlbvn-12-ychydvt-bmarz-muscle-moose-jxaohu",
-      "destination": "/products?brand=Muscle%20Moose",
-      "permanent": false
-    },
-    {
       "source": "/p/ecio0t",
       "destination": "/product/marz-12-ych-pchyvt-monster-ultra-violet-btam-anbym-vhdrym-500-ml-ecio0t",
       "permanent": true
@@ -1417,6 +1397,43 @@
       ],
       "destination": "/product/dyyst-shybvlt-shval-ashyrh-bchlbvn-btam-shvkvld-shvkvld-ashyr-vkrmy-marz-12-ychydvt-shl-60-grm-23-grm-chlbvn-bkvs-applied-nutrition-critical-oats-1zv6tk",
       "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "pay",
+          "value": "(?<pay>success|failure|cancel)"
+        },
+        {
+          "type": "query",
+          "key": "order",
+          "value": "(?<order>[A-Za-z0-9-]{1,24})"
+        }
+      ],
+      "destination": "/order-success?status=:pay&order=:order",
+      "permanent": false
+    },
+    {
+      "source": "/category/low-calorie-protein-powders",
+      "destination": "/category/protein-powders",
+      "permanent": true
+    },
+    {
+      "source": "/category/weight-gain-supplement",
+      "destination": "/category/protein-powders",
+      "permanent": true
+    },
+    {
+      "source": "/category/savory-protein-snacks",
+      "destination": "/category/protein-health-snacks",
+      "permanent": true
+    },
+    {
+      "source": "/product/chtyp-chlbvn-dl-svkr-the-dinky-protein-bar-btam-bvtnym-vshvkvld-peanut-chocolate-35-grm-11-grm-chlbvn-12-ychydvt-bmarz-muscle-moose-jxaohu",
+      "destination": "/products?brand=Muscle%20Moose",
+      "permanent": false
     },
     {
       "source": "/newsletter",

@@ -13,7 +13,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0a0a0a">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#0f1b33;--mute:#5a6782;--line:#dde3ee;--navy:#0f2a5c;--blue:#1d4ed8;--blue-ink:#fff;--ok:#0f7a3d;--okbg:#e3f5ea;--warn:#8a5a00;--warnbg:#fff3d6;--bad:#b42318;--badbg:#fde8e6;--chip:#e8edf7;color-scheme:light}
@@ -424,6 +423,8 @@ async function settings() {
     st.innerHTML = ok ? '<b style="color:#1a7f37">מפתחות ה-API מחוברים בשרת.</b>' : '<b style="color:#b42318">מפתחות ה-API עדיין לא הוגדרו בשרת.</b> יש להוסיף את PAYPLUS_API_KEY ו-PAYPLUS_SECRET_KEY בהגדרות השרת ב-Vercel.';
   };
   ppStatus();
+  boAdminsCard(pane());
+  boWebhookCard(pane());
   if (window.PK) PK.settingsCard(pane());
   document.getElementById('pp-save').onclick = async e => {
     const page_uid = document.getElementById('pp-uid').value.trim(), sandbox = document.getElementById('pp-sb').checked; let enabled = document.getElementById('pp-en').checked;

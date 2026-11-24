@@ -452,23 +452,42 @@ async function boCustomers() {
   document.getElementById('panel').classList.add('gray');
   const C = BO.customers, R = pane();
   R.innerHTML = `<div class="sp-card"><div class="bo-filters"><input type="search" id="bo-cq" placeholder="חיפוש לפי שם, טלפון או אימייל" value="${esc(C.q)}" aria-label="חיפוש לקוחות"></div><div id="bo-clist"><p class="sp-empty">טוען לקוחות…</p></div></div>
-    <p class="who">לקוח מזוהה לפי מספר הטלפון. הסכומים כוללים רק הזמנות ששולמו.</p>`;
+    <p class="who">כל מי שביצע הזמנה מופיע כאן כמשתמש. לקוח מזוהה לפי מספר הטלפון; "חשבון פעיל" = נכנס לחשבון שלו באתר. הסכומים כוללים רק הזמנות ששולמו.</p>`;
   let t; const qi = R.querySelector('#bo-cq');
   qi.oninput = () => { clearTimeout(t); t = setTimeout(() => { C.q = qi.value.trim(); C.page = 0; boCustomersLoad(); }, 300); };
   document.getElementById('bo-ccsv').onclick = boExportCustomers;
   boCustomersLoad();
+  boUsersSection(R.querySelector('.sp-card'));
+}
+/* site accounts (customers who signed in at /account), by email */
+let boAccP = null;
+const boAccounts = () => boAccP || (boAccP = (async () => {
+  if (!(window.PSDB && (await PSDB.mode()) === 'sb')) return new Map();
+  const { data } = await PSDB.rpc('ps_customer_accounts');
+  return new Map(((data && data.accounts) || []).map(a => [a.email, a]));
+})().catch(() => new Map()));
+const boAccBadge = (acc, email) => { const a = email && acc.get(String(email).toLowerCase()); return a ? `<span class="bo-acc on" title="כניסה אחרונה: ${a.last_sign_in ? boDate(a.last_sign_in) : '—'}">חשבון פעיל</span>` : (email ? '<span class="bo-acc" title="יכול/ה להיכנס לחשבון עם המייל הזה">משתמש</span>' : ''); };
+async function boUsersSection(host) {
+  const acc = await boAccounts(); if (!host.isConnected) return;
+  const rows = [...acc.values()].sort((a, b) => String(b.last_sign_in || b.created_at).localeCompare(String(a.last_sign_in || a.created_at)));
+  const sec = document.createElement('div'); sec.className = 'sp-card'; sec.style.marginTop = '16px';
+  sec.innerHTML = `<h2 class="bo-h2">משתמשים רשומים באתר <span class="mute">(${rows.length})</span></h2>
+    <p class="who" style="margin:0 0 10px">לקוחות שנכנסו לחשבון שלהם באתר (proteinstock.co.il/account). כל מי שהזמין עם מייל יכול להיכנס, והחשבון מציג את כל ההזמנות שלו.</p>
+    ${rows.length ? `<div class="sp-tw"><table class="sp-table bo-t"><thead><tr><th>מייל</th><th class="num">הזמנות</th><th>נרשם</th><th>כניסה אחרונה</th></tr></thead><tbody>
+      ${rows.map(a => `<tr><td dir="ltr" style="text-align:end">${esc(a.email)}</td><td class="num">${a.orders}</td><td class="mute bo-nw">${boDate(a.created_at)}</td><td class="mute bo-nw">${a.last_sign_in ? boDate(a.last_sign_in) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<p class="sp-empty">עדיין אין לקוחות שנכנסו לחשבון.</p>'}`;
+  host.after(sec);
 }
 async function boCustomersLoad() {
   const C = BO.customers, el = document.getElementById('bo-clist'); if (!el) return;
   el.style.opacity = '.55';
-  const { data, error } = await boApi('customers', { q: C.q, sort: C.sort, dir: C.dir, page: C.page, size: BO_PAGE });
+  const [{ data, error }, acc] = await Promise.all([boApi('customers', { q: C.q, sort: C.sort, dir: C.dir, page: C.page, size: BO_PAGE }), boAccounts()]);
   const box = document.getElementById('bo-clist'); if (!box) return;
   box.style.opacity = '';
   if (error) { box.innerHTML = boError(error); return; }
   const pages = Math.max(1, Math.ceil(data.count / BO_PAGE));
   const th = (k, label, cls = '') => `<th class="${cls}"><button class="bo-sort" data-sort="${k}">${label}${C.sort === k ? (C.dir === 'asc' ? ' ▲' : ' ▼') : ''}</button></th>`;
   box.innerHTML = (data.rows.length ? `<div class="sp-tw"><table class="sp-table bo-t"><thead><tr>${th('name', 'לקוח')}<th class="hm">אימייל</th>${th('orders', 'הזמנות', 'num')}${th('spent', 'סה"כ קניות', 'num')}<th class="hm num">חסך בקופונים</th><th>קופונים</th>${th('first', 'לקוח מאז', 'hm')}${th('last', 'הזמנה אחרונה')}</tr></thead><tbody>
-    ${data.rows.map(c => `<tr data-key="${esc(c.key)}" data-name="${esc(c.name)}" tabindex="0"><td><div class="bo-name">${esc(c.name)}</div><div class="mute" dir="ltr" style="text-align:end">${esc(c.phone)}</div></td>
+    ${data.rows.map(c => `<tr data-key="${esc(c.key)}" data-name="${esc(c.name)}" tabindex="0"><td><div class="bo-name">${esc(c.name)} ${boAccBadge(acc, c.email)}</div><div class="mute" dir="ltr" style="text-align:end">${esc(c.phone)}</div></td>
       <td class="hm mute" dir="ltr" style="text-align:end">${esc(c.email || '')}</td><td class="num">${c.paid}${c.orders > c.paid ? `<span class="mute"> / ${c.orders}</span>` : ''}</td><td class="num"><b>${boMoney(c.spent)}</b></td>
       <td class="hm num">${Number(c.saved) ? boMoney(c.saved) : '—'}</td><td>${(c.coupons || []).map(x => `<span class="bo-code" dir="ltr">${esc(x)}</span>`).join(' ') || '<span class="mute">—</span>'}</td>
       <td class="hm mute bo-nw">${boDate(c.first)}</td><td class="mute bo-nw">${boDate(c.last)}</td></tr>`).join('')}</tbody></table></div>`
@@ -731,3 +750,81 @@ async function boExportCustomers() {
   };
   new MutationObserver(() => { clearTimeout(t); t = setTimeout(label, 30); }).observe(document.documentElement, { childList: true, subtree: true });
 })();
+
+/* ---------- settings: who can enter the admin ---------- */
+async function boAdminsCard(host) {
+  if (!(window.PSDB && (await PSDB.mode()) === 'sb')) return;
+  const sec = document.createElement('div'); sec.className = 'card bo-admins'; sec.style.marginTop = '16px';
+  host.appendChild(sec);
+  const ERR = { forbidden: 'אין הרשאה.', invalid_email: 'כתובת המייל לא תקינה.', self: 'אי אפשר להסיר את עצמך.', last: 'חייב להישאר לפחות מנהל אחד.' };
+  const paint = list => {
+    sec.innerHTML = `<h2 style="font-size:1.05rem;margin-bottom:6px">מנהלים</h2>
+      <p class="who" style="margin:0 0 10px">מי שמופיע כאן נכנס לניהול עם קוד שנשלח למייל שלו (ואחר כך גם עם Face ID).</p>
+      <ul class="pk-list">${list.map(a => `<li><b dir="ltr">${esc(a.email)}${a.me ? ' <span class="mute">(את/ה)</span>' : ''}</b><span>${a.last_sign_in ? 'כניסה אחרונה ' + boDate(a.last_sign_in) : 'עוד לא נכנס/ה'}</span>${a.me ? '' : `<button class="btn sm" data-rm="${esc(a.email)}">הסרה</button>`}</li>`).join('')}</ul>
+      <form class="bo-add-admin"><input type="email" id="adm-new" placeholder="מייל של מנהל חדש" dir="ltr" autocomplete="off" aria-label="מייל של מנהל חדש" required><button class="btn pri" type="submit">הוספת מנהל</button></form>
+      <p class="who" style="margin:8px 0 0">אחרי ההוספה, שלחו לו את הכתובת proteinstock.co.il/admin. בכניסה הראשונה הוא יקבל קוד למייל.</p>`;
+    sec.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => {
+      if (!confirm('להסיר את ' + b.dataset.rm + ' מהמנהלים? הוא לא יוכל להיכנס לניהול.')) return;
+      const { data, error } = await PSDB.rpc('ps_admin_remove', { p_email: b.dataset.rm });
+      if (error || (data && data.error)) return toast(ERR[data && data.error] || 'ההסרה נכשלה');
+      paint(data); toast('הוסר');
+    });
+    sec.querySelector('form').onsubmit = async e => {
+      e.preventDefault();
+      const inp = sec.querySelector('#adm-new'), email = inp.value.trim().toLowerCase();
+      if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(email)) return toast(ERR.invalid_email);
+      const btn = e.target.querySelector('button'); btn.disabled = true;
+      const { data, error } = await PSDB.rpc('ps_admin_add', { p_email: email });
+      btn.disabled = false;
+      if (error || (data && data.error)) return toast(ERR[data && data.error] || 'ההוספה נכשלה');
+      paint(data); toast('נוסף מנהל: ' + email);
+    };
+  };
+  const { data, error } = await PSDB.rpc('ps_admins');
+  if (error || !Array.isArray(data)) { sec.innerHTML = '<p class="who">לא ניתן לטעון את רשימת המנהלים כרגע.</p>'; return; }
+  paint(data);
+}
+
+/* ---------- settings: send every paid order to the store's own system (stock / shipping) ---------- */
+async function boWebhookCard(host) {
+  if (!(window.PSDB && (await PSDB.mode()) === 'sb')) return;
+  const sec = document.createElement('div'); sec.className = 'card bo-wh'; sec.style.marginTop = '16px';
+  host.appendChild(sec);
+  const ERR = { forbidden: 'אין הרשאה.', bad_url: 'הכתובת חייבת להתחיל ב-https://' };
+  const paint = d => {
+    const c = d.config || {}, log = d.log || [];
+    sec.innerHTML = `<h2 style="font-size:1.05rem;margin-bottom:6px">חיבור למערכת המלאי והמשלוחים</h2>
+      <p class="who" style="margin:0 0 10px">כל הזמנה ששולמה נשלחת מיד לכתובת הזו עם כל הפרטים: מוצרים (כולל ברקוד), שם, טלפון, מייל, כתובת, ואיסוף עצמי או משלוח. במקום Zappy Events.</p>
+      <div class="field" style="max-width:620px"><label for="wh-url">כתובת (Webhook URL)</label><input type="url" id="wh-url" dir="ltr" value="${esc(c.url || '')}" placeholder="https://..."></div>
+      <label class="o" style="display:flex;gap:8px;align-items:center;margin:10px 0"><input type="checkbox" id="wh-en"${c.enabled ? ' checked' : ''}> שליחה פעילה</label>
+      <div class="field" style="max-width:620px"><label>מפתח חתימה (Signing secret)</label><div class="bo-secret"><code dir="ltr" id="wh-sec">${esc(c.secret || '')}</code><button class="btn sm" id="wh-copy" type="button">העתקה</button><button class="btn sm" id="wh-new" type="button">מפתח חדש</button></div>
+        <p class="who" style="margin:6px 0 0">כל בקשה חתומה בכותרת <span dir="ltr">X-ProteinStock-Signature: sha256=…</span> (HMAC-SHA256 של גוף הבקשה עם המפתח). פרטים מלאים במסמך ה-API.</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn pri" id="wh-save">שמירה</button><button class="btn" id="wh-test">שליחת בדיקה (ההזמנה האחרונה)</button></div>
+      <p class="who" id="wh-res" style="margin:10px 0 0"></p>
+      <h3 style="font-size:.95rem;margin:16px 0 8px">שליחות אחרונות</h3>
+      ${log.length ? `<div class="sp-tw"><table class="sp-table bo-t"><thead><tr><th>הזמנה</th><th>מתי</th><th>תוצאה</th><th class="hm">תשובה</th><th></th></tr></thead><tbody>${log.map(l => `<tr><td dir="ltr" style="text-align:end">${esc(l.order_number || '')}</td><td class="mute bo-nw">${boWhen(l.created_at)}</td><td>${l.ok ? '<span class="bo-acc on">התקבל</span>' : `<span class="bo-acc bad">נכשל ${l.status || ''}</span>`}${/test/.test(l.event) ? ' <span class="mute">בדיקה</span>' : ''}</td><td class="hm mute" dir="ltr" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.response || '')}</td><td>${l.ok ? '' : `<button class="btn sm" data-resend="${esc(l.order_number || '')}">שליחה חוזרת</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="who">עדיין לא נשלחו הזמנות.</p>'}`;
+    const res = sec.querySelector('#wh-res');
+    sec.querySelector('#wh-copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(c.secret || ''); toast('המפתח הועתק'); };
+    const save = async extra => {
+      const { data, error } = await PSDB.rpc('ps_webhook_set', { p: { url: sec.querySelector('#wh-url').value.trim(), enabled: sec.querySelector('#wh-en').checked, ...extra } });
+      if (error || (data && data.error)) { toast(ERR[data && data.error] || 'השמירה נכשלה'); return null; }
+      paint(data); return data;
+    };
+    sec.querySelector('#wh-save').onclick = async () => { if (await save({})) toast('נשמר'); };
+    sec.querySelector('#wh-new').onclick = async () => { if (!confirm('ליצור מפתח חתימה חדש? המערכת המקבלת תצטרך את המפתח החדש.')) return; if (await save({ new_secret: true })) toast('נוצר מפתח חדש'); };
+    const send = async (action, order_number, btn) => {
+      btn.disabled = true; res.textContent = 'שולח…';
+      const { data, error } = await sb.functions.invoke('order-webhook', { body: { action, order_number } });
+      btn.disabled = false;
+      if (error || !data) { res.textContent = 'השליחה נכשלה.'; }
+      else if (data.error) res.textContent = data.error === 'no_url' ? 'צריך להזין כתובת.' : data.error === 'not_found' ? 'לא נמצאה הזמנה ששולמה.' : 'השליחה נכשלה: ' + data.error;
+      else res.innerHTML = data.ok ? '<b style="color:#1a7f37">המערכת קיבלה את ההזמנה.</b>' : `<b style="color:#b42318">המערכת החזירה ${esc(String(data.status || 'שגיאה'))}</b> <span dir="ltr">${esc(data.response || '')}</span>`;
+      const { data: d2 } = await PSDB.rpc('ps_webhook_get'); if (d2 && !d2.error) { const keep = res.innerHTML; paint(d2); sec.querySelector('#wh-res').innerHTML = keep; }
+    };
+    sec.querySelector('#wh-test').onclick = e => send('test', '', e.target);
+    sec.querySelectorAll('[data-resend]').forEach(b => b.onclick = () => send('resend', b.dataset.resend, b));
+  };
+  const { data, error } = await PSDB.rpc('ps_webhook_get');
+  if (error || !data || data.error) { sec.innerHTML = '<p class="who">לא ניתן לטעון את הגדרות החיבור כרגע.</p>'; return; }
+  paint(data);
+}

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>החשבון שלי — פרוטאין סטוק</title>
+<meta name="description" content="כניסה לחשבון בפרוטאין סטוק: ההזמנות שלכם, סטטוס משלוח ופרטים שמורים לקנייה מהירה.">
+<meta name="robots" content="noindex,follow">
+<link rel="canonical" href="https://proteinstock.co.il/account">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main id="main"><div class="wrap"><div class="acc" id="acc"><p class="acc-load">טוען…</p></div></div></main>
+<script src="js/data.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script>
+/* Customer account: sign in with a code sent by email (no password). Orders are matched by the verified email.
+   Its own session key, separate from the store admin's. */
+layout('account');
+const box = document.getElementById('acc');
+const sbc = window.supabase.createClient(LEGACY_SB.url, LEGACY_SB.key, { auth: { storageKey: 'ps-cust', persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
+const PROFILE = 'ps_profile';
+const setProfile = p => { try { if (p) localStorage.setItem(PROFILE, JSON.stringify(p)); else localStorage.removeItem(PROFILE); } catch (e) { /* ignore */ } };
+const fmtDate = d => new Date(d).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+const PAY = { paid: ['שולם', 'ok'], pending: ['ממתין לתשלום', 'wait'], failed: ['התשלום נכשל', 'bad'], cancelled: ['בוטל', 'bad'], refunded: ['זוכה', 'mute'] };
+const SHIPST = { pending: 'התקבלה', processing: 'בטיפול', shipped: 'נשלחה', completed: 'נמסרה', cancelled: 'בוטלה' };
+const STEPS = ['pending', 'processing', 'shipped', 'completed'];
+
+function loginView(email, sent) {
+  document.title = 'כניסה לחשבון — פרוטאין סטוק';
+  box.innerHTML = `<div class="acc-login">
+    <div class="acc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.4 4.2-6.5 8-6.5s7 2.1 8 6.5"/></svg></div>
+    <h1>${sent ? 'הזינו את הקוד' : 'כניסה לחשבון'}</h1>
+    <p class="acc-sub">${sent ? `שלחנו קוד לכתובת <b dir="ltr">${esc(email)}</b>. הקוד תקף לשעה.` : 'בלי סיסמה: נשלח לכם קוד כניסה למייל. אם כבר הזמנתם אצלנו, השתמשו באותו מייל ותראו את כל ההזמנות שלכם.'}</p>
+    <form id="acc-f" novalidate>
+      ${sent
+        ? `<input id="acc-code" class="acc-in acc-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="קוד מהמייל" dir="ltr" aria-label="קוד מהמייל" required>`
+        : `<input id="acc-mail" class="acc-in" type="email" inputmode="email" autocomplete="email" placeholder="כתובת המייל שלכם" dir="ltr" aria-label="כתובת מייל" value="${esc(email || '')}" required>`}
+      <button class="btn btn-primary acc-go" type="submit">${sent ? 'כניסה' : 'שלחו לי קוד'}</button>
+      <p class="acc-msg" id="acc-m" role="status"></p>
+    </form>
+    ${sent ? '<button type="button" class="acc-link" id="acc-back">החלפת מייל / שליחה מחדש</button>' : ''}
+    <ul class="acc-why"><li>כל ההזמנות וסטטוס המשלוח במקום אחד</li><li>פרטי משלוח שמורים לקנייה מהירה</li><li>הזמנה חוזרת בלחיצה</li></ul>
+  </div>`;
+  const m = document.getElementById('acc-m'), f = document.getElementById('acc-f');
+  const err = t => { m.className = 'acc-msg err'; m.textContent = t; };
+  if (sent) {
+    document.getElementById('acc-back').onclick = () => loginView(email, false);
+    const ci = document.getElementById('acc-code'); ci.focus();
+    ci.oninput = () => { ci.value = ci.value.replace(/\D/g, ''); if (ci.value.length === 8) f.requestSubmit(); };
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const token = ci.value.replace(/\D/g, '');
+      if (token.length < 6) return err('הקוד צריך להכיל 6-8 ספרות.');
+      const b = f.querySelector('button'); b.disabled = true; m.className = 'acc-msg'; m.textContent = 'בודקים…';
+      const { error } = await sbc.auth.verifyOtp({ email, token, type: 'email' });
+      b.disabled = false;
+      if (error) return err(/expired|invalid/i.test(error.message) ? 'הקוד שגוי או שפג תוקפו. נסו שוב או בקשו קוד חדש.' : 'לא הצלחנו להיכנס. נסו שוב.');
+      try { sessionStorage.removeItem('ps_acc_mail'); } catch (x) { /* ignore */ }
+      show();
+    };
+  } else {
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const mail = document.getElementById('acc-mail').value.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return err('כתובת המייל לא תקינה.');
+      const b = f.querySelector('button'); b.disabled = true; m.className = 'acc-msg'; m.textContent = 'שולחים…';
+      const { error } = await sbc.auth.signInWithOtp({ email: mail, options: { shouldCreateUser: true } });
+      b.disabled = false;
+      if (error) return err(/rate|security purposes|too many/i.test(error.message) ? 'נשלחו יותר מדי קודים בזמן קצר. נסו שוב בעוד כמה דקות, או פנו אלינו בוואטסאפ.' : 'לא הצלחנו לשלוח קוד. נסו שוב.');
+      try { sessionStorage.setItem('ps_acc_mail', mail); } catch (x) { /* ignore */ }
+      loginView(mail, true);
+    };
+  }
+}
+
+function orderCard(o) {
+  const pay = PAY[o.status] || [o.status, 'mute'];
+  const ful = o.status === 'cancelled' ? 'cancelled' : (o.fulfillment || 'pending');
+  const at = STEPS.indexOf(ful);
+  const items = (o.items || []).map(i => { const p = byId(i.id); return `<li>${p ? `<img src="${esc(p.img)}" alt="" width="48" height="48" loading="lazy">` : '<span class="acc-noimg"></span>'}<span class="acc-it">${p ? `<a href="${purl(p.id)}">${esc(i.title)}</a>` : esc(i.title)}<small>${i.q} × ${money(i.price)}</small></span></li>`; }).join('');
+  const again = (o.items || []).some(i => { const p = byId(i.id); return p && !p.out; });
+  return `<article class="acc-order">
+    <header><div><b dir="ltr">${esc(o.number)}</b><span>${fmtDate(o.created_at)}</span></div><span class="acc-badge ${pay[1]}">${pay[0]}</span></header>
+    ${o.status === 'paid' && at >= 0 ? `<ol class="acc-steps" aria-label="סטטוס משלוח">${STEPS.map((s, k) => `<li class="${k <= at ? 'on' : ''}">${SHIPST[s]}</li>`).join('')}</ol>` : ''}
+    ${o.tracking_number ? `<p class="acc-track">מספר מעקב: <b dir="ltr">${esc(o.tracking_number)}</b></p>` : ''}
+    <ul class="acc-items">${items}</ul>
+    <footer><span>סה"כ <b>${money(o.total)}</b>${Number(o.discount) ? ` <small>(חסכתם ${money(o.discount)}${o.coupon ? ' עם ' + esc(o.coupon) : ''})</small>` : ''}</span>
+      ${again ? `<button type="button" class="btn btn-outline acc-again" data-n="${esc(o.number)}">הזמנה חוזרת</button>` : ''}</footer>
+  </article>`;
+}
+
+async function accountView(session) {
+  document.title = 'החשבון שלי — פרוטאין סטוק';
+  box.innerHTML = '<p class="acc-load">טוען את ההזמנות שלכם…</p>';
+  const { data, error } = await sbc.rpc('ps_my_account');
+  if (error || !data || data.error) { box.innerHTML = '<p class="acc-load">לא הצלחנו לטעון את החשבון. <button class="acc-link" onclick="location.reload()">נסו שוב</button></p>'; return; }
+  const pr = data.profile || {}, orders = data.orders || [];
+  setProfile({ name: pr.name || '', phone: pr.phone || '', email: data.email, address: pr.address || '' });
+  const first = (pr.name || '').split(' ')[0];
+  const spent = orders.filter(o => o.status === 'paid').reduce((s, o) => s + Number(o.total || 0), 0);
+  box.innerHTML = `<div class="acc-head"><div><h1>שלום${first ? ', ' + esc(first) : ''} 👋</h1><p dir="ltr" class="acc-mail">${esc(data.email)}</p></div><button type="button" class="btn btn-outline" id="acc-out">יציאה</button></div>
+    <div class="acc-grid">
+      <section class="acc-card acc-prof"><h2>הפרטים שלי</h2>
+        ${pr.name || pr.phone ? `<dl><dt>שם</dt><dd>${esc(pr.name || '—')}</dd><dt>טלפון</dt><dd dir="ltr">${esc(pr.phone || '—')}</dd><dt>כתובת</dt><dd>${esc(pr.address || '—')}</dd></dl>
+        <p class="acc-note">הפרטים ימולאו אוטומטית בקופה. נשמרים מההזמנה האחרונה.</p>` : '<p class="acc-note">אחרי ההזמנה הראשונה הפרטים יישמרו כאן וימולאו אוטומטית בקופה.</p>'}
+        ${orders.length ? `<div class="acc-stats"><div><b>${orders.length}</b><span>הזמנות</span></div><div><b>${money(spent)}</b><span>סה"כ קניות</span></div></div>` : ''}
+      </section>
+      <section class="acc-orders"><h2>ההזמנות שלי</h2>
+        ${orders.length ? orders.map(orderCard).join('') : `<div class="acc-card acc-empty"><p>עדיין אין הזמנות במייל הזה.</p><a class="btn btn-primary" href="products">לכל המוצרים</a></div>`}
+      </section>
+    </div>`;
+  document.getElementById('acc-out').onclick = async () => { await sbc.auth.signOut(); setProfile(null); loginView('', false); };
+  box.querySelectorAll('.acc-again').forEach(b => b.onclick = () => {
+    const o = orders.find(x => x.number === b.dataset.n); let n = 0;
+    (o.items || []).forEach(i => { const p = byId(i.id); if (p && !p.out) { Cart.add(p.id, i.q); n++; } });
+    if (n) Cart.open();
+  });
+}
+
+async function show() {
+  const { data } = await sbc.auth.getSession();
+  if (data && data.session) return accountView(data.session);
+  let mail = ''; try { mail = sessionStorage.getItem('ps_acc_mail') || ''; } catch (e) { /* ignore */ }
+  loginView(mail, !!mail);
+}
+const go = () => { if (typeof byId === 'function') show(); };
+go(); window.__rerender = () => { if (document.querySelector('.acc-orders')) show(); };
+</script>
+</body>
+</html>

@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>תשלום — פרוטאין סטוק - PROTEIN STOCK</title>
 <meta name="robots" content="noindex,nofollow">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
 <link rel="stylesheet" href="css/style.css">
@@ -24,7 +23,8 @@ const FKEY = 'ps_checkout';
 const FIELDS = ['name', 'phone', 'email', 'address', 'apt'];
 const VAT = 0.18;   // Israeli VAT; prices already include it
 const readStore = st => { try { return JSON.parse(st.getItem(FKEY) || '{}'); } catch (e) { return {}; } };
-const load = () => ({ ...readStore(sessionStorage), ...readStore(localStorage) });
+const readProfile = () => { try { const p = JSON.parse(localStorage.getItem('ps_profile') || '{}'); const o = {}; ['name', 'phone', 'email', 'address'].forEach(k => { if (p[k]) o[k] = p[k]; }); return o; } catch (e) { return {}; } };   // signed-in customer (account page)
+const load = () => ({ ...readProfile(), ...readStore(sessionStorage), ...readStore(localStorage) });
 const save = () => {
   try {
     const o = {}; FIELDS.forEach(f => { const el = document.getElementById('f-' + f); if (el) o[f] = el.value; });

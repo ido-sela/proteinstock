@@ -17,7 +17,6 @@
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"חטיף חלבון סניקרס פריך SNICKERS HI PROTEIN CRISP בטעם שוקולד, קרמל ובוטנים (Crisp)","description":"חטיף חלבון סניקרס פריך SNICKERS HI PROTEIN CRISP בטעם שוקולד, קרמל ובוטנים (Crisp) · 55 גרם · 20 גרם חלבון · 12 יחידות במארז · Snickers. חטיפי חלבון במחיר ₪170 כולל מע\"מ, משלוח לכל הארץ — פרוטאין סטוק.","image":["https://proteinstock.co.il/img/p/product-1784574112607-m7zkh7-w.webp"],"sku":"wc2qj8","brand":{"@type":"Brand","name":"Snickers"},"category":"חטיפי חלבון","offers":{"@type":"Offer","url":"https://proteinstock.co.il/product/chtyp-chlbvn-snykrs-pryk-snickers-hi-protein-crisp-btam-shvkvld-krml-vbvtnym-crisp-55-grm-20-grm-chlbvn-12-ychydvt-bmarz-snickers-wc2qj8","priceCurrency":"ILS","price":"170","availability":"https://schema.org/OutOfStock","seller":{"@type":"Organization","name":"פרוטאין סטוק"}}}</script>
 <script>window.PS_PID="wc2qj8";</script>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
 <link rel="stylesheet" href="css/style.css">
@@ -146,7 +145,7 @@ else{
   const specs=productSpecs(p);
   const q=1; let qty=1;
   host.innerHTML=`<div class="crumbs" style="padding-top:24px"><a href="/">בית</a> / <a href="products">מוצרים</a> / <a href="category/${p.cat}">${catName(p.cat)}</a></div>
-  <div class="pp"><div class="pp-gal"><div class="pp-img"><img id="pp-main" src="${p.img}" alt="${esc(p.name)}" width="800" height="800"></div>${(p.imgs||[]).length>1?`<div class="pp-thumbs" role="list">${p.imgs.map((u,i)=>`<button type="button" class="pp-th${i?'':' on'}" data-src="${esc(u)}" aria-label="תמונה ${i+1} מתוך ${p.imgs.length}" role="listitem"><img src="${esc(u)}" alt="" loading="lazy" width="120" height="120"></button>`).join('')}</div>`:''}</div>
+  <div class="pp"><div class="pp-gal">${galHtml(p)}</div>
   <div><span class="pbrand">${esc(p.brand)}</span><h1>${esc(p.name)}</h1>
   <div class="ptags" style="position:static;flex-direction:row;flex-wrap:wrap;margin-bottom:12px">${p.sale?`<span class="tag sale">${p.pct}%- הנחה</span>`:''}${p.tags.map(t=>`<span class="tag green">${esc(t)}</span>`).join('')}</div>
   <div class="price">${money(p.price)}${p.sale?`<s>${money(p.old)}</s>`:''}</div><p class="vat">המחיר כולל מע"מ</p>
@@ -155,19 +154,42 @@ else{
   <div class="specs">${specs.map(s=>`<div class="spec"><b>${esc(s[0])}</b><span>${s[1]}</span></div>`).join('')}</div>
   <div class="buy"><div class="qty"><button id="m" aria-label="הפחת">−</button><span id="n">1</span><button id="pl" aria-label="הוסף">+</button></div>
   <button class="btn btn-primary" id="buy" ${p.out?'disabled':''} style="flex:1;min-width:200px">הוספה לעגלה</button></div>
-  <ul class="perks"><li>משלוחים לכל הארץ — חינם מעל ${money(SITE.freeShip)}</li><li>מותג מקורי, טריות מובטחת</li><li>מידע על כשרות מופיע על האריזה</li></ul>
-  <div class="desc"><h2>פרטי המוצר</h2>${infoHtml(p)}<h3 class="info-h">מפרט</h3><table class="spec-t"><tbody>${productDetails(p).map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table>${p.desc?`<p style="margin-top:10px;white-space:pre-line">${esc(p.desc)}</p>`:''}<div class="note-box"><h3>חשוב לדעת</h3><ul><li>התמונה להמחשה בלבד. עיצוב האריזה עשוי להשתנות בין סדרות ייצור.</li></ul><p class="disc">*המידע המופיע באתר בנוגע למרכיבי המוצר וערכיו התזונתיים נמסר לנוחותכם בלבד. ייתכנו טעויות, אי-התאמות או שינויים בעקבות עדכוני יצרן, והנתונים המחייבים הם אלה המופיעים על גבי אריזת המוצר. יש לקרוא את התווית לפני השימוש, במיוחד במקרה של רגישות או אלרגיה.</p></div></div></div></div>`;
+  <ul class="perks"><li>משלוחים לכל הארץ — חינם מעל ${money(SITE.freeShip)}</li><li>מותג מקורי, טריות מובטחת</li><li>כשרות: ${p.tags.includes('כשר')?'כשר':'לפי ההכשר על האריזה'} · <b>חלב נוכרי</b></li></ul>
+  <div class="desc"><h2>פרטי המוצר</h2>${infoHtml(p)}<h3 class="info-h">מפרט</h3><table class="spec-t"><tbody>${productDetails(p).map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table>${p.desc?`<p style="margin-top:10px;white-space:pre-line">${esc(p.desc)}</p>`:''}<div class="note-box"><h3>חשוב לדעת</h3><ul><li><b>כשרות:</b> מוצרי החלב באתר הם <b>חלב נוכרי</b> (אינם חלב ישראל). פרטי ההכשר המלאים מופיעים על אריזת המוצר.</li><li>התמונה להמחשה בלבד. עיצוב האריזה עשוי להשתנות בין סדרות ייצור.</li></ul><p class="disc">*המידע המופיע באתר בנוגע למרכיבי המוצר וערכיו התזונתיים נמסר לנוחותכם בלבד. ייתכנו טעויות, אי-התאמות או שינויים בעקבות עדכוני יצרן, והנתונים המחייבים הם אלה המופיעים על גבי אריזת המוצר. יש לקרוא את התווית לפני השימוש, במיוחד במקרה של רגישות או אלרגיה.</p></div></div></div></div>`;
   document.getElementById('m').onclick=()=>{qty=Math.max(1,qty-1);n.textContent=qty;};
   document.getElementById('pl').onclick=()=>{qty=Math.min(20,qty+1);n.textContent=qty;};
   const packs=packOptions(p); let pack=0;
   const pk=document.getElementById('pack'); if(pk) pk.onclick=e=>{ const b=e.target.closest('[data-pack]'); if(!b) return; pack=+b.dataset.pack; pk.querySelectorAll('.vopt').forEach(x=>x.classList.toggle('on',x===b)); document.getElementById('pack-cur').textContent=packs[pack]; };
   document.getElementById('buy').onclick=()=>{Cart.add(p.id,qty,pack?packs[pack]:'');Cart.open();};
-  const th=host.querySelector('.pp-thumbs'); if(th) th.onclick=e=>{ const b=e.target.closest('.pp-th'); if(!b) return; document.getElementById('pp-main').src=b.dataset.src; th.querySelectorAll('.pp-th').forEach(x=>x.classList.toggle('on',x===b)); };
+  galInit(host);
   const rel=PRODUCTS.filter(x=>x.cat===p.cat&&x.id!==p.id&&!x.out).slice(0,4);
   document.getElementById('rel').innerHTML=rel.map(card).join('');
   if(relSec) relSec.hidden=!rel.length;
 }
 }
+/* product photos: a swipeable strip (one photo per slide); thumbnails below follow the swipe and jump to a photo */
+function galHtml(p){
+  const imgs=(p.imgs&&p.imgs.length?p.imgs:[p.img]);
+  const many=imgs.length>1;
+  return `<div class="pp-img${many?' many':''}"><div class="pp-track" tabindex="0" aria-label="תמונות המוצר">${imgs.map((u,i)=>`<div class="pp-slide"><img ${i?'':'id="pp-main" '}src="${esc(u)}" alt="${i?'':esc(p.name)}" width="800" height="800" ${i?'loading="lazy"':'fetchpriority="high"'} draggable="false"></div>`).join('')}</div>${many?`<button type="button" class="pp-nav prev" aria-label="התמונה הקודמת">‹</button><button type="button" class="pp-nav next" aria-label="התמונה הבאה">›</button><span class="pp-count" aria-hidden="true">1 / ${imgs.length}</span>`:''}</div>${many?`<div class="pp-thumbs" role="list">${imgs.map((u,i)=>`<button type="button" class="pp-th${i?'':' on'}" data-i="${i}" aria-label="תמונה ${i+1} מתוך ${imgs.length}" role="listitem"><img src="${esc(u)}" alt="" loading="lazy" width="120" height="120"></button>`).join('')}</div>`:''}`;
+}
+function galInit(host){
+  const tr=host.querySelector('.pp-track'); if(!tr) return;
+  const slides=[...tr.children], th=host.querySelector('.pp-thumbs'), cnt=host.querySelector('.pp-count');
+  if(slides.length<2) return;
+  let cur=0;
+  const mark=i=>{ cur=i; if(cnt) cnt.textContent=(i+1)+' / '+slides.length;
+    if(th){ th.querySelectorAll('.pp-th').forEach((b,k)=>b.classList.toggle('on',k===i)); const b=th.children[i]; if(b){ const r=b.getBoundingClientRect(), R=th.getBoundingClientRect(); th.scrollBy({left:(r.left+r.width/2)-(R.left+R.width/2),behavior:'smooth'}); } } };
+  const go=i=>{ i=(i+slides.length)%slides.length; tr.scrollBy({left:slides[i].getBoundingClientRect().left-tr.getBoundingClientRect().left,behavior:'smooth'}); mark(i); };
+  /* which slide is in view (works for swipes, trackpads and RTL alike) */
+  const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting&&e.intersectionRatio>.6) mark(slides.indexOf(e.target)); }),{root:tr,threshold:[.6]});
+  slides.forEach(sl=>io.observe(sl));
+  if(th) th.onclick=e=>{ const b=e.target.closest('.pp-th'); if(b) go(+b.dataset.i); };
+  host.querySelector('.pp-nav.prev').onclick=()=>go(cur-1);
+  host.querySelector('.pp-nav.next').onclick=()=>go(cur+1);
+  tr.onkeydown=e=>{ if(e.key==='ArrowLeft'){ e.preventDefault(); go(cur+1); } else if(e.key==='ArrowRight'){ e.preventDefault(); go(cur-1); } };
+}
+
 draw(); window.__rerender=draw; if(window.__liveReady) draw();
 </script>
 </body>

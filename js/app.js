@@ -9,7 +9,7 @@ const LEGACY_SB = { url:'https://yplzliqpohqehypllxdq.supabase.co', key:'sb_publ
 /* Marketing & analytics tags (Meta Pixel, GA4, Cloudflare, store events, cart abandonment): js/track.js.
    The paid order is read now, before order-success clears it, for the Purchase event. */
 try{ if(/order-success/.test(location.pathname)){ const l=JSON.parse(sessionStorage.getItem('ps_last')||'null'), o=(new URLSearchParams(location.search).get('order')||'').toUpperCase(); if(l&&String(l.number).toUpperCase()===o) window.__psLastOrder=l; } }catch(e){}
-(function(){ const s=document.createElement('script'); s.src='/js/track.js?v=1'; s.async=true; document.head.appendChild(s); })();
+(function(){ const s=document.createElement('script'); s.src='/js/track.js?v=2'; s.async=true; document.head.appendChild(s); })();
 /* Read rows from the public data API: apiRead('products', 'id,title', [['eq','key','x']]) -> array, or null on failure. */
 async function apiRead(table, select, filters){
   try{
@@ -115,6 +115,7 @@ function layout(active){
       <a href="contact" class="${active==='contact'?'active':''}">צור קשר</a>
     </nav>
     <form class="hsearch" action="products" role="search"><input type="search" name="q" value="${esc(q)}" placeholder="חיפוש מוצרים…" aria-label="חיפוש מוצרים">${ICON.search}</form>
+    <a class="icon-btn acc-btn${active==='account'?' active':''}" href="account" aria-label="החשבון שלי" title="החשבון שלי"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.4 4.2-6.5 8-6.5s7 2.1 8 6.5"/></svg><span class="acc-lbl">${(()=>{try{const p=JSON.parse(localStorage.getItem('ps_profile')||'null');return p&&p.name?esc(p.name.split(' ')[0]):'התחברות';}catch(e){return 'התחברות';}})()}</span></a>
     <button class="icon-btn" id="cart-btn" aria-label="פתח עגלה">${ICON.cart}<span class="badge cart-badge" style="display:none">0</span></button>
   </div></header>
   <div class="overlay" id="overlay"></div>
@@ -129,7 +130,7 @@ function layout(active){
     <div><img class="flogo" src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt="פרוטאין סטוק" width="150" height="48"><p>אבקות חלבון, חטיפי אנרגיה ומשקאות מהמותגים המובילים בעולם — איכות בינלאומית, משלוח מהיר מישראל, במחיר המשתלם ביותר.</p>
       <div class="social"><a href="https://instagram.com/protein.stock" target="_blank" rel="noopener" aria-label="Instagram">IG</a><a href="https://facebook.com/profile.php?id=100063652643790" target="_blank" rel="noopener" aria-label="Facebook">FB</a><a href="https://tiktok.com/@proten.stock" target="_blank" rel="noopener" aria-label="TikTok">TT</a><a href="https://youtube.com/@proteinstock" target="_blank" rel="noopener" aria-label="YouTube">YT</a></div></div>
     <div><h4>קטגוריות</h4>${SHOP_CATS.slice(0,6).map(c=>`<a href="category/${c.id}">${c.name}</a>`).join('')}</div>
-    <div><h4>מידע</h4><a href="why-protein-stock">למה פרוטאין סטוק</a><a href="global-brands">מותגים מכל העולם</a><a href="articles">מאמרים</a><a href="business-wholesale">לעסקים</a><a href="shipping-policy">מדיניות משלוחים</a><a href="return-policy">מדיניות החזרות</a><a href="transaction-cancellation">ביטול עסקה</a><a href="privacy">מדיניות פרטיות</a><a href="terms">תנאי שימוש</a><a href="accessibility">הצהרת נגישות</a></div>
+    <div><h4>מידע</h4><a href="why-protein-stock">למה פרוטאין סטוק</a><a href="global-brands">מותגים מכל העולם</a><a href="articles">מאמרים</a><a href="business-wholesale">לעסקים</a><a href="shipping-policy">מדיניות משלוחים</a><a href="return-policy">מדיניות החזרות</a><a href="transaction-cancellation">ביטול עסקה</a><a href="privacy">מדיניות פרטיות</a><a href="terms">תנאי שימוש</a><a href="accessibility">הצהרת נגישות</a><a href="#cookies">הגדרות עוגיות</a></div>
     <div><h4>יצירת קשר</h4><a href="mailto:${SITE.email}">${SITE.email}</a><a href="tel:${SITE.phone}">${SITE.phone}</a><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SITE.address)}" target="_blank" rel="noopener">${SITE.address}</a><p style="margin-top:8px">א׳–ה׳ 09:00–16:00<br>ו׳–שבת סגור</p></div>
   </div><div class="fbottom"><span>© ${new Date().getFullYear()} פרוטאין סטוק — כל הזכויות שמורות</span><span>המחירים כוללים מע"מ</span></div></div></footer>`);
 

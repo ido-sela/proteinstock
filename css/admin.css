@@ -490,3 +490,12 @@ button.bo-tile:not(:disabled):hover{transform:translateY(-3px);box-shadow:var(--
   .sh-main .card input,.sh-main .card select,.sh-main .field{max-width:100%!important;min-width:0}
   #pp-wh{word-break:break-all}
 }
+/* customers: account badge · settings: admins */
+.bo-acc{display:inline-block;font-size:.7rem;font-weight:700;padding:1px 8px;border-radius:99px;background:#eef2f7;color:#5b6b7f;vertical-align:middle;margin-inline-start:4px}
+.bo-acc.on{background:#e7f7ee;color:#137a3a}
+.bo-add-admin{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.bo-add-admin input{flex:1 1 220px;min-width:0;height:40px;border:1px solid var(--border,#d9dee5);border-radius:10px;padding:0 12px;font:inherit}
+.bo-h2{font-size:1.05rem;margin:0 0 6px}
+.bo-acc.bad{background:#fdecec;color:#b42318}
+.bo-secret{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.bo-secret code{flex:1 1 240px;min-width:0;background:#f4f6f9;border:1px solid var(--border,#d9dee5);border-radius:8px;padding:8px 10px;font-size:.8rem;word-break:break-all;user-select:all}

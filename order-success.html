@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ההזמנה התקבלה! — פרוטאין סטוק - PROTEIN STOCK</title>
 <meta name="robots" content="noindex,nofollow">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
 <link rel="stylesheet" href="css/style.css">
@@ -26,12 +25,33 @@ const wa = text => `https://wa.me/${SITE.wa}?text=${encodeURIComponent(text)}`;
 const orderLine = order ? `<p class="ty-num">מספר הזמנה <b dir="ltr">${esc(order)}</b>${last.total ? ` · סה"כ ${money(last.total)}` : ''}</p>` : '';
 let h = '';
 if (status === 'success') {
-  Cart.items = []; Cart.stored = []; try { localStorage.setItem('ps_cart', '[]'); sessionStorage.removeItem('ps_last'); sessionStorage.removeItem('ps_coupon'); } catch (e) { /* ignore */ }
+  /* PayPlus sent the shopper here; the order is shown as paid only once the store's server has the payment
+     (PayPlus reports it to us directly, usually within seconds), and only then is the purchase reported to Meta / Google / TikTok. */
+  Cart.items = []; Cart.stored = []; try { localStorage.setItem('ps_cart', '[]'); sessionStorage.removeItem('ps_coupon'); } catch (e) { /* ignore */ }
   Cart.render();
-  document.title = 'תודה על ההזמנה — פרוטאין סטוק';
-  h = `<div class="ty-i ok">✓</div><h1>תודה${last.name ? ', ' + esc(last.name.split(' ')[0]) : ''}! ההזמנה התקבלה</h1>${orderLine}
-    <p>התשלום התקבל. נאשר את ההזמנה ונעדכן אתכם על המשלוח בהקדם. אם הזנתם אימייל, תישלח אליו קבלה.</p>
-    <div class="ty-a"><a class="btn btn-primary" href="products">להמשך קנייה</a><a class="btn btn-outline" target="_blank" rel="noopener" href="${wa('שלום, ביצעתי הזמנה באתר. מספר הזמנה: ' + order)}">שאלה על ההזמנה בוואטסאפ</a></div>`;
+  const box = document.getElementById('ty');
+  const paidView = o => {
+    document.title = 'תודה על ההזמנה — פרוטאין סטוק';
+    const nm = (o && o.first_name) || (last.name ? last.name.split(' ')[0] : '');
+    const tot = (o && o.total) || last.total;
+    box.innerHTML = `<div class="ty-i ok">✓</div><h1>תודה${nm ? ', ' + esc(nm) : ''}! התשלום התקבל</h1>${order ? `<p class="ty-num">מספר הזמנה <b dir="ltr">${esc(order)}</b>${tot ? ` · סה"כ ${money(tot)}` : ''}</p>` : ''}
+      <p>ההזמנה אושרה ונכנסה לטיפול. נעדכן אתכם כשהיא יוצאת למשלוח. אם הזנתם אימייל, תישלח אליו קבלה.</p>
+      <div class="ty-a"><a class="btn btn-primary" href="products">להמשך קנייה</a><a class="btn btn-outline" href="account">ההזמנות שלי</a><a class="btn btn-outline" target="_blank" rel="noopener" href="${wa('שלום, ביצעתי הזמנה באתר. מספר הזמנה: ' + order)}">שאלה בוואטסאפ</a></div>`;
+    try { sessionStorage.removeItem('ps_last'); } catch (e) { /* ignore */ }
+  };
+  const report = o => { if (window.PSTrack && o) PSTrack.purchase({ number: o.number, total: o.total, shipping: o.shipping, coupon: o.coupon, items: o.items }); };
+  box.innerHTML = '<div class="ty-wait"><span class="ty-spin" aria-hidden="true"></span><h1>מאשרים את התשלום…</h1><p>זה לוקח רק כמה שניות. אין צורך לרענן את הדף.</p></div>';
+  const ask = () => fetch(LEGACY_SB.url + '/rest/v1/rpc/ps_order_public', { method: 'POST', headers: { apikey: LEGACY_SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_number: order }) }).then(r => r.ok ? r.json() : Promise.reject(r.status));
+  let tries = 0;
+  const check = () => ask().then(o => {
+    if (o && o.paid) { paidView(o); report(o); return; }
+    if (o && (o.status === 'failed' || o.status === 'cancelled')) { location.replace('order-success?status=failure&order=' + encodeURIComponent(order)); return; }
+    if (++tries < 20) return setTimeout(check, 2500);
+    box.innerHTML = `<div class="ty-i ok">✓</div><h1>ההזמנה התקבלה</h1>${orderLine}<p>אישור התשלום מחברת האשראי עוד לא הגיע אלינו. אין צורך לשלם שוב: ברגע שהאישור יגיע ההזמנה תיכנס לטיפול, ואם יש בעיה ניצור איתכם קשר.</p>
+      <div class="ty-a"><a class="btn btn-primary" href="products">להמשך קנייה</a><a class="btn btn-outline" target="_blank" rel="noopener" href="${wa('שלום, ביצעתי הזמנה ושילמתי באתר. מספר הזמנה: ' + order)}">שאלה בוואטסאפ</a></div>`;
+  }).catch(() => { if (++tries < 4) return setTimeout(check, 2500); paidView(null); if (last.number) report({ number: last.number, total: last.total, shipping: last.shipping, coupon: last.coupon, items: last.items }); });
+  if (order) check(); else paidView(null);
+  h = null;
 } else if (status === 'received') {
   Cart.render();
   document.title = 'ההזמנה נקלטה — פרוטאין סטוק';
@@ -45,7 +65,7 @@ if (status === 'success') {
     <p>${cancelled ? 'לא בוצע חיוב.' : 'לא בוצע חיוב, או שהכרטיס לא אושר.'} העגלה שלכם נשמרה, אפשר לנסות שוב או לפנות אלינו ונעזור.</p>
     <div class="ty-a"><a class="btn btn-primary" href="checkout">חזרה לתשלום</a><a class="btn btn-outline" target="_blank" rel="noopener" href="${wa('שלום, נתקלתי בבעיה בתשלום באתר' + (order ? '. מספר הזמנה: ' + order : ''))}">עזרה בוואטסאפ</a></div>`;
 }
-document.getElementById('ty').innerHTML = h;
+if (h !== null) document.getElementById('ty').innerHTML = h;
 </script>
 </body>
 </html>

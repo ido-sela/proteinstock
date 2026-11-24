@@ -80,6 +80,51 @@ curl -X POST -H "x-api-key: $KEY" -H "content-type: application/json" \
 ```
 התשובה מפרטת לכל שורה אם עודכנה (`ok`) או למה לא.
 
+## Webhook: הזמנה ששולמה נשלחת אליכם אוטומטית
+ברגע שהתשלום עובר, האתר שולח `POST` עם JSON לכתובת שהוגדרה בניהול (הגדרות ← חיבור למערכת המלאי והמשלוחים). כך מקבלים מיד את כל מה שצריך כדי להעביר לחברת השליחויות, בלי למשוך.
+
+כותרות:
+| כותרת | ערך |
+|---|---|
+| `X-ProteinStock-Event` | `order.paid` |
+| `X-ProteinStock-Signature` | `sha256=<hex>` — HMAC-SHA256 של **גוף הבקשה כפי שהתקבל**, עם מפתח החתימה שמופיע בניהול |
+| `X-ProteinStock-Timestamp` | זמן השליחה (שניות, Unix) |
+| `X-ProteinStock-Delivery` | מזהה ייחודי לשליחה |
+
+גוף הבקשה:
+```json
+{
+  "event": "order.paid",
+  "test": false,
+  "sent_at": "2026-11-24T10:15:03Z",
+  "order": {
+    "number": "PS7K2Q9M",
+    "created_at": "2026-11-24T10:12:40Z",
+    "paid_at": "2026-11-24T10:15:01Z",
+    "payment_status": "paid",
+    "fulfillment_status": "pending",
+    "customer": { "name": "ישראל ישראלי", "phone": "0501234567", "email": "israel@example.com" },
+    "delivery": { "method": "shipping", "method_label": "משלוח", "address": "הרצל 10, דירה 4, תל אביב", "notes": "להשאיר ליד הדלת", "shipping_method": null, "tracking_number": null },
+    "items": [{ "product_id": "nho05h", "sku": "5056357999523", "title": "…", "quantity": 2, "unit_price": 170, "line_total": 340 }],
+    "totals": { "currency": "ILS", "subtotal": 340, "discount": 34, "coupon_code": "WELCOME10", "shipping": 0, "total": 306 },
+    "payment": { "provider": "payplus", "reference": "…", "paid_at": "2026-11-24T10:15:01Z" }
+  }
+}
+```
+- **איסוף עצמי:** `delivery.method` = `"pickup"` (`method_label` = "איסוף עצמי") ו-`address` = `null`. במשלוח: `"shipping"` עם הכתובת המלאה.
+- יש להחזיר קוד 2xx. בשגיאת שרת (5xx / אין תשובה) האתר מנסה שוב עד 3 פעמים; כל שליחה נרשמת בניהול ואפשר לשלוח מחדש בלחיצה.
+- אותם נתונים זמינים גם במשיכה: `GET /orders/{number}` או `GET /orders?status=paid&updated_since=…`.
+
+בדיקת החתימה (Node.js):
+```js
+import crypto from 'node:crypto';
+const raw = await req.text();   // הגוף הגולמי, לפני JSON.parse
+const expected = 'sha256=' + crypto.createHmac('sha256', process.env.PROTEINSTOCK_SECRET).update(raw).digest('hex');
+const got = req.headers.get('x-proteinstock-signature') || '';
+if (got.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(got), Buffer.from(expected))) return new Response('bad signature', { status: 401 });
+const { event, order } = JSON.parse(raw);
+```
+
 ## שגיאות
 | קוד | משמעות |
 |---|---|
