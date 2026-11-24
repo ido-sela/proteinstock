@@ -708,7 +708,7 @@ const inventory = () => { boCur = { view: 'inventory' }; boHash(''); boInventory
 function boDeepLink() {
   if (location.hash === '#stock-sync') {   /* settings → connection to the stock system */
     document.querySelectorAll('.sh-nav [data-t]').forEach(b => b.setAttribute('aria-selected', b.dataset.t === 'settings'));
-    Promise.resolve(settings()).then(() => { let n = 0; const t = setInterval(() => { const el = document.querySelector('.bo-wh'); if (el || ++n > 40) { clearInterval(t); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); el.style.boxShadow = '0 0 0 3px #1764d6'; const p = el.querySelector('#wh-paste'); if (p) p.focus(); } } }, 150); });
+    Promise.resolve(settings()).then(() => { let n = 0; const t = setInterval(() => { const p = document.getElementById('wh-paste'); if (p || ++n > 60) { clearInterval(t); if (p) { const el = p.closest('.bo-wh'); setTimeout(() => { el.scrollIntoView({ block: 'start' }); el.style.boxShadow = '0 0 0 3px #1764d6'; p.focus({ preventScroll: true }); }, 400); } } }, 150); });
     return true;
   }
   const m = location.hash.match(/^#(order|customer|coupon)=(.+)$/); if (!m) return false;
