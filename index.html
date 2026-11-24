@@ -53,7 +53,7 @@
   <section>
     <div class="wrap">
       <div class="sec-head" style="justify-content:center;text-align:center"><div><h2>המותגים הבינלאומיים שאתם מכירים ואוהבים</h2><p style="margin-inline:auto">השמות הגדולים בעולם תזונת הספורט — חטיפים, משקאות ואבקות ממיטב היצרנים הגלובליים.</p></div></div>
-      <div class="brands" id="brands"></div>
+      <div class="brand-strip home" id="brands"></div>
     </div>
   </section>
 
@@ -98,7 +98,7 @@ function paintHome(){
   document.getElementById('featured').innerHTML=feat.map(card).join('');
 }
 paintHome(); window.__rerender=paintHome; if(window.__liveReady) paintHome();
-document.getElementById('brands').innerHTML=BRAND_ORDER.filter(b=>BRAND_LOGOS[b]).map(b=>brandTile(b)).join('');
+document.getElementById('brands').innerHTML=BRAND_ORDER.filter(b=>BRAND_LOGOS[b]).map(b=>brandTile(b,'brand-tile sm')).join('');
 /* newsletter: the ActiveTrail form above (same list and automation as the old site) */
 </script>
 </body>
