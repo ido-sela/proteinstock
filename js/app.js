@@ -2,7 +2,7 @@
 /* An admin login link from the email can land on the home page (Supabase's site address): pass it on to the admin panel. */
 if (/[#&]access_token=/.test(location.hash) && /type=(magiclink|signup|invite|recovery)/.test(location.hash) && !/\/admin/.test(location.pathname)) location.replace('/admin' + location.hash);
 const SITE = { phone:'0556650400', wa:'972556650400', email:'info@proteinstock.co.il',
-  address:'שדרות הראשונים 20, ראשון לציון', freeShip:499, currency:'₪' };
+  address:'שדרות הראשונים 20, ראשון לציון', freeShip:500, currency:'₪' };
 /* Backend: our own API on the same domain (/api/*, PostgreSQL behind it). Prices and totals are always computed on the server.
    LEGACY_SB is the old Supabase project, used only as a fallback while the new database is being set up — remove after the move. */
 const LEGACY_SB = { url:'https://yplzliqpohqehypllxdq.supabase.co', key:'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };
@@ -28,13 +28,13 @@ async function apiRead(table, select, filters){
   }catch(e){ return null; }
 }
 /* Shipping rule (free over / fee) — public copy of the server setting; the server recomputes it for every order. */
-const SHIP = { free_over: 499, fee: 35, pickup: true };
+const SHIP = { free_over: 500, fee: 35, pickup: true };
 const shipCost = sub => (SHIP.free_over > 0 && sub >= SHIP.free_over) ? 0 : SHIP.fee;
 async function loadShipping(){
   try{
     const a = await apiRead('site_settings', 'value', [['eq','key','shipping']]);
     if(!a) return; const v = a[0] && a[0].value;
-    if(v){ SHIP.free_over = Number(v.free_over) || 0; SHIP.fee = Number(v.fee) || 0; SHIP.pickup = v.pickup !== false; }
+    if(v){ SHIP.free_over = Number(v.free_over) || 0; SHIP.fee = Number(v.fee) || 0; SHIP.pickup = v.pickup !== false; if(SHIP.free_over>0) SITE.freeShip = SHIP.free_over; }
     Cart.render(); if(window.__rerender) window.__rerender();
   }catch(e){}
 }
