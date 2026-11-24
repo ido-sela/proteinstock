@@ -793,7 +793,7 @@ async function boWebhookCard(host) {
   if (!(window.PSDB && (await PSDB.mode()) === 'sb')) return;
   const sec = document.createElement('div'); sec.className = 'card bo-wh'; sec.style.marginTop = '16px';
   host.appendChild(sec);
-  const ERR = { forbidden: 'אין הרשאה.', bad_url: 'הכתובת חייבת להתחיל ב-https://' };
+  const ERR = { forbidden: 'אין הרשאה.', bad_url: 'הכתובת חייבת להתחיל ב-https://', bad_secret: 'המפתח לא תקין (לפחות 16 תווים, בלי רווחים).' };
   const paint = d => {
     const c = d.config || {}, log = d.log || [];
     sec.innerHTML = `<h2 style="font-size:1.05rem;margin-bottom:6px">חיבור למערכת המלאי והמשלוחים</h2>
@@ -801,7 +801,8 @@ async function boWebhookCard(host) {
       <div class="field" style="max-width:620px"><label for="wh-url">כתובת (Webhook URL)</label><input type="url" id="wh-url" dir="ltr" value="${esc(c.url || '')}" placeholder="https://..."></div>
       <label class="o" style="display:flex;gap:8px;align-items:center;margin:10px 0"><input type="checkbox" id="wh-en"${c.enabled ? ' checked' : ''}> שליחה פעילה</label>
       <div class="field" style="max-width:620px"><label>מפתח חתימה (Signing secret)</label><div class="bo-secret"><code dir="ltr" id="wh-sec">${esc(c.secret || '')}</code><button class="btn sm" id="wh-copy" type="button">העתקה</button><button class="btn sm" id="wh-new" type="button">מפתח חדש</button></div>
-        <p class="who" style="margin:6px 0 0">כל בקשה חתומה בכותרת <span dir="ltr">X-ProteinStock-Signature: sha256=…</span> (HMAC-SHA256 של גוף הבקשה עם המפתח). פרטים מלאים במסמך ה-API.</p></div>
+        <div class="bo-secret" style="margin-top:8px"><input type="password" id="wh-paste" dir="ltr" autocomplete="off" placeholder="הדביקו כאן מפתח שקיבלתם מהמערכת המקבלת" aria-label="הדבקת מפתח חתימה" style="flex:1 1 240px;min-width:0;height:36px;border:1px solid var(--border,#d9dee5);border-radius:8px;padding:0 10px;font:inherit"><button class="btn sm pri" id="wh-setsec" type="button">שמירת המפתח</button></div>
+        <p class="who" style="margin:6px 0 0">כל בקשה נשלחת בפורמט של מערכת המלאי, חתומה בכותרת <span dir="ltr">x-zappy-signature: sha256=…</span> (HMAC-SHA256 של גוף הבקשה עם המפתח).</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn pri" id="wh-save">שמירה</button><button class="btn" id="wh-test">שליחת בדיקה (ההזמנה האחרונה)</button></div>
       <p class="who" id="wh-res" style="margin:10px 0 0"></p>
       <h3 style="font-size:.95rem;margin:16px 0 8px">שליחות אחרונות</h3>
@@ -814,6 +815,7 @@ async function boWebhookCard(host) {
       paint(data); return data;
     };
     sec.querySelector('#wh-save').onclick = async () => { if (await save({})) toast('נשמר'); };
+    sec.querySelector('#wh-setsec').onclick = async () => { const v = sec.querySelector('#wh-paste').value.trim(); if (!v) { toast('הדביקו קודם את המפתח'); return; } if (await save({ secret: v })) toast('המפתח נשמר'); };
     sec.querySelector('#wh-new').onclick = async () => { if (!confirm('ליצור מפתח חתימה חדש? המערכת המקבלת תצטרך את המפתח החדש.')) return; if (await save({ new_secret: true })) toast('נוצר מפתח חדש'); };
     const send = async (action, order_number, btn) => {
       btn.disabled = true; res.textContent = 'שולח…';
