@@ -1457,12 +1457,7 @@
     },
     {
       "source": "/login",
-      "destination": "/",
-      "permanent": false
-    },
-    {
-      "source": "/account",
-      "destination": "/",
+      "destination": "/account",
       "permanent": false
     },
     {
