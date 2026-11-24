@@ -3019,6 +3019,21 @@
       "source": "/assets/product-1783503225500-iix3mi.webp",
       "destination": "https://yplzliqpohqehypllxdq.supabase.co/storage/v1/object/public/product-media/gallery/product-1783503225500-iix3mi.webp",
       "permanent": true
+    },
+    {
+      "source": "/assets/image-1791369024989-huo9ti.webp",
+      "destination": "/img/articles/kmh-chlbvn-mvmlts-ltsrvk-byvm.webp",
+      "permanent": true
+    },
+    {
+      "source": "/assets/image-1791369307165-mlfh8d.webp",
+      "destination": "/img/articles/kryatyn-mh-hva-avshh-kmh-lv.webp",
+      "permanent": true
+    },
+    {
+      "source": "/assets/image-1791886696325-sk5ob4.webp",
+      "destination": "/img/articles/abkt-chlbvn-ham-bamt-tsryk-avth.webp",
+      "permanent": true
     }
   ],
   "functions": {

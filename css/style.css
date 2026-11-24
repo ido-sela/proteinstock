@@ -919,3 +919,8 @@ input[type=tel]:placeholder-shown,input[type=email]:placeholder-shown{direction:
 .desc-z .d-line.warn{background:#fff5e0}
 .news-ok{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;background:rgba(255,255,255,.1);border-radius:14px;padding:14px 16px}
 .news-ok code{background:#fff;color:var(--navy);padding:2px 10px;border-radius:8px;font-weight:800;letter-spacing:.05em}
+/* article photos (as on the old site) */
+.art-card{overflow:hidden}
+.art-card .art-img{width:calc(100% + 40px);margin:-20px -20px 6px;max-width:none;aspect-ratio:16/10;object-fit:cover;display:block;background:var(--light)}
+.art-hero{width:100%;height:auto;max-height:440px;object-fit:cover;border-radius:var(--r);margin:0 0 22px;display:block}
+@media(max-width:640px){.art-hero{max-height:260px;margin-bottom:16px}}
