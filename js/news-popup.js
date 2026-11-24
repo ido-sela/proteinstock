@@ -3,6 +3,7 @@
    Not on admin / checkout / thank-you pages. The mobile fix keeps the popup above the sticky header with its X visible. */
 (function () {
   if (window._atpopq && window._atpopq.loaded) return;
+  try { if (window.self !== window.top) return; } catch (e) { return; }   // not inside the admin's live preview
   if (/^\/(admin|checkout|order-success|thank-you|account|cart)/.test(location.pathname)) return;
   const css = document.createElement('style');
   css.id = 'ps-at-popup-fix';
