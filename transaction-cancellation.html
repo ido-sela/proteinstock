@@ -13,7 +13,7 @@
 <main id="main">
 <div class="page-head"><div class="wrap"><div class="crumbs"><a href="/">בית</a> / ביטול עסקה</div><h1>ביטול עסקה</h1></div></div>
 <div class="wrap"><div class="prose">
-<p>לביטול עסקה והחזרת מוצר מלאו את הטופס ונחזור אליכם. ניתן למסור הודעת ביטול גם בדוא"ל <a href="mailto:info@proteinstock.co.il">info@proteinstock.co.il</a> או בטלפון / WhatsApp במספר <a href="tel:0556650400">055-6650400</a>. תנאי הביטול מפורטים ב<a href="return-policy">מדיניות ההחזרות</a>.</p>
+<p>לביטול עסקה והחזרת מוצר מלאו את הטופס ונחזור אליכם. ניתן למסור הודעת ביטול גם בדוא"ל <a href="mailto:info@proteinstock.co.il">info@proteinstock.co.il</a> או בטלפון <a href="tel:0556650400">055-6650400</a> / WhatsApp <a href="https://wa.me/972556650600" target="_blank" rel="noopener">055-6650600</a>. תנאי הביטול מפורטים ב<a href="return-policy">מדיניות ההחזרות</a>.</p>
 <form id="cxl" class="cxl-form" novalidate>
   <label>שם מלא<input id="cx-name" required autocomplete="name"></label>
   <label>טלפון<input id="cx-phone" type="tel" required autocomplete="tel" dir="ltr"></label>
@@ -40,7 +40,7 @@
     document.getElementById('cx-err').hidden = true;
     var msg = 'הודעת ביטול עסקה\nשם: ' + v('cx-name') + '\nטלפון: ' + v('cx-phone') + (v('cx-order') ? '\nמספר הזמנה: ' + v('cx-order') : '') + (v('cx-why') ? '\nסיבה: ' + v('cx-why') : '');
     fetch(LEGACY_SB.url + '/rest/v1/rpc/ps_save_lead', { method: 'POST', keepalive: true, headers: { apikey: LEGACY_SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p: { source: 'transaction-cancellation', name: v('cx-name'), phone: v('cx-phone'), message: (v('cx-order') ? 'מספר הזמנה: ' + v('cx-order') + ' · ' : '') + v('cx-why'), page: location.pathname } }) }).catch(function(){});
-    location.href = via === 'wa' ? 'https://wa.me/972556650400?text=' + encodeURIComponent(msg)
+    location.href = via === 'wa' ? 'https://wa.me/972556650600?text=' + encodeURIComponent(msg)
       : 'mailto:info@proteinstock.co.il?subject=' + encodeURIComponent('ביטול עסקה' + (v('cx-order') ? ' ' + v('cx-order') : '')) + '&body=' + encodeURIComponent(msg);
   };
 })();
