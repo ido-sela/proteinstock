@@ -706,6 +706,11 @@ const abandoned = () => { boCur = { view: 'abandoned' }; boHash(''); boAbandoned
 const inventory = () => { boCur = { view: 'inventory' }; boHash(''); boInventory(); };
 /* deep links: #order=<id>, #customer=<phone>, #coupon=<code> */
 function boDeepLink() {
+  if (location.hash === '#stock-sync') {   /* settings → connection to the stock system */
+    document.querySelectorAll('.sh-nav [data-t]').forEach(b => b.setAttribute('aria-selected', b.dataset.t === 'settings'));
+    Promise.resolve(settings()).then(() => { let n = 0; const t = setInterval(() => { const el = document.querySelector('.bo-wh'); if (el || ++n > 40) { clearInterval(t); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); el.style.boxShadow = '0 0 0 3px #1764d6'; const p = el.querySelector('#wh-paste'); if (p) p.focus(); } } }, 150); });
+    return true;
+  }
   const m = location.hash.match(/^#(order|customer|coupon)=(.+)$/); if (!m) return false;
   const v = decodeURIComponent(m[2]);
   const sel = { order: 'orders', customer: 'customers', coupon: 'couponUse' }[m[1]];
