@@ -31,8 +31,19 @@ function draw() {
     host.innerHTML = `<div class="ct-empty"><div class="ct-empty-i">🛒</div><h1>העגלה שלך ריקה</h1><p>עוד לא הוספת מוצרים. בוא נמצא משהו טוב.</p><a class="btn btn-primary" href="products">להמשך קנייה</a></div>`;
     return;
   }
-  const sub = Cart.total(), ship = shipCost(sub), left = SHIP.free_over - sub;
-  const pct = SHIP.free_over > 0 ? Math.min(100, Math.round(sub / SHIP.free_over * 100)) : 100;
+  /* a saved coupon lowers the total before free shipping is decided, exactly as the server does at checkout */
+  const cp = (() => { try { return sessionStorage.getItem('ps_coupon') || ''; } catch (e) { return ''; } })();
+  const qKey = cp + '|' + items.map(i => i.id + 'x' + i.q).join(',');
+  const qt = window.__cartQ && window.__cartQ.key === qKey ? window.__cartQ : null;
+  if (cp && !qt && !window.__cartQBusy) {
+    window.__cartQBusy = true;
+    fetch(LEGACY_SB.url + '/functions/v1/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: LEGACY_SB.key }, body: JSON.stringify({ action: 'quote', coupon: cp, items: items.map(i => ({ id: i.id, qty: i.q })) }) })
+      .then(r => r.json()).then(j => { window.__cartQ = { key: qKey, discount: Number(j.discount) || 0, code: j.coupon || '' }; }).catch(() => { window.__cartQ = { key: qKey, discount: 0, code: '' }; })
+      .finally(() => { window.__cartQBusy = false; draw(); });
+  }
+  const disc = qt ? qt.discount : 0, after = Cart.total() - disc;
+  const sub = Cart.total(), ship = shipCost(after), left = SHIP.free_over - after;
+  const pct = SHIP.free_over > 0 ? Math.min(100, Math.round(after / SHIP.free_over * 100)) : 100;
   const bar = SHIP.free_over > 0 ? `<div class="ct-ship"><p>${left > 0 ? `עוד <b>${money(left)}</b> ומקבלים משלוח חינם` : '🎉 מגיע לך משלוח חינם'}</p><div class="ct-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pct}%"></span></div></div>` : '';
   const rows = items.map(i => {
     const p = byId(i.id);
@@ -52,8 +63,8 @@ function draw() {
       <label class="ct-note"><span>הערה להזמנה (לא חובה)</span><textarea id="ct-note" rows="2" maxlength="300" placeholder="למשל: להתקשר לפני ההגעה">${esc(getNote())}</textarea></label></section>
     <aside class="ct-sum" aria-label="סיכום הזמנה"><h2>סיכום הזמנה</h2>
       <div class="ct-l"><span>סכום ביניים</span><b>${money(sub)}</b></div>
-      <div class="ct-l"><span>משלוח</span><b>${ship ? money(ship) : 'חינם'}</b></div>
-      <div class="ct-l tot"><span>סה"כ</span><b>${money(sub + ship)}</b></div>
+      ${disc ? `<div class="ct-l"><span>הנחת קופון${qt.code ? " " + esc(qt.code) : ""}</span><b style="color:var(--ok)">-${money(disc)}</b></div>` : ""}<div class="ct-l"><span>משלוח</span><b>${ship ? money(ship) : 'חינם'}</b></div>
+      <div class="ct-l tot"><span>סה"כ</span><b>${money(after + ship)}</b></div>
       <p class="ct-vat">המחיר כולל מע"מ. המשלוח מחושב סופית בקופה.</p>
       <a class="btn btn-primary ct-go${blocked ? ' dis' : ''}" href="${blocked ? '#' : 'checkout'}" ${blocked ? 'aria-disabled="true"' : ''}>המשך לתשלום</a>
       <a class="ct-more" href="products">← המשך קנייה</a>

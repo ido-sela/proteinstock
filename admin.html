@@ -226,7 +226,7 @@ async function enter(session) {
     return;
   }
   document.body.classList.add('sh');
-  const items = [['home', 'לוח בקרה'], ['orders', 'הזמנות'], ['customers', 'לקוחות'], ['products', 'מוצרים'], ['inventory', 'מלאי'],['coupons', 'קופונים'], ['couponUse', 'שימוש בקופונים'], ['abandoned', 'עגלות נטושות'],['ai', 'בנייה עם AI'], ['pay', 'סליקה']];
+  const items = [['home', 'לוח בקרה'], ['orders', 'הזמנות'], ['customers', 'לקוחות'], ['products', 'מוצרים'], ['inventory', 'מלאי'],['coupons', 'קופונים'], ['couponUse', 'שימוש בקופונים'], ['abandoned', 'עגלות נטושות'],['leads', 'לידים'],['ai', 'בנייה עם AI'], ['pay', 'סליקה']];
   const mail = session.user.email;
   app.innerHTML = `<div class="sh-body"><aside class="sh-nav" id="nav" aria-label="ניווט">
     <a class="sh-logo" href="/" title="חזרה לאתר"><img src="img/protein-stock-sports-nutrition-e-commerce-logo.webp" alt=""><b>פרוטאין סטוק</b></a>
@@ -244,7 +244,7 @@ async function enter(session) {
   document.getElementById('lo').onclick = () => sb.auth.signOut();
   document.getElementById('nbd').onclick = closeNav;
   const tabs = [...app.querySelectorAll('[data-t]')];
-  const go = t => { tabs.forEach(b => b.setAttribute('aria-selected', b.dataset.t === t)); document.getElementById('aib').hidden = t === 'ai'; closeNav(); ({ home, orders, customers, couponUse, abandoned, inventory, products, coupons, ai, settings, pay: async () => { await settings(); const el = document.getElementById('pp'); if (el) el.scrollIntoView({ block: 'start' }); } }[t])(); };
+  const go = t => { tabs.forEach(b => b.setAttribute('aria-selected', b.dataset.t === t)); document.getElementById('aib').hidden = t === 'ai'; closeNav(); ({ home, orders, customers, couponUse, abandoned, leads, inventory, products, coupons, ai, settings, pay: async () => { await settings(); const el = document.getElementById('pp'); if (el) el.scrollIntoView({ block: 'start' }); } }[t])(); };
   tabs.forEach(b => b.onclick = () => go(b.dataset.t));
   document.getElementById('aib').onsubmit = e => { e.preventDefault(); const i = document.getElementById('aib-in'); const v = i.value.trim(); if (!v) return; i.value = ''; window.__pendingAsk = v; go('ai'); };
   const gs = document.getElementById('gs');

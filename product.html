@@ -86,7 +86,7 @@ function descHtml(d){
 function kosherLine(p){
   const m=String(p.desc||'').match(/כשרות\s*:\s*([^\n]+)/);
   if(m) return 'כשרות: '+esc(m[1].trim());
-  return 'כשרות: '+(p.tags.includes('כשר')?'כשר':'לפי ההכשר על האריזה')+' · פרטי ההכשר על האריזה';
+  return '';   // as on the old site: no kashrut line when the product's text has none (the owner's decision)
 }
 function infoHtml(p){
   const i=infoOf(p.id); if(!i) return '';
@@ -133,7 +133,29 @@ const QS=new URLSearchParams(location.search);
 /* /product/<old-slug>: the slug ends with the product id; other slugs are matched by name */
 const pathSlug=(location.pathname.match(/^\/product\/([^/]+)/)||[])[1]||'';
 const slugId=s=>{ const m=decodeURIComponent(s||'').match(/-([a-z0-9]{6})$/i); return m?m[1].toLowerCase():null; };
+/* Old Zappy product addresses: Zappy changed the short code at the end of a product address on every save, so ads, posts and
+   catalogs still hold older codes of the same product. Matched by the text part of the address (checked against 248 real addresses). */
+const OLD_SLUG_MAP = { // old slug text (without the last "-xxxxxx") -> product id
+  'chtyp-chlbvn-dl-svkr-the-dinky-protein-bar-btam-shvkvld-choccy-heaven-35-grm-11-grm-chlbvn-12-ychydvt-bmarz-muscle-moose': 'dp9u4r',
+  'dyyst-shybvlt-shval-ashyrh-bchlbvn-btam-avgyvt-vshmnt-am-chtykvt-avgyvt-amytyvt-marz-6-ychydvt-shl-60-grm-am-23-grm-chlbvn-critical-oats-applied-nutrition': 'qtkqxx',
+  'dyyst-shybvlt-shval-ashyrh-bchlbvn-btam-gvldn-syrvp-syrvp-zhvb-mtvk-btam-dbsh-krml-marz-6-ychydvt-shl-60-grm-23-grm-chlbvn-bkvs-applied-nutrition-critical-oats': '9eoguz',
+  'dyyst-shybvlt-shval-ashyrh-bchlbvn-btam-shvkvld-shvkvld-ashyr-vkrmy-marz-6-ychydvt-shl-60-grm-23-grm-chlbvn-bkvs-applied-nutrition-critical-oats': '1zv6tk',
+  'mshkh-chlbvn-mvkn-lshtyyh-applied-nutrition-high-protein-shake-btam-bnnh-banana-delight-500-ml-42-grm-chlbvn-8-ychydvt-bmarz-applied-nutrition': 'hk1dvq'
+};
+/* Returns the product id for an old address whose short code is not a product any more. */
+function oldSlugId(slug){
+  const s = decodeURIComponent(slug || '').toLowerCase().replace(/\/+$/, '');
+  const base = s.replace(/-[a-z0-9]{3,8}$/, '');   // drop the old code at the end
+  if (!base || base === s) return null;
+  if (OLD_SLUG_MAP[base]) return OLD_SLUG_MAP[base];
+  if (typeof SLUGS === 'undefined') return null;
+  for (const id in SLUGS) { if (String(SLUGS[id]).replace(/-[a-z0-9]{6}$/, '') === base) return id; }   // same text part, newer code
+  return null;
+}
 let PID=QS.get('id')||window.PS_PID||slugId(pathSlug)||slugId(QS.get('slug'))||null;
+if (PID && typeof byId === 'function' && !byId(PID) && typeof SLUGS !== 'undefined' && !SLUGS[PID]) {
+  PID = oldSlugId(pathSlug || QS.get('slug')) || PID;   // old code -> current product
+}
 function bySlug(slug){   // old site links: /product/<product-name-with-dashes>
   const norm=t=>t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
   const w=norm(decodeURIComponent(slug)).split(' ').filter(Boolean); if(!w.length) return null;
@@ -149,7 +171,7 @@ const p=byId(PID);
 if(p&&pathSlug&&typeof SLUGS!=='undefined'&&SLUGS[p.id]&&decodeURIComponent(pathSlug)!==SLUGS[p.id]){ try{ history.replaceState(null,'',purl(p.id)); }catch(x){} }   // an older address of the same product -> its current one
 const relSec=document.querySelector('section');
 if(!p&&!window.__liveReady&&!giveUp){ host.innerHTML='<div class="empty"><p style="padding:60px 0">טוען מוצר…</p></div>'; if(relSec) relSec.hidden=true; return; }
-if(!p){ host.innerHTML='<div class="empty"><h1>המוצר לא נמצא</h1><p style="margin:12px 0 22px">ייתכן שהמוצר הוסר מהקטלוג.</p><a class="btn btn-dark" href="products">לכל המוצרים</a></div>'; if(relSec) relSec.hidden=true; }
+if(!p){ host.innerHTML='<div class="empty"><h1>המוצר לא נמצא</h1><p style="margin:12px 0 22px">ייתכן שהמוצר הוסר מהקטלוג.</p><a class="btn btn-dark" href="products">לכל המוצרים</a></div>'; if(relSec) relSec.hidden=true;  if(!window.__nfT) window.__nfT=setTimeout(()=>{ if(!byId(PID)) location.replace('/products'); },4000);}
 else{
   if(relSec) relSec.hidden=false;
   document.title=p.name+' — פרוטאין סטוק';
@@ -165,8 +187,8 @@ else{
   <div class="specs">${specs.map(s=>`<div class="spec"><b>${esc(s[0])}</b><span>${s[1]}</span></div>`).join('')}</div>
   <div class="buy"><div class="qty"><button id="m" aria-label="הפחת">−</button><span id="n">1</span><button id="pl" aria-label="הוסף">+</button></div>
   <button class="btn btn-primary" id="buy" ${p.out?'disabled':''} style="flex:1;min-width:200px">הוספה לעגלה</button></div>
-  <ul class="perks"><li>משלוחים לכל הארץ — חינם מעל ${money(SITE.freeShip)}</li><li>מותג מקורי, טריות מובטחת</li><li>${kosherLine(p)}</li></ul>
-  <div class="desc"><h2>פרטי המוצר</h2>${p.desc?descHtml(p.desc):infoHtml(p)}<h3 class="info-h">מפרט</h3><table class="spec-t"><tbody>${productDetails(p).map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table><div class="note-box"><h3>חשוב לדעת</h3><ul><li><b>כשרות:</b> מוצרי החלב באתר הם <b>חלב נוכרי</b> (אינם חלב ישראל). פרטי ההכשר המלאים מופיעים על אריזת המוצר.</li><li>התמונה להמחשה בלבד. עיצוב האריזה עשוי להשתנות בין סדרות ייצור.</li></ul><p class="disc">*המידע המופיע באתר בנוגע למרכיבי המוצר וערכיו התזונתיים נמסר לנוחותכם בלבד. ייתכנו טעויות, אי-התאמות או שינויים בעקבות עדכוני יצרן, והנתונים המחייבים הם אלה המופיעים על גבי אריזת המוצר. יש לקרוא את התווית לפני השימוש, במיוחד במקרה של רגישות או אלרגיה.</p></div></div></div></div>`;
+  <ul class="perks"><li>משלוחים לכל הארץ — חינם מעל ${money(SITE.freeShip)}</li><li>מותג מקורי, טריות מובטחת</li>${kosherLine(p)?`<li>${kosherLine(p)}</li>`:""}</ul>
+  <div class="desc"><h2>פרטי המוצר</h2>${p.desc?descHtml(p.desc):infoHtml(p)}<h3 class="info-h">מפרט</h3><table class="spec-t"><tbody>${productDetails(p).map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table><div class="note-box"><h3>חשוב לדעת</h3><ul><li>התמונה להמחשה בלבד. עיצוב האריזה עשוי להשתנות בין סדרות ייצור.</li></ul><p class="disc">*המידע המופיע באתר בנוגע למרכיבי המוצר וערכיו התזונתיים נמסר לנוחותכם בלבד. ייתכנו טעויות, אי-התאמות או שינויים בעקבות עדכוני יצרן, והנתונים המחייבים הם אלה המופיעים על גבי אריזת המוצר. יש לקרוא את התווית לפני השימוש, במיוחד במקרה של רגישות או אלרגיה.</p></div></div></div></div>`;
   document.getElementById('m').onclick=()=>{qty=Math.max(1,qty-1);n.textContent=qty;};
   document.getElementById('pl').onclick=()=>{qty=Math.min(20,qty+1);n.textContent=qty;};
   const packs=packOptions(p); let pack=0;

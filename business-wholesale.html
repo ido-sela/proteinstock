@@ -76,6 +76,7 @@
     err.hidden = true;
     var rows = [['שם', 'b-name'], ['עסק', 'b-biz'], ['סוג העסק', 'b-type'], ['עיר', 'b-city'], ['טלפון', 'b-phone'], ['אימייל', 'b-email'], ['מוצרים', 'b-prod'], ['הערות', 'b-notes']];
     var msg = 'פנייה לעסקים — הצעת מחיר\n' + rows.filter(function(r){ return v(r[1]); }).map(function(r){ return r[0] + ': ' + v(r[1]); }).join('\n');
+    fetch(LEGACY_SB.url + '/rest/v1/rpc/ps_save_lead', { method: 'POST', keepalive: true, headers: { apikey: LEGACY_SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p: { source: 'business-wholesale', name: v('b-name'), phone: v('b-phone'), email: v('b-email'), business: v('b-biz'), business_type: v('b-type'), city: v('b-city'), products: v('b-prod'), message: v('b-notes'), page: location.pathname } }) }).catch(function(){});
     location.href = via === 'wa' ? 'https://wa.me/972556650400?text=' + encodeURIComponent(msg)
       : 'mailto:info@proteinstock.co.il?subject=' + encodeURIComponent('הצעת מחיר לעסקים — ' + v('b-biz')) + '&body=' + encodeURIComponent(msg);
   };

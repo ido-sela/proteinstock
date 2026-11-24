@@ -36,6 +36,8 @@
 layout('contact');
 document.getElementById('f').onsubmit=e=>{e.preventDefault();const d=new FormData(e.target);
 const t=`פנייה מהאתר%0Aשם: ${encodeURIComponent(d.get('name'))}%0Aטלפון: ${encodeURIComponent(d.get('phone'))}%0Aאימייל: ${encodeURIComponent(d.get('email')||'-')}%0A${encodeURIComponent(d.get('msg'))}`;
+/* saved as a lead (admin → לידים), as on the old site */
+fetch(LEGACY_SB.url + '/rest/v1/rpc/ps_save_lead', { method: 'POST', keepalive: true, headers: { apikey: LEGACY_SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p: { source: 'contact', name: d.get('name'), phone: d.get('phone'), email: d.get('email'), message: d.get('msg'), page: location.pathname } }) }).catch(function(){});
 window.open(`https://wa.me/${SITE.wa}?text=${t}`,'_blank','noopener');};
 </script>
 </body>

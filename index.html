@@ -80,8 +80,8 @@
     <div class="wrap">
       <div class="band">
         <h2>הירשמו לניוזלטר וקבלו 30% הנחה</h2>
-        <p>קוד הקופון נשלח אליכם למייל מיד אחרי ההרשמה. בלי ספאם — רק מבצעים ומוצרים חדשים.</p>
-        <form class="news" id="news"><label class="sr" for="nm">אימייל</label><input id="nm" type="email" required placeholder="האימייל שלך" autocomplete="email"><button class="btn btn-primary" type="submit">הרשמה</button></form>
+        <p>קוד הקופון נשלח אליכם במייל וב-SMS מיד אחרי ההרשמה. בלי ספאם — רק מבצעים ומוצרים חדשים.</p>
+        <iframe class="news-at" src="https://proteinstock.activetrail.biz/newsletter-form" title="הרשמה לניוזלטר" loading="lazy"></iframe>
       </div>
     </div>
   </section>
@@ -99,15 +99,7 @@ function paintHome(){
 }
 paintHome(); window.__rerender=paintHome; if(window.__liveReady) paintHome();
 document.getElementById('brands').innerHTML=BRAND_ORDER.filter(b=>BRAND_LOGOS[b]).map(b=>brandTile(b)).join('');
-/* newsletter: saved in the store database (admin → לקוחות); the welcome code is shown right away */
-document.getElementById('news').onsubmit=async e=>{
-  e.preventDefault(); const f=e.target, b=f.querySelector('button'), email=f.querySelector('input').value.trim();
-  b.disabled=true;
-  let j={}; try{ const r=await fetch(LEGACY_SB.url+'/rest/v1/rpc/ps_subscribe',{method:'POST',headers:{apikey:LEGACY_SB.key,'Content-Type':'application/json'},body:JSON.stringify({p_email:email,p_source:'home'})}); j=await r.json(); }catch(x){ j={error:'net'}; }
-  b.disabled=false;
-  if(j.error){ toast(j.error==='invalid_email'?'כתובת המייל לא תקינה':'משהו השתבש, נסו שוב'); return; }
-  f.outerHTML=`<div class="news-ok"><b>תודה שנרשמת! 🎉</b>${j.coupon?`<span>קוד ההנחה שלך: <code dir="ltr">${esc(j.coupon)}</code> · 30% הנחה על כל החנות</span><button type="button" class="btn btn-primary" onclick="try{sessionStorage.setItem('ps_coupon','${esc(j.coupon)}')}catch(e){};location.href='products'">לקנייה עם הקוד</button>`:''}</div>`;
-};
+/* newsletter: the ActiveTrail form above (same list and automation as the old site) */
 </script>
 </body>
 </html>

@@ -30,6 +30,7 @@ const BO_ICO = {
   couponUse: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 16.5h13"/><path d="M5.5 13.5v-4M10 13.5v-8M14.5 13.5v-6"/></svg>',
   inventory: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l7 3.5v8l-7 3.5-7-3.5v-8z"/><path d="M3 6l7 3.5L17 6M10 9.5v8"/></svg>',
   abandoned: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3.5h2l2 9h9l1.5-6.5H6"/><circle cx="8" cy="16" r="1"/><circle cx="14" cy="16" r="1"/><path d="M10.5 7.5l3 3M13.5 7.5l-3 3"/></svg>',
+  leads: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h14v9H7l-4 3z"/><path d="M6.5 8h7M6.5 10.5h4"/></svg>',
   print: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 7.5v-4h9v4M5.5 13.5h-2v-6h13v6h-2"/><path d="M5.5 11.5h9v5h-9z"/></svg>',
   dl: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5v9M6.5 9l3.5 3.5L13.5 9M4 15.5h12"/></svg>',
 };
@@ -700,6 +701,7 @@ const home = () => { boCur = { view: 'home' }; boHash(''); boHome(); };
 const orders = () => { boCur = { view: 'orders' }; boHash(''); boOrders(); };
 const customers = () => { boCur = { view: 'customers' }; boHash(''); boCustomers(); };
 const couponUse = () => { boCur = { view: 'couponUse' }; boHash(''); boCouponUse(); };
+const leads = () => { boCur = { view: 'leads' }; boHash(''); boLeads(); };
 const abandoned = () => { boCur = { view: 'abandoned' }; boHash(''); boAbandoned(); };
 const inventory = () => { boCur = { view: 'inventory' }; boHash(''); boInventory(); };
 /* deep links: #order=<id>, #customer=<phone>, #coupon=<code> */
@@ -841,4 +843,35 @@ async function boNewsSection(R) {
     ${data.length ? `<div class="sp-tw"><table class="sp-table bo-t"><thead><tr><th>מייל</th><th>נרשם</th></tr></thead><tbody>${data.slice(0, 200).map(r => `<tr><td dir="ltr" style="text-align:end">${esc(r.email)}</td><td class="mute bo-nw">${boWhen(r.created_at)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="sp-empty">עדיין אין נרשמים.</p>'}`;
   R.appendChild(sec);
   const b = sec.querySelector('#bo-ncsv'); if (b) b.onclick = () => boCsv('newsletter.csv', ['מייל', 'מקור', 'נרשם'], data.map(r => [r.email, r.source || '', boWhen(r.created_at)]));
+}
+
+/* ---------- leads: contact, business (wholesale) and cancellation forms ---------- */
+const LEAD_SRC = { contact: 'צור קשר', 'business-wholesale': 'לעסקים', 'transaction-cancellation': 'ביטול עסקה' };
+async function boLeads() {
+  setBar('leads', 'לידים', `<button class="btn" id="bo-lcsv">${ICO.dl}ייצוא ל-Excel</button>`);
+  document.getElementById('panel').classList.add('gray');
+  const R = pane(); R.innerHTML = boLoading();
+  const { data, error } = await sb.from('leads').select('*').order('created_at', { ascending: false }).limit(1000);
+  if (error) { R.innerHTML = boError(error.message || 'שגיאה'); return; }
+  const rows = data || [];
+  const paint = () => {
+    const nNew = rows.filter(r => r.status === 'new').length;
+    R.innerHTML = `<div class="sp-card">${rows.length ? `<div class="sp-tw"><table class="sp-table bo-t"><thead><tr><th>תאריך</th><th>מקור</th><th>שם</th><th>טלפון</th><th class="hm">מייל</th><th class="hm">עסק</th><th>הודעה</th><th>סטטוס</th></tr></thead><tbody>
+      ${rows.map(r => `<tr><td class="mute bo-nw">${boWhen(r.created_at)}</td><td>${esc(LEAD_SRC[r.source] || r.source)}</td><td><b>${esc(r.name)}</b></td>
+        <td dir="ltr" style="text-align:end">${r.phone ? `<a href="tel:${esc(r.phone)}">${esc(r.phone)}</a>` : '—'}</td><td class="hm" dir="ltr" style="text-align:end">${esc(r.email || '')}</td>
+        <td class="hm">${esc([r.business, r.business_type, r.city].filter(Boolean).join(' · '))}</td>
+        <td style="max-width:320px;white-space:pre-line">${esc([r.products, r.message].filter(Boolean).join(' · '))}</td>
+        <td><button class="btn sm${r.status === 'new' ? ' pri' : ''}" data-l="${r.id}">${r.status === 'new' ? 'חדש · סמן טופל' : 'טופל'}</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="sp-empty">עדיין אין לידים. פניות מטופס צור קשר, לעסקים וביטול עסקה יופיעו כאן.</p>'}
+      <div class="bo-foot"><span>${rows.length} לידים · ${nNew} חדשים</span></div></div>`;
+    R.querySelectorAll('[data-l]').forEach(btn => btn.onclick = async () => {
+      const r = rows.find(x => String(x.id) === btn.dataset.l); const next = r.status === 'new' ? 'handled' : 'new';
+      btn.disabled = true;
+      const { error } = await sb.from('leads').update({ status: next }).eq('id', r.id);
+      if (error) { btn.disabled = false; toast('העדכון נכשל'); return; }
+      r.status = next; paint();
+    });
+  };
+  paint();
+  document.getElementById('bo-lcsv').onclick = () => boCsv('leads.csv', ['תאריך', 'מקור', 'שם', 'טלפון', 'מייל', 'עסק', 'סוג עסק', 'עיר', 'מוצרים', 'הודעה', 'סטטוס'],
+    rows.map(r => [boWhen(r.created_at), LEAD_SRC[r.source] || r.source, r.name, r.phone || '', r.email || '', r.business || '', r.business_type || '', r.city || '', r.products || '', r.message || '', r.status === 'new' ? 'חדש' : 'טופל']));
 }
