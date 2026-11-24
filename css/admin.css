@@ -499,3 +499,9 @@ button.bo-tile:not(:disabled):hover{transform:translateY(-3px);box-shadow:var(--
 .bo-acc.bad{background:#fdecec;color:#b42318}
 .bo-secret{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .bo-secret code{flex:1 1 240px;min-width:0;background:#f4f6f9;border:1px solid var(--border,#d9dee5);border-radius:8px;padding:8px 10px;font-size:.8rem;word-break:break-all;user-select:all}
+.bo-newkey{background:#e7f7ee;border:1px solid #b5e3c6;border-radius:12px;padding:12px;margin:0 0 12px}
+.bo-keyform{display:grid;gap:10px;margin-top:14px;max-width:620px}
+.bo-keyform input[type=text]{height:40px;border:1px solid var(--border,#d9dee5);border-radius:10px;padding:0 12px;font:inherit}
+.bo-scopes{display:flex;flex-wrap:wrap;gap:8px 16px}
+.bo-scopes label{display:flex;gap:6px;align-items:center;font-size:.9rem}
+.bo-keyform .btn{justify-self:start}

@@ -425,6 +425,7 @@ async function settings() {
   ppStatus();
   boAdminsCard(pane());
   boWebhookCard(pane());
+  boApiKeysCard(pane());
   if (window.PK) PK.settingsCard(pane());
   document.getElementById('pp-save').onclick = async e => {
     const page_uid = document.getElementById('pp-uid').value.trim(), sandbox = document.getElementById('pp-sb').checked; let enabled = document.getElementById('pp-en').checked;

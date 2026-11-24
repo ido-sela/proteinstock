@@ -706,6 +706,7 @@ const abandoned = () => { boCur = { view: 'abandoned' }; boHash(''); boAbandoned
 const inventory = () => { boCur = { view: 'inventory' }; boHash(''); boInventory(); };
 /* deep links: #order=<id>, #customer=<phone>, #coupon=<code> */
 function boDeepLink() {
+  if (location.hash === '#api-keys') { document.querySelectorAll('.sh-nav [data-t]').forEach(b => b.setAttribute('aria-selected', b.dataset.t === 'settings')); Promise.resolve(settings()).then(() => { let n = 0; const t = setInterval(() => { const f = document.getElementById('ak-name'); if (f || ++n > 60) { clearInterval(t); if (f) { const el = f.closest('.bo-keys'); setTimeout(() => { el.scrollIntoView({ block: 'start' }); el.style.boxShadow = '0 0 0 3px #1764d6'; f.focus({ preventScroll: true }); }, 400); } } }, 150); }); return true; }
   if (location.hash === '#stock-sync') {   /* settings → connection to the stock system */
     document.querySelectorAll('.sh-nav [data-t]').forEach(b => b.setAttribute('aria-selected', b.dataset.t === 'settings'));
     Promise.resolve(settings()).then(() => { let n = 0; const t = setInterval(() => { const p = document.getElementById('wh-paste'); if (p || ++n > 60) { clearInterval(t); if (p) { const el = p.closest('.bo-wh'); setTimeout(() => { el.scrollIntoView({ block: 'start' }); el.style.boxShadow = '0 0 0 3px #1764d6'; p.focus({ preventScroll: true }); }, 400); } } }, 150); });
@@ -881,4 +882,41 @@ async function boLeads() {
   paint();
   document.getElementById('bo-lcsv').onclick = () => boCsv('leads.csv', ['תאריך', 'מקור', 'שם', 'טלפון', 'מייל', 'עסק', 'סוג עסק', 'עיר', 'מוצרים', 'הודעה', 'סטטוס'],
     rows.map(r => [boWhen(r.created_at), LEAD_SRC[r.source] || r.source, r.name, r.phone || '', r.email || '', r.business || '', r.business_type || '', r.city || '', r.products || '', r.message || '', r.status === 'new' ? 'חדש' : 'טופל']));
+}
+
+/* ---------- settings: Store API keys (create with chosen permissions, see once, revoke) ---------- */
+const API_SCOPES = [['orders:read', 'קריאת הזמנות'], ['orders:write', 'עדכון מספר משלוח וסטטוס משלוח'], ['products:read', 'קריאת מוצרים ומלאי'], ['stock:write', 'עדכון מלאי']];
+async function boApiKeysCard(host) {
+  if (!(window.PSDB && (await PSDB.mode()) === 'sb')) return;
+  const sec = document.createElement('div'); sec.className = 'card bo-keys'; sec.style.marginTop = '16px';
+  host.appendChild(sec);
+  const ERR = { forbidden: 'אין הרשאה.', no_scopes: 'בחרו לפחות הרשאה אחת.', no_name: 'תנו שם למפתח (למשל "בוט וואטסאפ").' };
+  const paint = (list, fresh) => {
+    sec.innerHTML = `<h2 style="font-size:1.05rem;margin-bottom:6px">מפתחות API (Store API)</h2>
+      <p class="who" style="margin:0 0 10px">לחיבור מערכות חיצוניות: מערכת מלאי, בוט וואטסאפ, הנהלת חשבונות. לכל מפתח הרשאות משלו, ואפשר לבטל כל אחד בנפרד. תיעוד: <a href="https://github.com/rockitai/proteinstock/blob/main/docs/API.md" target="_blank" rel="noopener">docs/API.md</a></p>
+      ${fresh ? `<div class="bo-newkey"><b>המפתח נוצר. העתיקו אותו עכשיו, הוא לא יוצג שוב:</b><div class="bo-secret"><code dir="ltr" id="ak-new">${esc(fresh)}</code><button class="btn sm pri" id="ak-copy" type="button">העתקה</button></div><p class="who" style="margin:6px 0 0">שלחו אותו רק בהודעה פרטית, ולא בקבוצה או במייל משותף.</p></div>` : ''}
+      ${list.length ? `<div class="sp-tw"><table class="sp-table bo-t"><thead><tr><th>שם</th><th>הרשאות</th><th class="hm">נוצר</th><th class="hm">שימוש אחרון</th><th></th></tr></thead><tbody>${list.map(k => `<tr${k.revoked_at ? ' style="opacity:.5"' : ''}><td><b>${esc(k.name)}</b><div class="mute" dir="ltr" style="text-align:end">${esc(k.prefix || '')}…</div></td><td>${(k.scopes || []).map(s => `<span class="bo-acc">${esc((API_SCOPES.find(x => x[0] === s) || [s, s])[1])}</span>`).join(' ')}</td><td class="hm mute bo-nw">${boDate(k.created_at)}</td><td class="hm mute bo-nw">${k.last_used_at ? boWhen(k.last_used_at) : '—'}</td><td>${k.revoked_at ? '<span class="mute">בוטל</span>' : `<button class="btn sm" data-revoke="${esc(k.id)}">ביטול</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="who">עדיין אין מפתחות.</p>'}
+      <form class="bo-keyform"><input type="text" id="ak-name" maxlength="80" placeholder="שם המפתח, למשל: בוט וואטסאפ" aria-label="שם המפתח">
+        <div class="bo-scopes">${API_SCOPES.map(([s, l]) => `<label><input type="checkbox" value="${s}"${s === 'orders:read' ? ' checked' : ''}> ${l}</label>`).join('')}</div>
+        <button class="btn pri" type="submit">יצירת מפתח</button></form>`;
+    const cp = sec.querySelector('#ak-copy'); if (cp) cp.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(fresh); toast('המפתח הועתק'); };
+    sec.querySelectorAll('[data-revoke]').forEach(b => b.onclick = async () => {
+      if (!confirm('לבטל את המפתח? כל מערכת שמשתמשת בו תפסיק לעבוד מיד.')) return;
+      const { data, error } = await PSDB.rpc('ps_api_key_revoke', { p_id: b.dataset.revoke });
+      if (error || (data && data.error)) return toast('הביטול נכשל');
+      paint(data); toast('המפתח בוטל');
+    });
+    sec.querySelector('form').onsubmit = async e => {
+      e.preventDefault();
+      const name = sec.querySelector('#ak-name').value.trim(), scopes = [...sec.querySelectorAll('.bo-scopes input:checked')].map(i => i.value);
+      const btn = e.target.querySelector('button'); btn.disabled = true;
+      const { data, error } = await PSDB.rpc('ps_api_key_create', { p_name: name, p_scopes: scopes });
+      btn.disabled = false;
+      if (error || !data || data.error) return toast(ERR[data && data.error] || 'היצירה נכשלה');
+      paint(data.keys, data.key);
+    };
+  };
+  const { data, error } = await PSDB.rpc('ps_api_keys');
+  if (error || !Array.isArray(data)) { sec.innerHTML = '<p class="who">לא ניתן לטעון את מפתחות ה-API כרגע.</p>'; return; }
+  paint(data);
 }

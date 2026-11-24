@@ -5,7 +5,9 @@ API לחיבור מערכות חיצוניות (מלאי, הנהלת חשבונ�
 - **כתובת בסיס:** `https://proteinstock.co.il/api/v1`
 - **אימות:** בכל בקשה שולחים את המפתח בכותרת `x-api-key: <המפתח>` (או `Authorization: Bearer <המפתח>`).
 - **פורמט:** JSON, UTF-8. תאריכים בפורמט ISO 8601 (UTC).
-- המפתח נותן גישה ל: קריאת הזמנות, קריאת מוצרים ועדכון מלאי. יש לשמור אותו בסוד, בצד השרת בלבד.
+- **הרשאות:** לכל מפתח הרשאות משלו, שנבחרות כשיוצרים אותו בניהול (הגדרות ← מפתחות API): `orders:read` קריאת הזמנות · `orders:write` עדכון מספר משלוח וסטטוס משלוח · `products:read` קריאת מוצרים ומלאי · `stock:write` עדכון מלאי. בקשה בלי ההרשאה המתאימה מקבלת 403.
+- יש לשמור את המפתח בסוד, בצד השרת בלבד. כל מפתח אפשר לבטל בנפרד.
+- `GET /` מחזיר את ההרשאות של המפתח ואת רשימת הכתובות.
 
 ## הזמנות
 
@@ -18,6 +20,7 @@ API לחיבור מערכות חיצוניות (מלאי, הנהלת חשבונ�
 | `updated_since` | הזמנות שנוצרו **או שולמו** מאז התאריך (מתאים למשיכה תקופתית) |
 | `status` | סטטוס תשלום: `pending,paid,failed,cancelled,refunded` (אפשר כמה, מופרדים בפסיק) |
 | `fulfillment_status` | סטטוס משלוח: `pending,processing,shipped,completed,cancelled` |
+| `phone` | הזמנות של לקוח לפי טלפון. מתאים לפי 9 הספרות האחרונות, כך ש-`0501234567`, `050-1234567` ו-`+972501234567` זהים. עם `phone` ההזמנות מהחדשה לישנה |
 | `limit` / `page` | עד 500 בעמוד (ברירת מחדל 100), עמודים מ-0 |
 
 ```bash
@@ -45,6 +48,21 @@ curl -H "x-api-key: $KEY" "https://proteinstock.co.il/api/v1/orders?status=paid&
 ### `GET /orders/{number}`
 הזמנה אחת לפי מספר ההזמנה.
 
+```bash
+curl -H "x-api-key: $KEY" "https://proteinstock.co.il/api/v1/orders?phone=0501234567&limit=5"
+```
+
+### `PATCH /orders/{number}` (הרשאה `orders:write`)
+עדכון מספר משלוח וסטטוס משלוח, למשל ברגע שהחבילה נמסרת לחברת השליחויות:
+- `tracking_number`: מספר המשלוח (3-80 תווים), או `null` כדי למחוק
+- `fulfillment_status`: `pending` / `processing` / `shipped` / `completed` / `cancelled`. אם שולחים מספר משלוח בלי סטטוס, הסטטוס עובר ל-`shipped`
+- `shipping_method`: חברת השליחויות או שיטת המשלוח (טקסט חופשי)
+
+```bash
+curl -X PATCH -H "x-api-key: $KEY" -H "content-type: application/json" \n  -d '{"tracking_number":"YG123456789","shipping_method":"ישג\"ב"}' "https://proteinstock.co.il/api/v1/orders/PS7K2Q9M"
+```
+מספר המשלוח מופיע ללקוח בחשבון שלו באתר, ובניהול בעמוד ההזמנה. אפשר למלא אותו גם ידנית בניהול.
+
 ## מוצרים ומלאי
 
 ### `GET /products`
@@ -57,7 +75,7 @@ curl -H "x-api-key: $KEY" "https://proteinstock.co.il/api/v1/orders?status=paid&
 ```
 
 ### `GET /products/{id או ברקוד}`
-מוצר אחד, לפי מזהה המוצר או לפי הברקוד.
+מוצר אחד, לפי מזהה המוצר או לפי הברקוד. ברקוד מזוהה גם עם או בלי אפס בהתחלה (למשל `70847899617` = `070847899617`).
 
 ### `PATCH /products/{id או ברקוד}`
 עדכון מלאי של מוצר אחד. שולחים אחד מהבאים:
