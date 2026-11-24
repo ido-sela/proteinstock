@@ -1,5 +1,5 @@
 /* Protein Stock — marketing & analytics tags (same IDs and events as the old Zappy store) + cookie consent.
-   Meta Pixel 1120769657458456 · Google Analytics 4 G-R26YTRKNR6 · TikTok Pixel (TT below) · Cloudflare Web Analytics.
+   Meta Pixel 1120769657458456 · Google Analytics 4 G-R26YTRKNR6 · TikTok Pixel DBCB1TBC77U4J2JQ8DLG · Cloudflare Web Analytics.
    Store events (Meta / GA4 / TikTok): PageView/page_view/page · ViewContent/view_item/ViewContent ·
    AddToCart/add_to_cart/AddToCart · InitiateCheckout/begin_checkout/InitiateCheckout · Purchase/purchase/CompletePayment.
    Clicks: WhatsApp, phone, contact & lead forms.
@@ -11,7 +11,7 @@
 (function () {
   if (window.PSTrack || /\/admin/.test(location.pathname)) return;
   const FB = '1120769657458456', GA = 'G-R26YTRKNR6', CF = 'ba4da9700791400bb1fed45649c4c1b7';
-  const TT = '';   // TikTok Pixel ID (e.g. 'C9ABCDEF123...'); empty = TikTok off
+  const TT = 'DBCB1TBC77U4J2JQ8DLG';   // TikTok Pixel (same as the old Zappy store); empty = TikTok off
   const CUR = 'ILS';
   const add = (src, attrs) => { const s = document.createElement('script'); s.async = true; s.src = src; Object.entries(attrs || {}).forEach(([k, v]) => s.setAttribute(k, v)); document.head.appendChild(s); };
 
