@@ -140,7 +140,7 @@ async function boHome(opt = {}) {
   BO.seen = nums;
   const upd = document.getElementById('bo-upd'); if (upd) upd.textContent = 'עודכן ' + new Date().toLocaleTimeString('he-IL', { timeZone: BO_TZ, hour: '2-digit', minute: '2-digit' });
   if (silent) { const y = document.getElementById('panel').scrollTop; boHomeRender(body, data, inv, ab, true); document.getElementById('panel').scrollTop = y; }
-  else { boHomeRender(body, data, inv, ab, false); boLive(); }
+  else { boHomeRender(body, data, inv, ab, false); boLive(); if (window.PK) PK.offer(body); }
 }
 
 function boHomeRender(body, data, inv, ab, silent) {
@@ -718,3 +718,16 @@ async function boExportCustomers() {
   boCsv('customers.csv', ['שם', 'טלפון', 'אימייל', 'כתובת אחרונה', 'הזמנות ששולמו', 'כל ההזמנות', 'סה"כ קניות', 'חסך בקופונים', 'קופונים', 'לקוח מאז', 'הזמנה אחרונה'],
     data.rows.map(c => [c.name, c.phone, c.email || '', c.address || '', c.paid, c.orders, c.spent, c.saved, (c.coupons || []).join(' '), boDate(c.first), boDate(c.last)]));
 }
+
+/* ---------- mobile: every admin table becomes a list of cards; each cell gets its column name as a label ---------- */
+(function () {
+  let t = null;
+  const label = () => {
+    document.querySelectorAll('.sh-panel table.sp-table').forEach(tb => {
+      const heads = [...tb.querySelectorAll('thead th')].map(th => th.textContent.replace(/[▲▼]/g, '').trim());
+      tb.querySelectorAll('tbody tr').forEach(tr => [...tr.children].forEach((td, i) => { if (!td.hasAttribute('data-l')) td.setAttribute('data-l', heads[i] || ''); }));
+      tb.classList.add('bo-cards');
+    });
+  };
+  new MutationObserver(() => { clearTimeout(t); t = setTimeout(label, 30); }).observe(document.documentElement, { childList: true, subtree: true });
+})();

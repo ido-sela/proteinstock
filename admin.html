@@ -129,6 +129,7 @@ textarea:focus{outline:2px solid var(--blue);outline-offset:2px}
 <script src="js/admin-products.js"></script>
 <script src="js/admin-coupons.js"></script>
 <script src="js/admin-bo.js"></script>
+<script src="js/admin-passkey.js"></script>
 <script>
 const sb = supabase.createClient();   // our own API (js/db-client.js), PostgreSQL behind it
 const app = document.getElementById('app');
@@ -153,6 +154,7 @@ function showLogin(note) {
     <div style="display:flex;justify-content:space-between;gap:8px;margin-top:10px"><button type="button" class="btn sm link" id="cr" disabled>שליחה חוזרת</button><button type="button" class="btn sm link" id="cx">שינוי אימייל</button></div></form>
     <div id="lm"></div>${note ? `<div class="msg err">${esc(note)}</div>` : ''}</div>`;
   const $ = id => document.getElementById(id), m = $('lm');
+  if (window.PK) { const pkHost = document.createElement('div'); $('lf').before(pkHost); PK.mountLogin(pkHost, t => { m.innerHTML = t ? `<div class="msg err">${esc(t)}</div>` : ''; }); }
   const LERR = e => {
     const c = e.code || '', t = (e.message || '').toLowerCase();
     if (c === 'over_email_send_rate_limit' || e.status === 429 || t.includes('rate limit')) return 'נשלחו יותר מדי מיילים בזמן קצר. המתינו כמה דקות ונסו שוב. אם כבר קיבלתם קוד, השתמשו בו.';
@@ -422,6 +424,7 @@ async function settings() {
     st.innerHTML = ok ? '<b style="color:#1a7f37">מפתחות ה-API מחוברים בשרת.</b>' : '<b style="color:#b42318">מפתחות ה-API עדיין לא הוגדרו בשרת.</b> יש להוסיף את PAYPLUS_API_KEY ו-PAYPLUS_SECRET_KEY בהגדרות השרת ב-Vercel.';
   };
   ppStatus();
+  if (window.PK) PK.settingsCard(pane());
   document.getElementById('pp-save').onclick = async e => {
     const page_uid = document.getElementById('pp-uid').value.trim(), sandbox = document.getElementById('pp-sb').checked; let enabled = document.getElementById('pp-en').checked;
     const res = document.getElementById('pp-res');

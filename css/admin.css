@@ -424,3 +424,69 @@ button.bo-tile:not(:disabled):hover{transform:translateY(-3px);box-shadow:var(--
 
 @media (max-width:1000px){.bo-hero2{grid-template-columns:1fr}.bo-tiles-dash{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:520px){.bo-hello h1{font-size:21px}.bo-hero2{padding:18px;border-radius:18px}.bo-hero2 .bo-hv{font-size:36px}.bo-hero2-mini{grid-template-columns:1fr 1fr}.bo-hero2-mini .bo-mini:last-child{grid-column:1/-1}.bo-mini b{font-size:19px}}
+
+/* discount cells: keep the minus sign in front without breaking the table row */
+.sp-table td.neg{display:table-cell;unicode-bidi:plaintext;text-align:end}
+
+/* ===== mobile: tables as cards ===== */
+@media (max-width:700px){
+  .sh-panel .sp-tw{overflow:visible}
+  table.bo-cards{min-width:0!important;display:block}
+  table.bo-cards thead{display:none}
+  table.bo-cards tbody{display:block}
+  table.bo-cards tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;padding:14px 14px;border-bottom:1px solid #eef1f6;position:relative}
+  table.bo-cards tbody tr:last-child{border-bottom:0}
+  table.bo-cards td{display:flex;flex-direction:column;gap:2px;padding:0!important;border:0!important;min-width:0;text-align:start!important;white-space:normal;font-size:13px}
+  table.bo-cards td::before{content:attr(data-l);font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:.01em}
+  table.bo-cards td[data-l=""]::before{display:none}
+  table.bo-cards td:first-child{grid-column:1/-1;font-size:14px}
+  table.bo-cards td:first-child::before{display:none}
+  table.bo-cards td.hm{display:none}
+  table.bo-cards td.c{grid-column:auto}
+  table.bo-cards td .bo-line{min-width:0}
+  table.bo-cards td.neg,table.bo-cards .neg{color:var(--bad)}
+  table.bo-cards .cp-desc{max-width:none;grid-column:1/-1}
+  table.bo-cards .bo-stc{grid-column:1/-1}
+  table.bo-cards .bo-stsel{width:100%}
+  table.bo-cards .bo-qin{width:100%}
+  table.bo-cards tbody tr:hover{background:#f8faff}
+  .bo-filters input,.bo-filters select{min-width:0;flex:1 1 100%}
+  .sp-tabbar .tb{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .sp-tabbar .tb::-webkit-scrollbar{display:none}
+  .sp-tabbar .tb button{white-space:nowrap;flex:none}
+  .bo-foot{flex-direction:column;align-items:flex-start}
+  .bo-tiles,.bo-tiles4{grid-template-columns:1fr 1fr;gap:10px}
+  .bo-tile{padding:12px}
+  .bo-tv{font-size:19px}
+  .pb{gap:6px}
+  .pb .pb-a .btn{padding:5px 10px;font-size:12px}
+  .pb .pb-a .btn svg{display:none}
+  .sh-main{padding-inline:10px;padding-bottom:110px}
+  .bo-oh{gap:6px}
+  .sp-grid{gap:12px}
+}
+
+/* Face ID */
+.pk-login{margin:4px 0 6px}
+.pk-btn{width:100%;justify-content:center;min-height:46px;font-size:15px;gap:10px;border-radius:12px}
+.pk-or{display:flex;align-items:center;gap:10px;color:#94a3b8;font-size:12px;margin:14px 0 4px}
+.pk-or::before,.pk-or::after{content:"";flex:1;height:1px;background:#e5e7eb}
+.pk-offer{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 16px;margin-bottom:14px;border-radius:16px;background:#fff;box-shadow:var(--bo-shadow);border:1px solid #e0e7ff;animation:boIn .45s both}
+.pk-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--bo-brand),var(--bo-brand2));flex:none}
+.pk-tx{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}.pk-tx b{font-size:14px;color:var(--bo-ink)}.pk-tx span{color:var(--bo-mute);font-size:12.5px}
+.pk-ac{display:flex;gap:6px;align-items:center}
+.pk-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.pk-list li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+.pk-list li span{flex:1;color:var(--mute);font-size:12px}
+@media (max-width:700px){
+  .pb .pb-t{flex:1 1 auto;min-width:0;max-width:none}
+  .pb .pb-s{display:none}
+  .pb .pb-a{flex:none;gap:4px;max-width:62%;overflow-x:auto;scrollbar-width:none}
+  .pb .pb-a::-webkit-scrollbar{display:none}
+  .pb .pb-a .btn{white-space:nowrap}
+  .sh-main .card{max-width:100%;min-width:0;padding:14px}
+  .sh-main .card>*{min-width:0}
+  .sh-main .grid2{grid-template-columns:1fr;max-width:none}
+  .sh-main .card input,.sh-main .card select,.sh-main .field{max-width:100%!important;min-width:0}
+  #pp-wh{word-break:break-all}
+}
