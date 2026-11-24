@@ -458,6 +458,7 @@ async function boCustomers() {
   document.getElementById('bo-ccsv').onclick = boExportCustomers;
   boCustomersLoad();
   boUsersSection(R.querySelector('.sp-card'));
+  boNewsSection(R);
 }
 /* site accounts (customers who signed in at /account), by email */
 let boAccP = null;
@@ -827,4 +828,17 @@ async function boWebhookCard(host) {
   const { data, error } = await PSDB.rpc('ps_webhook_get');
   if (error || !data || data.error) { sec.innerHTML = '<p class="who">לא ניתן לטעון את הגדרות החיבור כרגע.</p>'; return; }
   paint(data);
+}
+
+/* ---------- newsletter subscribers (home page form) ---------- */
+async function boNewsSection(R) {
+  if (!(window.PSDB && (await PSDB.mode()) === 'sb')) return;
+  const { data, error } = await sb.from('newsletter_subscribers').select('email,source,created_at').order('created_at', { ascending: false }).limit(5000);
+  if (error || !R.isConnected) return;
+  const sec = document.createElement('div'); sec.className = 'sp-card'; sec.style.marginTop = '16px';
+  sec.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2 class="bo-h2" style="margin:0">נרשמים לניוזלטר <span class="mute">(${data.length})</span></h2>${data.length ? '<button class="btn sm" id="bo-ncsv">ייצוא ל-Excel</button>' : ''}</div>
+    <p class="who" style="margin:6px 0 10px">נרשמו בטופס בעמוד הבית וקיבלו את קוד ההנחה WELCOME30.</p>
+    ${data.length ? `<div class="sp-tw"><table class="sp-table bo-t"><thead><tr><th>מייל</th><th>נרשם</th></tr></thead><tbody>${data.slice(0, 200).map(r => `<tr><td dir="ltr" style="text-align:end">${esc(r.email)}</td><td class="mute bo-nw">${boWhen(r.created_at)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="sp-empty">עדיין אין נרשמים.</p>'}`;
+  R.appendChild(sec);
+  const b = sec.querySelector('#bo-ncsv'); if (b) b.onclick = () => boCsv('newsletter.csv', ['מייל', 'מקור', 'נרשם'], data.map(r => [r.email, r.source || '', boWhen(r.created_at)]));
 }

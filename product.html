@@ -65,6 +65,29 @@ function benefits(p){
   if(s.unit&&!n.creatine) out.push(`מארז ${s.unit} יחידות – נוח לעבודה, לאימון או לטיול`);
   return out;
 }
+/* The product's own description (from the store, as it was on the old site): ingredients, allergens, kashrut, warnings.
+   Lines like "רכיבים: ..." get a bold label; the general disclaimer is shown once in the note box below. */
+function descHtml(d){
+  const lines=String(d).split(/\n+/).map(l=>l.trim()).filter(l=>l&&!/^\*?המידע המופיע באתר/.test(l));
+  const lab=/^(רכיבים|אלרגנים|כשרות|ערכים תזונתיים[^:]*|אופן (?:הגשה|שימוש|הכנה)[^:]*|אחסון|אזהרה|אזהרות|הערה|שימו לב|מכיל|עלול להכיל)\s*:/;
+  let h='', list=[];
+  const flush=()=>{ if(list.length){ h+=`<ul class="ben">${list.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`; list=[]; } };
+  for(const l of lines){
+    if(/^[✔✓•-]\s*/.test(l)){ list.push(l.replace(/^[✔✓•-]\s*/,'')); continue; }
+    flush();
+    const m=l.match(lab);
+    if(m) h+=`<p class="d-line${/אזהר|משלשל/.test(l)?' warn':''}"><b>${esc(m[0])}</b>${esc(l.slice(m[0].length))}</p>`;
+    else if(/משלשל/.test(l)) h+=`<div class="warn-box"><p>⚠️ ${esc(l)}</p></div>`;
+    else h+=`<p>${esc(l)}</p>`;
+  }
+  flush();
+  return `<div class="info desc-z">${h}</div>`;
+}
+function kosherLine(p){
+  const m=String(p.desc||'').match(/כשרות\s*:\s*([^\n]+)/);
+  if(m) return 'כשרות: '+esc(m[1].trim());
+  return 'כשרות: '+(p.tags.includes('כשר')?'כשר':'לפי ההכשר על האריזה')+' · פרטי ההכשר על האריזה';
+}
 function infoHtml(p){
   const i=infoOf(p.id); if(!i) return '';
   const fmt=v=>String(v);
@@ -142,8 +165,8 @@ else{
   <div class="specs">${specs.map(s=>`<div class="spec"><b>${esc(s[0])}</b><span>${s[1]}</span></div>`).join('')}</div>
   <div class="buy"><div class="qty"><button id="m" aria-label="הפחת">−</button><span id="n">1</span><button id="pl" aria-label="הוסף">+</button></div>
   <button class="btn btn-primary" id="buy" ${p.out?'disabled':''} style="flex:1;min-width:200px">הוספה לעגלה</button></div>
-  <ul class="perks"><li>משלוחים לכל הארץ — חינם מעל ${money(SITE.freeShip)}</li><li>מותג מקורי, טריות מובטחת</li><li>כשרות: ${p.tags.includes('כשר')?'כשר':'לפי ההכשר על האריזה'} · <b>חלב נוכרי</b></li></ul>
-  <div class="desc"><h2>פרטי המוצר</h2>${infoHtml(p)}<h3 class="info-h">מפרט</h3><table class="spec-t"><tbody>${productDetails(p).map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table>${p.desc?`<p style="margin-top:10px;white-space:pre-line">${esc(p.desc)}</p>`:''}<div class="note-box"><h3>חשוב לדעת</h3><ul><li><b>כשרות:</b> מוצרי החלב באתר הם <b>חלב נוכרי</b> (אינם חלב ישראל). פרטי ההכשר המלאים מופיעים על אריזת המוצר.</li><li>התמונה להמחשה בלבד. עיצוב האריזה עשוי להשתנות בין סדרות ייצור.</li></ul><p class="disc">*המידע המופיע באתר בנוגע למרכיבי המוצר וערכיו התזונתיים נמסר לנוחותכם בלבד. ייתכנו טעויות, אי-התאמות או שינויים בעקבות עדכוני יצרן, והנתונים המחייבים הם אלה המופיעים על גבי אריזת המוצר. יש לקרוא את התווית לפני השימוש, במיוחד במקרה של רגישות או אלרגיה.</p></div></div></div></div>`;
+  <ul class="perks"><li>משלוחים לכל הארץ — חינם מעל ${money(SITE.freeShip)}</li><li>מותג מקורי, טריות מובטחת</li><li>${kosherLine(p)}</li></ul>
+  <div class="desc"><h2>פרטי המוצר</h2>${p.desc?descHtml(p.desc):infoHtml(p)}<h3 class="info-h">מפרט</h3><table class="spec-t"><tbody>${productDetails(p).map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table><div class="note-box"><h3>חשוב לדעת</h3><ul><li><b>כשרות:</b> מוצרי החלב באתר הם <b>חלב נוכרי</b> (אינם חלב ישראל). פרטי ההכשר המלאים מופיעים על אריזת המוצר.</li><li>התמונה להמחשה בלבד. עיצוב האריזה עשוי להשתנות בין סדרות ייצור.</li></ul><p class="disc">*המידע המופיע באתר בנוגע למרכיבי המוצר וערכיו התזונתיים נמסר לנוחותכם בלבד. ייתכנו טעויות, אי-התאמות או שינויים בעקבות עדכוני יצרן, והנתונים המחייבים הם אלה המופיעים על גבי אריזת המוצר. יש לקרוא את התווית לפני השימוש, במיוחד במקרה של רגישות או אלרגיה.</p></div></div></div></div>`;
   document.getElementById('m').onclick=()=>{qty=Math.max(1,qty-1);n.textContent=qty;};
   document.getElementById('pl').onclick=()=>{qty=Math.min(20,qty+1);n.textContent=qty;};
   const packs=packOptions(p); let pack=0;

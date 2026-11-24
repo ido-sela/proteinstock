@@ -913,3 +913,9 @@ input[type=tel]:placeholder-shown,input[type=email]:placeholder-shown{direction:
 .acc-again{min-height:38px;padding:0 14px}
 .acc-empty{text-align:center;display:grid;gap:12px;justify-items:center}
 @media(max-width:860px){.acc-grid{grid-template-columns:1fr}.acc-prof{position:static}.acc{padding-top:22px}.acc-head h1{font-size:1.4rem}}
+/* product description from the store (old site text) */
+.desc-z p{margin:0 0 10px;line-height:1.7}
+.desc-z .d-line{background:var(--light);border-radius:10px;padding:8px 12px}
+.desc-z .d-line.warn{background:#fff5e0}
+.news-ok{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;background:rgba(255,255,255,.1);border-radius:14px;padding:14px 16px}
+.news-ok code{background:#fff;color:var(--navy);padding:2px 10px;border-radius:8px;font-weight:800;letter-spacing:.05em}

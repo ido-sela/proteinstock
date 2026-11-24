@@ -1,5 +1,6 @@
 // Product catalog feed for Meta Commerce Manager / Google Merchant Center, at the old store's address:
 // https://proteinstock.co.il/product-feed.xml (rewritten here in vercel.json). RSS 2.0 with the g: namespace.
+// Item ids and titles are the old store's (Zappy) where known, so Merchant Center / Meta / TikTok keep each product's history.
 // Reads the public product list (same data the storefront shows) and the product page addresses from js/data.js.
 const SITE = 'https://proteinstock.co.il';
 const SB = { url: 'https://yplzliqpohqehypllxdq.supabase.co', key: 'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };
@@ -20,10 +21,10 @@ async function slugs() {
 }
 
 async function products() {
-  const cols = 'id,title,description,price,old_price,out_of_stock,vendor,category,tags,image,sku,images';
+  const cols = 'id,title,description,price,old_price,out_of_stock,vendor,category,tags,image,sku,images,hidden,status,zappy_id,zappy_title';
   const get = (c) => fetch(`${SB.url}/rest/v1/products?select=${c}&order=id`, { headers: { apikey: SB.key } });
   let r = await get(cols);
-  if (!r.ok) r = await get(cols.replace(',images', ''));   // before the gallery column exists
+  if (!r.ok) r = await get(cols.replace(',hidden,status,zappy_id,zappy_title', ''));   // older table without these columns
   if (!r.ok) throw new Error('products ' + r.status);
   return r.json();
 }
@@ -31,14 +32,14 @@ async function products() {
 export default async function handler(req, res) {
   try {
     const [list, S] = await Promise.all([products(), slugs()]);
-    const items = list.map((p) => {
+    const items = list.filter((p) => !p.hidden && (!p.status || p.status === 'active')).map((p) => {
       const link = SITE + '/' + (S[p.id] ? 'product/' + S[p.id] : 'product?id=' + encodeURIComponent(p.id));
       const sale = Number(p.old_price) > Number(p.price);
       const extra = (Array.isArray(p.images) ? p.images : []).filter((u) => u && u !== p.image).slice(0, 10);
       const gtin = /^\d{8,14}$/.test(String(p.sku || '')) ? p.sku : '';
       return `<item>
-<g:id>${x(p.id)}</g:id>
-<g:title>${x(String(p.title).slice(0, 150))}</g:title>
+<g:id>${x(p.zappy_id || p.id)}</g:id>
+<g:title>${x(String(p.zappy_title || p.title).slice(0, 150))}</g:title>
 <g:description>${x((text(p.description) || p.title).slice(0, 4990))}</g:description>
 <g:link>${x(link)}</g:link>
 <g:image_link>${x(abs(p.image))}</g:image_link>

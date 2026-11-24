@@ -99,7 +99,15 @@ function paintHome(){
 }
 paintHome(); window.__rerender=paintHome; if(window.__liveReady) paintHome();
 document.getElementById('brands').innerHTML=['Snickers','Mars','Warrior','Monster',"M&M's",'Applied Nutrition','UFIT','Muscle Moose','Hubba Bubba'].map(b=>`<a class="brand-pill" href="products?brand=${encodeURIComponent(b)}">${b}</a>`).join('');
-document.getElementById('news').onsubmit=e=>{e.preventDefault();toast('תודה! קוד ההנחה בדרך אליך 🎉');e.target.reset();};
+/* newsletter: saved in the store database (admin → לקוחות); the welcome code is shown right away */
+document.getElementById('news').onsubmit=async e=>{
+  e.preventDefault(); const f=e.target, b=f.querySelector('button'), email=f.querySelector('input').value.trim();
+  b.disabled=true;
+  let j={}; try{ const r=await fetch(LEGACY_SB.url+'/rest/v1/rpc/ps_subscribe',{method:'POST',headers:{apikey:LEGACY_SB.key,'Content-Type':'application/json'},body:JSON.stringify({p_email:email,p_source:'home'})}); j=await r.json(); }catch(x){ j={error:'net'}; }
+  b.disabled=false;
+  if(j.error){ toast(j.error==='invalid_email'?'כתובת המייל לא תקינה':'משהו השתבש, נסו שוב'); return; }
+  f.outerHTML=`<div class="news-ok"><b>תודה שנרשמת! 🎉</b>${j.coupon?`<span>קוד ההנחה שלך: <code dir="ltr">${esc(j.coupon)}</code> · 30% הנחה על כל החנות</span><button type="button" class="btn btn-primary" onclick="try{sessionStorage.setItem('ps_coupon','${esc(j.coupon)}')}catch(e){};location.href='products'">לקנייה עם הקוד</button>`:''}</div>`;
+};
 </script>
 </body>
 </html>
