@@ -289,6 +289,29 @@ function boOrdersTable(rows, opt = {}) {
 /* one "order status" per order, changeable right in the list: pending → processing → shipped → completed, or cancelled.
    Cancelling also cancels the payment status, which returns the items to stock (and the coupon use, if it was paid). */
 const BO_CLOSED = ['cancelled', 'refunded', 'failed'];
+const boDenied = (error) => /permission denied|not allowed|row-level security|bad_column|bad op/i.test(String(error && error.message || ''));
+/* Cancel an order. If the database does not let the admin change the payment status (the legacy Supabase
+   grants allow only fulfillment), an unpaid order is still marked cancelled through its order status. */
+async function boCancelOrder(id, pay) {
+  let { error } = await sb.from('orders').update({ fulfillment: 'cancelled', status: 'cancelled' }).eq('id', id);
+  if (error && boDenied(error) && pay !== 'paid') {
+    ({ error } = await sb.from('orders').update({ fulfillment: 'cancelled' }).eq('id', id));
+    if (!error) return { partial: true };
+  }
+  return { error };
+}
+/* Delete an order that was never paid (abandoned checkout, test order). Paid orders are never deleted. */
+async function boDeleteOrder(id, num, pay) {
+  if (pay === 'paid' || pay === 'refunded') { toast('הזמנה ששולמה לא נמחקת — אפשר לבטל אותה'); return false; }
+  if (!confirm(`למחוק לגמרי את הזמנה ${num}?\nההזמנה לא שולמה. הפעולה לא ניתנת לביטול.`)) return false;
+  const { error } = await sb.from('orders').delete().eq('id', id).neq('status', 'paid');
+  if (error) {
+    toast(boDenied(error) ? 'המחיקה עוד לא מאושרת במסד הנתונים — אפשר לסמן את ההזמנה כמבוטלת בינתיים' : 'המחיקה נכשלה: ' + error.message);
+    return false;
+  }
+  toast(`הזמנה ${num} נמחקה`);
+  return true;
+}
 const boOrderStatus = o => BO_CLOSED.includes(o.status) ? o.status : (o.fulfillment || 'pending');
 function boStatusSelect(o) {
   const cur = boOrderStatus(o);
@@ -301,13 +324,14 @@ async function boChangeStatus(sel) {
   let values = { fulfillment: next };
   if (next === 'cancelled') {
     if (!confirm(`לבטל את הזמנה ${num}? המוצרים יחזרו למלאי${pay === 'paid' ? '. אם הלקוח שילם, צריך לבצע לו זיכוי בנפרד ב-PayPlus' : ''}.`)) { sel.value = prev; return; }
-    values = { fulfillment: 'cancelled', status: 'cancelled' };
   }
   sel.disabled = true;
-  const { error } = await sb.from('orders').update(values).eq('id', id);
+  const r = next === 'cancelled' ? await boCancelOrder(id, pay) : await sb.from('orders').update(values).eq('id', id);
+  const error = r.error;
   sel.disabled = false;
   if (error) { sel.value = prev; toast('השמירה נכשלה: ' + error.message); return; }
   toast(`הזמנה ${num}: ${FUL[next]}`);
+  if (r.partial) { sel.dataset.stCur = next; sel.className = 'bo-stsel ful-' + next; return; }
   if (next === 'cancelled') { const td = sel.closest('td'); const row = sel.closest('tr'); td.innerHTML = `<span class="badge cancelled">${esc(STATUS.cancelled)}</span>`; const b = row && row.querySelector('.badge.' + pay); if (b) { b.className = 'badge cancelled'; b.textContent = STATUS.cancelled; } return; }
   sel.dataset.stCur = next; sel.className = 'bo-stsel ful-' + next;
 }
@@ -402,7 +426,8 @@ async function boOrder(id, back) {
         ${ev.length ? `<h3 class="bo-h3">אירועי סליקה</h3><ol class="bo-tl">${ev.map(e => `<li><b>${e.status_code === '000' ? 'תשלום אושר' : e.status_code ? 'תשלום נדחה (קוד ' + esc(e.status_code) + ')' : 'התקבלה הודעה מ-' + esc(e.provider)}</b> <span class="mute">${boWhen(e.received_at)}</span>
           <div class="mute">${e.amount ? 'סכום ' + boMoney(e.amount) + ' · ' : ''}${e.card_last4 ? 'כרטיס ••••' + esc(e.card_last4) + ' · ' : ''}${e.payments && +e.payments > 1 ? esc(e.payments) + ' תשלומים · ' : ''}${e.approval ? 'אישור ' + esc(e.approval) + ' · ' : ''}<span dir="ltr">${esc(e.event_id)}</span></div></li>`).join('')}</ol>` : ''}
         <div class="bo-st"><label for="bo-status">שינוי סטטוס</label><select id="bo-status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}"${k === o.status ? ' selected' : ''}>${v}</option>`).join('')}</select></div>
-        <p class="mute bo-note">סימון "שולמה" ידני מתאים לתשלום בהעברה, בביט או במזומן. ביטול או החזרה מחזירים את הפריטים למלאי.</p></section>
+        <p class="mute bo-note">סימון "שולמה" ידני מתאים לתשלום בהעברה, בביט או במזומן. ביטול או החזרה מחזירים את הפריטים למלאי.</p>
+        ${['paid', 'refunded'].includes(o.status) ? '' : `<button class="btn" id="bo-del" style="margin-top:10px;color:#c62828;border-color:#c62828">🗑 מחיקת ההזמנה (לא שולמה)</button>`}</section>
     </div>
     <div>
       <section class="sp-card sp-pad"><h2>לקוח</h2>
@@ -441,11 +466,13 @@ async function boOrder(id, back) {
     const next = sel.value, prev = o.status;
     if (['cancelled', 'refunded', 'failed'].includes(next) && !confirm(`לשנות את הזמנה ${o.number} ל"${STATUS[next]}"? הפריטים יחזרו למלאי${prev === 'paid' && o.coupon_code ? ' והשימוש בקופון יבוטל' : ''}.`)) { sel.value = prev; return; }
     sel.disabled = true;
-    const { error } = await sb.from('orders').update({ status: next }).eq('id', o.id);
+    const { error } = next === 'cancelled' ? await boCancelOrder(o.id, prev) : await sb.from('orders').update({ status: next }).eq('id', o.id);
     sel.disabled = false;
     if (error) { sel.value = prev; toast('השמירה נכשלה: ' + error.message); return; }
     toast('הסטטוס עודכן'); boOrder(o.id, from);
   };
+  const del = P.querySelector('#bo-del');
+  if (del) del.onclick = async () => { del.disabled = true; if (await boDeleteOrder(o.id, o.number, o.status)) { BO.orders.page = 0; boOrders(); } else del.disabled = false; };
 }
 
 /* ---------- customers ---------- */
