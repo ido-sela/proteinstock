@@ -1,0 +1,18 @@
+# Deploys the site to Vercel on every push to main, whoever made the commit.
+# (Vercel's own Git deploys skip commits by people who are not on the Vercel team.)
+# Needs the repository secret VERCEL_DEPLOY_HOOK: the project's deploy hook URL for branch main.
+name: Deploy to Vercel
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the Vercel deploy hook
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "VERCEL_DEPLOY_HOOK is not set"; exit 1; fi
+          curl -fsS -X POST "$HOOK"
