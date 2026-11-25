@@ -30,6 +30,7 @@ const BO_ICO = {
   couponUse: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 16.5h13"/><path d="M5.5 13.5v-4M10 13.5v-8M14.5 13.5v-6"/></svg>',
   inventory: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l7 3.5v8l-7 3.5-7-3.5v-8z"/><path d="M3 6l7 3.5L17 6M10 9.5v8"/></svg>',
   abandoned: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3.5h2l2 9h9l1.5-6.5H6"/><circle cx="8" cy="16" r="1"/><circle cx="14" cy="16" r="1"/><path d="M10.5 7.5l3 3M13.5 7.5l-3 3"/></svg>',
+  dns: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15M10 2.5c2.2 2.2 2.2 12.8 0 15M10 2.5c-2.2 2.2-2.2 12.8 0 15"/></svg>',
   leads: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h14v9H7l-4 3z"/><path d="M6.5 8h7M6.5 10.5h4"/></svg>',
   print: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 7.5v-4h9v4M5.5 13.5h-2v-6h13v6h-2"/><path d="M5.5 11.5h9v5h-9z"/></svg>',
   dl: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5v9M6.5 9l3.5 3.5L13.5 9M4 15.5h12"/></svg>',
@@ -701,6 +702,7 @@ const home = () => { boCur = { view: 'home' }; boHash(''); boHome(); };
 const orders = () => { boCur = { view: 'orders' }; boHash(''); boOrders(); };
 const customers = () => { boCur = { view: 'customers' }; boHash(''); boCustomers(); };
 const couponUse = () => { boCur = { view: 'couponUse' }; boHash(''); boCouponUse(); };
+const dns = () => { boCur = { view: 'dns' }; boHash(''); boDns(); };
 const leads = () => { boCur = { view: 'leads' }; boHash(''); boLeads(); };
 const abandoned = () => { boCur = { view: 'abandoned' }; boHash(''); boAbandoned(); };
 const inventory = () => { boCur = { view: 'inventory' }; boHash(''); boInventory(); };
@@ -919,4 +921,58 @@ async function boApiKeysCard(host) {
   const { data, error } = await PSDB.rpc('ps_api_keys');
   if (error || !Array.isArray(data)) { sec.innerHTML = '<p class="who">לא ניתן לטעון את מפתחות ה-API כרגע.</p>'; return; }
   paint(data);
+}
+
+/* ---------- DNS records of proteinstock.co.il (Cloudflare, through the dns-admin server function) ---------- */
+const DNS_ERR = { not_configured: 'החיבור ל-Cloudflare עוד לא הוגדר (חסר מפתח CLOUDFLARE_API_TOKEN בשרת).', token_forbidden: 'מפתח ה-Cloudflare לא מורשה לדומיין. צריך מפתח עם הרשאת DNS Edit ל-proteinstock.co.il.', zone_not_found: 'הדומיין לא נמצא בחשבון ה-Cloudflare של המפתח.', protected: 'הרשומה הזו מוגנת', bad_type: 'סוג רשומה לא נתמך.', bad_name: 'השם לא תקין (אותיות באנגלית, ספרות, מקף ונקודה).', bad_content: 'חסר ערך.', bad_ip: 'כתובת IP לא תקינה.', forbidden: 'אין הרשאה.', unauthorized: 'ההתחברות פגה. התנתקו והתחברו שוב.' };
+async function boDns() {
+  setBar('dns', 'DNS ודומיין');
+  document.getElementById('panel').classList.add('gray');
+  const R = pane(); R.innerHTML = boLoading();
+  const call = async body => {
+    const { data, error } = await sb.functions.invoke('dns-admin', { body });
+    if (data && data.error) return { err: data };
+    if (error) { let d = null; try { d = await error.context.json(); } catch (x) { /* ignore */ } return { err: d || { error: 'error' } }; }
+    return { data };
+  };
+  const errText = e => (DNS_ERR[e.error] || 'הפעולה נכשלה') + (e.why ? ` (${e.why}).` : '') + (e.detail && !DNS_ERR[e.error] ? ` ${e.detail}` : '');
+  let editing = null;
+  const paint = (recs, msg) => {
+    R.innerHTML = `<div class="sp-card">
+      <p class="who" style="margin:0 0 12px">רשומות ה-DNS של <b dir="ltr">proteinstock.co.il</b>. שינוי נכנס לתוקף תוך דקות. רשומות שהאתר והמייל תלויים בהן מסומנות 🔒 ולא ניתנות לשינוי מכאן.</p>
+      ${msg ? `<div class="msg ${msg.ok ? 'ok' : 'err'}" style="margin-bottom:10px">${esc(msg.text)}</div>` : ''}
+      <div class="sp-tw"><table class="sp-table bo-t"><thead><tr><th>סוג</th><th>שם</th><th>ערך</th><th class="hm">Proxy</th><th></th></tr></thead><tbody>
+      ${recs.map(r => `<tr><td><b>${esc(r.type)}</b></td><td dir="ltr" style="text-align:end">${esc(r.name)}</td><td dir="ltr" style="text-align:end;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.content)}">${r.priority != null ? esc(r.priority) + ' ' : ''}${esc(r.content)}</td><td class="hm">${['A', 'AAAA', 'CNAME'].includes(r.type) ? (r.proxied ? '🟠 Proxied' : '⚪ DNS only') : ''}</td>
+        <td class="bo-nw">${r.locked ? `<span class="mute" title="${esc(r.locked)}">🔒 ${esc(r.locked)}</span>` : `<button class="btn sm" data-edit="${esc(r.id)}">עריכה</button> <button class="btn sm" data-del="${esc(r.id)}">מחיקה</button>`}</td></tr>`).join('')}</tbody></table></div></div>
+      <div class="sp-card" style="margin-top:16px"><h2 class="bo-h2">${editing ? 'עריכת רשומה' : 'הוספת רשומה'}</h2>
+      <form class="bo-dnsform"><select id="dn-type" aria-label="סוג">${['A', 'AAAA', 'CNAME', 'TXT', 'MX', 'CAA', 'SRV'].map(t => `<option${editing && editing.type === t ? ' selected' : ''}>${t}</option>`).join('')}</select>
+        <input id="dn-name" dir="ltr" placeholder="שם, למשל sales" aria-label="שם" value="${esc(editing ? editing.name : '')}">
+        <input id="dn-content" dir="ltr" placeholder="ערך, למשל 31.97.156.232" aria-label="ערך" value="${esc(editing ? editing.content : '')}">
+        <input id="dn-prio" dir="ltr" type="number" min="0" placeholder="עדיפות (MX)" aria-label="עדיפות" value="${esc(editing && editing.priority != null ? editing.priority : '')}">
+        <label class="o"><input type="checkbox" id="dn-proxy"${editing && editing.proxied ? ' checked' : ''}> Proxy (ענן כתום)</label>
+        <div style="display:flex;gap:8px"><button class="btn pri" type="submit">${editing ? 'שמירה' : 'הוספה'}</button>${editing ? '<button class="btn" type="button" id="dn-cancel">ביטול</button>' : ''}</div></form>
+      <p class="who" style="margin:8px 0 0">לשרת שמתקין בעצמו תעודת אבטחה (כמו stock ו-sales) משאירים את ה-Proxy כבוי.</p></div>`;
+    R.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { editing = recs.find(r => r.id === b.dataset.edit); paint(recs); R.querySelector('#dn-content').focus(); });
+    R.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+      const r = recs.find(x => x.id === b.dataset.del);
+      if (!confirm(`למחוק את הרשומה ${r.type} ${r.name} → ${r.content}?`)) return;
+      b.disabled = true;
+      const { data, err } = await call({ action: 'delete', id: r.id });
+      if (err) { b.disabled = false; return paint(recs, { text: errText(err) }); }
+      paint(data.records, { ok: true, text: 'הרשומה נמחקה.' });
+    });
+    const cancel = R.querySelector('#dn-cancel'); if (cancel) cancel.onclick = () => { editing = null; paint(recs); };
+    R.querySelector('form').onsubmit = async e => {
+      e.preventDefault();
+      const record = { type: R.querySelector('#dn-type').value, name: R.querySelector('#dn-name').value, content: R.querySelector('#dn-content').value, priority: R.querySelector('#dn-prio').value, proxied: R.querySelector('#dn-proxy').checked };
+      const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true;
+      const { data, err } = await call(editing ? { action: 'update', id: editing.id, record } : { action: 'create', record });
+      btn.disabled = false;
+      if (err) return paint(recs, { text: errText(err) });
+      editing = null; paint(data.records, { ok: true, text: 'נשמר. השינוי ייכנס לתוקף תוך כמה דקות.' });
+    };
+  };
+  const { data, err } = await call({ action: 'list' });
+  if (err) { R.innerHTML = `<div class="sp-card"><div class="msg err">${esc(errText(err))}</div></div>`; return; }
+  paint(data.records);
 }

@@ -505,3 +505,9 @@ button.bo-tile:not(:disabled):hover{transform:translateY(-3px);box-shadow:var(--
 .bo-scopes{display:flex;flex-wrap:wrap;gap:8px 16px}
 .bo-scopes label{display:flex;gap:6px;align-items:center;font-size:.9rem}
 .bo-keyform .btn{justify-self:start}
+
+.bo-dnsform{display:grid;grid-template-columns:110px 1fr 2fr 130px;gap:8px;align-items:center}
+.bo-dnsform input,.bo-dnsform select{height:40px;border:1px solid var(--border,#d9dee5);border-radius:10px;padding:0 10px;font:inherit;min-width:0}
+.bo-dnsform .o{display:flex;gap:6px;align-items:center;grid-column:1/-1}
+.bo-dnsform > div{grid-column:1/-1}
+@media(max-width:700px){.bo-dnsform{grid-template-columns:1fr 1fr}.bo-dnsform #dn-content{grid-column:1/-1}}
