@@ -1436,11 +1436,6 @@
       "permanent": false
     },
     {
-      "source": "/newsletter",
-      "destination": "/#news",
-      "permanent": true
-    },
-    {
       "source": "/why",
       "destination": "/why-protein-stock",
       "permanent": true

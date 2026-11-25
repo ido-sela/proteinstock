@@ -11,7 +11,7 @@
     if (sessionStorage.getItem('ps_np_entry')) return;            // not the entry page of this visit
     sessionStorage.setItem('ps_np_entry', '1');
   } catch (e) { /* storage blocked: fall back to the page rules below */ }
-  if (/^\/(admin|checkout|order-success|thank-you|account|cart)/.test(location.pathname)) return;
+  if (/^\/(admin|checkout|order-success|thank-you|account|cart|newsletter)/.test(location.pathname)) return;   // /newsletter is the signup form itself
   const css = document.createElement('style');
   css.id = 'ps-at-popup-fix';
   css.textContent =
