@@ -23,7 +23,7 @@
 
   <div class="benefits"><div class="wrap"><span>משלוחים לכל הארץ</span><span>מותגים מובילים</span><span>רוב המוצרים בכשרות</span></div></div>
 
-  <nav class="catband" aria-label="קטגוריות"><div class="wrap" id="catband"></div></nav>
+  <nav class="catband" aria-label="קטגוריות"><div class="wrap"><div class="catband-row" id="catband"></div><div class="brand-strip top" id="brandtop" aria-label="מותגים"></div></div></nav>
 
   <section>
     <div class="wrap">
@@ -53,7 +53,7 @@
   <section>
     <div class="wrap">
       <div class="sec-head" style="justify-content:center;text-align:center"><div><h2>המותגים הבינלאומיים שאתם מכירים ואוהבים</h2><p style="margin-inline:auto">השמות הגדולים בעולם תזונת הספורט — חטיפים, משקאות ואבקות ממיטב היצרנים הגלובליים.</p></div></div>
-      <div class="brand-strip home" id="brands"></div>
+      <div class="brands-grid" id="brands"></div>
     </div>
   </section>
 
@@ -91,14 +91,16 @@
 <script src="js/app.js"></script>
 <script>
 layout('home');
-document.getElementById('catband').innerHTML=SHOP_CATS.map(c=>`<a href="category/${c.id}">${c.name}</a>`).join('');
+document.getElementById('catband').innerHTML=SHOP_CATS.map(c=>`<a class="chip-btn" href="category/${c.id}">${c.name}</a>`).join('');
+/* brand logos, scrolling, right under the categories (Niv 24.11); the brands section further down stays a grid */
+document.getElementById('brandtop').innerHTML=BRAND_ORDER.filter(b=>BRAND_LOGOS[b]).map(b=>brandTile(b,'brand-tile sm')).join('');
 document.getElementById('cats').innerHTML=SHOP_CATS.slice(0,4).map(c=>`<a class="cat" href="category/${c.id}"><div class="ic" aria-hidden="true">${c.icon}</div><h3>${c.name}</h3><p>${c.desc}</p><span class="go">לכל ה${c.name}</span></a>`).join('');
 function paintHome(){
   const feat=['0zpa50','s5r79f','nho05h','vdx2p0','5g4sp7','wu794d','euudrs','24lhib'].map(byId).filter(Boolean);
   document.getElementById('featured').innerHTML=feat.map(card).join('');
 }
 paintHome(); window.__rerender=paintHome; if(window.__liveReady) paintHome();
-document.getElementById('brands').innerHTML=BRAND_ORDER.filter(b=>BRAND_LOGOS[b]).map(b=>brandTile(b,'brand-tile sm')).join('');
+document.getElementById('brands').innerHTML=BRAND_ORDER.filter(b=>BRAND_LOGOS[b]).map(b=>brandTile(b)).join('');
 /* newsletter: the ActiveTrail form above (same list and automation as the old site) */
 </script>
 </body>
