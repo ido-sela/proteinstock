@@ -19,6 +19,10 @@ export function categoriesOf(p) {
 
 // c: row returned by coupon_check(); lines: [{ product_id, title, category, cents }]; subtotalC in agorot.
 // Returns { discountC, perLine: Map(product_id -> agorot) } or { error }.
+// Store rule: a coupon never takes more than 40% off, whatever its type or value: a percentage above 40, or a fixed
+// amount worth more than 40% of the eligible items, is cut down to 40% of those items.
+export const MAX_COUPON_PCT = 40;
+
 export function priceCoupon(c, lines, subtotalC) {
   if (c.min_order_amount != null && subtotalC < Math.round(Number(c.min_order_amount) * 100)) {
     return { error: 'coupon_min_order', min: Number(c.min_order_amount) };
@@ -44,7 +48,16 @@ export function priceCoupon(c, lines, subtotalC) {
     const pct = Math.min(Math.max(value, 0), 100);
     eligible.forEach((l) => perLine.set(l.product_id, Math.round((l.cents * pct) / 100)));
   }
-  const discountC = [...perLine.values()].reduce((s, d) => s + d, 0);
+  let discountC = [...perLine.values()].reduce((s, d) => s + d, 0);
+  const poolC = eligible.reduce((s, l) => s + l.cents, 0);
+  const capC = Math.floor((poolC * MAX_COUPON_PCT) / 100);
+  if (discountC > capC) {
+    // scale every line down to the cap; the last line takes the rounding
+    const keys = [...perLine.keys()];
+    let left = capC;
+    keys.forEach((k, i) => { const d = i === keys.length - 1 ? left : Math.floor((perLine.get(k) * capC) / discountC); perLine.set(k, d); left -= d; });
+    discountC = capC;
+  }
   return { discountC, perLine };
 }
 

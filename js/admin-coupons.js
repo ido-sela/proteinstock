@@ -69,7 +69,7 @@ function cpFormHtml(c, series) {
       <p class="who">כל קוד נוצר בצורה PREFIX-XXXXX, וכברירת מחדל כל קוד הוא לשימוש אחד.</p>`
       : `<label class="fld"><span>קוד הקופון</span><input type="text" id="c-code" maxlength="40" dir="ltr" value="${esc(c ? c.code : '')}"${c ? ' readonly' : ''} placeholder="למשל SUMMER20"></label>${c ? '<p class="who">אי אפשר לשנות קוד קיים. כדי לשנות, צרו קופון חדש.</p>' : ''}`}
     <div class="row2c"><label class="fld"><span>סוג הנחה</span><select id="c-type"><option value="percentage">אחוז מהמחיר</option><option value="fixed">סכום קבוע (₪)</option></select></label>
-      <label class="fld"><span>ערך ההנחה</span><input type="number" id="c-value" min="0.01" step="0.01" dir="ltr" value="${c ? Number(c.value) : ''}"></label></div>
+      <label class="fld"><span>ערך ההנחה</span><input type="number" id="c-value" min="0.01" max="40" step="0.01" dir="ltr" value="${c ? Number(c.value) : ''}"></label></div>
     <label class="fld"><span>חל על</span><select id="c-apply">${Object.entries(CP_APPLY).map(([k, v]) => `<option value="${k}">${v === CP_APPLY.all ? v : 'רק ' + v + ' מסוימים'}</option>`).join('')}</select></label>
     <div id="c-cats" class="cp-picks">${CATS.map(x => `<label class="chk"><input type="checkbox" value="${esc(x.id)}"${c && (c.category_ids || []).includes(x.id) ? ' checked' : ''}> ${esc(x.name)}</label>`).join('')}</div>
     <div id="c-prods" class="cp-picks"><input type="search" id="c-psearch" placeholder="סינון מוצרים" aria-label="סינון מוצרים"><div id="c-plist" class="cp-plist"><p class="who">טוען מוצרים…</p></div></div>
@@ -100,7 +100,8 @@ function cpBindForm(c) {
   return () => {   // read + validate; returns { values } or { error }
     const type = $('#c-type').value, value = parseFloat($('#c-value').value), applies_to = $('#c-apply').value;
     if (!(value > 0)) return { error: 'נא להזין ערך הנחה' };
-    if (type === 'percentage' && value > 100) return { error: 'אחוז ההנחה לא יכול לעלות על 100' };
+    // store rule: a coupon never gives more than 40% off (MAX_COUPON_PCT in api/_lib/coupons.js)
+    if (type === 'percentage' && value > 40) return { error: 'אחוז ההנחה לא יכול לעלות על 40' };
     const category_ids = applies_to === 'categories' ? [...$('#c-cats').querySelectorAll('input:checked')].map(i => i.value) : [];
     const product_ids = applies_to === 'products' ? [...picked] : [];
     if (applies_to === 'categories' && !category_ids.length) return { error: 'נא לבחור לפחות קטגוריה אחת' };
