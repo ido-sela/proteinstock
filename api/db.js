@@ -93,6 +93,8 @@ function cleanRow(t, row) {
   const keys = Object.keys(row || {});
   if (!keys.length) bad('empty');
   keys.forEach((k) => { if (!t.write?.includes(k)) bad('bad_column'); });
+  // store rule: no percentage coupon above 40% (checkout caps every coupon at 40% as well)
+  if (t === T.coupons && (row.type ?? 'percentage') === 'percentage' && row.value != null && Number(row.value) > 40) bad('coupon_max_40');
   return keys;
 }
 

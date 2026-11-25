@@ -261,3 +261,7 @@ insert into site_settings (key, value) values
   ('shipping', '{"fee":35,"pickup":true,"free_over":499}'),
   ('payment',  '{"enabled":false,"sandbox":false,"provider":"payplus"}')
 on conflict (key) do nothing;
+
+-- Store rule: a percentage coupon is never above 40%. NOT VALID: checked on new and edited coupons, older rows are left as they are.
+alter table coupons drop constraint if exists coupons_max_40;
+alter table coupons add constraint coupons_max_40 check (type <> 'percentage' or value <= 40) not valid;
