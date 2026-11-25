@@ -21,7 +21,8 @@ const T = {
   orders: {
     pk: 'id',
     cols: ['id', 'number', 'status', 'customer_name', 'phone', 'email', 'address', 'notes', 'subtotal', 'discount', 'coupon_code', 'shipping', 'total', 'currency', 'payment_provider', 'payment_ref', 'paid_at', 'delivery', 'created_at', 'fulfillment', 'tracking_number', 'source', 'shipping_method'],
-    write: ['status', 'fulfillment', 'tracking_number'], ops: ['select', 'update'],
+    write: ['status', 'fulfillment', 'tracking_number'], ops: ['select', 'update', 'delete'],
+    deleteWhere: "status not in ('paid','refunded')",   // only unpaid orders (abandoned checkout, tests) can be deleted
     embed: { order_items: { fk: 'order_id', cols: ['id', 'product_id', 'title', 'unit_price', 'qty', 'line_total'] } },
   },
   order_items: { pk: 'id', cols: ['id', 'order_id', 'product_id', 'title', 'unit_price', 'qty', 'line_total'], ops: ['select'] },
@@ -178,6 +179,7 @@ export default handler(['POST'], async (req, res) => {
     if (op === 'delete') {
       const where = whereSql(t, b.filters, params, t.cols);
       if (!where.length) bad('filter_required');
+      if (t.deleteWhere) where.push(t.deleteWhere);
       const rows = await q(`delete from ${ident(b.table)} where ${where.join(' and ')}${retSql}`, params);
       return json(res, { data: ret ? rows : null });
     }
