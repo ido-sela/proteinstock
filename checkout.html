@@ -279,6 +279,16 @@ async function submit(e) {
   location.href = 'order-success?status=received&order=' + encodeURIComponent(d.order_number);
 }
 
+// Back from the payment page: the browser restores this page from its cache with the button still locked on
+// "מעבירים לתשלום…", so nothing can be submitted. Unlock it whenever the page is shown again from history.
+window.addEventListener('pageshow', (ev) => {
+  if (!ev.persisted && !busy) return;
+  busy = false;
+  const btn = document.getElementById('ck-go'), t = document.getElementById('ck-go-t');
+  if (btn) btn.disabled = false;
+  if (t) t.textContent = 'בצע הזמנה';
+});
+
 Cart.load();
 buildForm();
 window.__rerender = () => { refresh(); requote(); };
