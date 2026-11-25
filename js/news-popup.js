@@ -1,9 +1,16 @@
 /* Newsletter popup: the store's ActiveTrail popup (form 7547), exactly as on the old Zappy site.
    Its automation sends the subscriber the WELCOME30 code by email and SMS.
-   Not on admin / checkout / thank-you pages. The mobile fix keeps the popup above the sticky header with its X visible. */
+   Not on admin / checkout / thank-you pages. The mobile fix keeps the popup above the sticky header with its X visible.
+   Shown only on the first page of a visit (the page the visitor entered the site on), and never to a browser that
+   completed a paid order (order-success sets ps_buyer). ActiveTrail itself also hides it from existing subscribers. */
 (function () {
   if (window._atpopq && window._atpopq.loaded) return;
   try { if (window.self !== window.top) return; } catch (e) { return; }   // not inside the admin's live preview
+  try {
+    if (localStorage.getItem('ps_buyer')) return;                 // already bought on this browser
+    if (sessionStorage.getItem('ps_np_entry')) return;            // not the entry page of this visit
+    sessionStorage.setItem('ps_np_entry', '1');
+  } catch (e) { /* storage blocked: fall back to the page rules below */ }
   if (/^\/(admin|checkout|order-success|thank-you|account|cart)/.test(location.pathname)) return;
   const css = document.createElement('style');
   css.id = 'ps-at-popup-fix';

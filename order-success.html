@@ -37,7 +37,7 @@ if (status === 'success') {
     box.innerHTML = `<div class="ty-i ok">✓</div><h1>תודה${nm ? ', ' + esc(nm) : ''}! התשלום התקבל</h1>${order ? `<p class="ty-num">מספר הזמנה <b dir="ltr">${esc(order)}</b>${tot ? ` · סה"כ ${money(tot)}` : ''}</p>` : ''}
       <p>ההזמנה אושרה ונכנסה לטיפול. נעדכן אתכם כשהיא יוצאת למשלוח. אם הזנתם אימייל, תישלח אליו קבלה.</p>
       <div class="ty-a"><a class="btn btn-primary" href="products">להמשך קנייה</a><a class="btn btn-outline" href="account">ההזמנות שלי</a><a class="btn btn-outline" target="_blank" rel="noopener" href="${wa('שלום, ביצעתי הזמנה באתר. מספר הזמנה: ' + order)}">שאלה בוואטסאפ</a></div>`;
-    try { sessionStorage.removeItem('ps_last'); } catch (e) { /* ignore */ }
+    try { sessionStorage.removeItem('ps_last'); localStorage.setItem('ps_buyer', '1'); } catch (e) { /* ignore */ }   // buyers don't get the newsletter popup again
   };
   const report = o => { if (window.PSTrack && o) PSTrack.purchase({ number: o.number, total: o.total, shipping: o.shipping, coupon: o.coupon, items: o.items }); };
   box.innerHTML = '<div class="ty-wait"><span class="ty-spin" aria-hidden="true"></span><h1>מאשרים את התשלום…</h1><p>זה לוקח רק כמה שניות. אין צורך לרענן את הדף.</p></div>';
