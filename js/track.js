@@ -10,6 +10,7 @@
    Loaded by js/app.js on every storefront page (never on /admin). */
 (function () {
   if (window.PSTrack || /\/admin/.test(location.pathname)) return;
+  try { if (window.self !== window.top) return; } catch (e) { return; }   // not inside the admin's live preview: no cookie banner, no tracking
   const FB = '1120769657458456', GA = 'G-R26YTRKNR6', CF = 'ba4da9700791400bb1fed45649c4c1b7';
   const TT = 'DBCB1TBC77U4J2JQ8DLG';   // TikTok Pixel (same as the old Zappy store); empty = TikTok off
   const CUR = 'ILS';

@@ -9,7 +9,7 @@ const LEGACY_SB = { url:'https://yplzliqpohqehypllxdq.supabase.co', key:'sb_publ
 /* Marketing & analytics tags (Meta Pixel, GA4, Cloudflare, store events, cart abandonment): js/track.js.
    The paid order is read now, before order-success clears it, for the Purchase event. */
 try{ if(/order-success/.test(location.pathname)){ const l=JSON.parse(sessionStorage.getItem('ps_last')||'null'), o=(new URLSearchParams(location.search).get('order')||'').toUpperCase(); if(l&&String(l.number).toUpperCase()===o) window.__psLastOrder=l; } }catch(e){}
-(function(){ const s=document.createElement('script'); s.src='/js/track.js?v=3'; s.async=true; document.head.appendChild(s); })();
+(function(){ const s=document.createElement('script'); s.src='/js/track.js?v=4'; s.async=true; document.head.appendChild(s); })();
 /* Newsletter popup: js/news-popup.js */
 (function(){ if(/\/admin/.test(location.pathname)) return; const s=document.createElement('script'); s.src='/js/news-popup.js?v=4'; s.async=true; document.head.appendChild(s); })();
 /* Accessibility menu: js/a11y.js */
@@ -233,7 +233,7 @@ async function initLive(){
    If the request fails the built-in catalog (data.js) is used. */
 async function remoteCatalog(){
   try{
-    const rows = await apiRead('products', 'id,title,description,price,old_price,out_of_stock,vendor,category,tags,image,images');
+    const rows = await apiRead('products', 'id,title,description,price,old_price,out_of_stock,vendor,category,tags,image,images,cats');
     if(!Array.isArray(rows) || !rows.length) return;
     const m = new Map(rows.map(x => [x.id, x]));
     const apply = (p, x, isNew) => {
@@ -243,6 +243,10 @@ async function remoteCatalog(){
       p.sale = p.old > p.price; p.pct = p.sale ? Math.round((1 - p.price / p.old) * 100) : 0;
       if(full && x.vendor) p.brand = x.vendor;
       if(full && x.category && CATS.some(c => c.id === x.category)) p.cat = x.category;
+      if(Array.isArray(x.cats) && x.cats.length){   // categories managed in the database (admin / AI assistant): first = main category
+        const main = x.cats.find(c => CATS.some(k => k.id === c)); if(main) p.cat = main;
+        p.cats = x.cats.filter(c => c !== p.cat && SHOP_CATS.some(k => k.id === c));
+      }
       if(full && Array.isArray(x.tags) && x.tags.length) p.tags = x.tags.filter(t => t !== 'אזל');
       if(x.image) p.img = x.image;
       p.imgs = [p.img, ...(Array.isArray(x.images) ? x.images : []).filter(u => u && u !== p.img)];   // all product photos (gallery); the main photo chosen in the admin always first

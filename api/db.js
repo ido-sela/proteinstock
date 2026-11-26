@@ -8,10 +8,10 @@ import { adminEmail } from './_lib/auth.js';
 const T = {
   products: {
     pk: 'id',
-    cols: ['id', 'title', 'price', 'old_price', 'out_of_stock', 'hidden', 'description', 'vendor', 'category', 'tags', 'image', 'images', 'quantity', 'low_stock_threshold', 'sku', 'status', 'created_at', 'updated_at'],
-    write: ['id', 'title', 'price', 'old_price', 'out_of_stock', 'hidden', 'description', 'vendor', 'category', 'tags', 'image', 'quantity', 'low_stock_threshold', 'sku', 'status'],
+    cols: ['id', 'title', 'price', 'old_price', 'out_of_stock', 'hidden', 'description', 'vendor', 'category', 'tags', 'image', 'images', 'cats', 'quantity', 'low_stock_threshold', 'sku', 'status', 'created_at', 'updated_at'],
+    write: ['id', 'title', 'price', 'old_price', 'out_of_stock', 'hidden', 'description', 'vendor', 'category', 'tags', 'image', 'cats', 'quantity', 'low_stock_threshold', 'sku', 'status'],
     ops: ['select', 'insert', 'update', 'delete', 'upsert'],
-    pub: { cols: ['id', 'title', 'description', 'price', 'old_price', 'out_of_stock', 'vendor', 'category', 'tags', 'image', 'images'], where: 'hidden = false' },
+    pub: { cols: ['id', 'title', 'description', 'price', 'old_price', 'out_of_stock', 'vendor', 'category', 'tags', 'image', 'images', 'cats'], where: 'hidden = false' },
   },
   site_settings: {
     pk: 'key', cols: ['key', 'value', 'updated_at'], write: ['key', 'value'], json: ['value'],

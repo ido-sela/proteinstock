@@ -265,3 +265,6 @@ on conflict (key) do nothing;
 -- Store rule: a percentage coupon is never above 40%. NOT VALID: checked on new and edited coupons, older rows are left as they are.
 alter table coupons drop constraint if exists coupons_max_40;
 alter table coupons add constraint coupons_max_40 check (type <> 'percentage' or value <= 40) not valid;
+
+-- Every category a product appears in on the store; the first one is its main category (= category). null = the store's built-in rules.
+alter table products add column if not exists cats text[];
