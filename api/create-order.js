@@ -84,9 +84,11 @@ export default handler(['POST'], async (req, res) => {
   const afterC = subtotalC - discountC;
 
   const sset = (await one(`select value from site_settings where key = 'shipping'`))?.value ?? {};
-  const freeOver = Number(sset.free_over ?? 0), fee = Number(sset.fee ?? 0);
+  const freeOver = Number(sset.free_over ?? 0), freeOverList = Number(sset.free_over_list ?? 0), fee = Number(sset.fee ?? 0);
   if (pickup && sset.pickup === false) return json(res, { error: 'pickup_unavailable' }, 400);
-  const shippingC = pickup ? 0 : (freeOver > 0 && afterC >= cents(freeOver) ? 0 : cents(fee));   // free shipping counts the total after the discount
+  // free shipping: the total after the discount reaches free_over, and (when set) the cart before the discount reaches free_over_list
+  const free = freeOver > 0 && afterC >= cents(freeOver) && !(freeOverList > 0 && subtotalC < cents(freeOverList));
+  const shippingC = pickup ? 0 : (free ? 0 : cents(fee));
   const totalC = afterC + shippingC;
 
   if (quote) {

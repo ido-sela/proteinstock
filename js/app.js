@@ -28,13 +28,23 @@ async function apiRead(table, select, filters){
   }catch(e){ return null; }
 }
 /* Shipping rule (free over / fee) — public copy of the server setting; the server recomputes it for every order. */
-const SHIP = { free_over: 500, fee: 35, pickup: true };
-const shipCost = sub => (SHIP.free_over > 0 && sub >= SHIP.free_over) ? 0 : SHIP.fee;
+const SHIP = { free_over: 500, free_over_list: 0, fee: 35, pickup: true };
+/* free_over: the total after the coupon; free_over_list (optional): the cart before the coupon must also reach it */
+const shipCost = (after, list) => (SHIP.free_over > 0 && after >= SHIP.free_over && !(SHIP.free_over_list > 0 && (list ?? after) < SHIP.free_over_list)) ? 0 : SHIP.fee;
+/* how much more (after the coupon) is needed for free shipping; 0 when it is already free */
+function shipGap(after, list) {
+  if (!(SHIP.free_over > 0)) return 0;
+  list = list ?? after;
+  const ratio = list > 0 ? after / list : 1;
+  const needAfter = Math.max(0, SHIP.free_over - after);
+  const needList = SHIP.free_over_list > 0 ? Math.max(0, SHIP.free_over_list - list) * ratio : 0;
+  return Math.ceil(Math.max(needAfter, needList) * 100) / 100;
+}
 async function loadShipping(){
   try{
     const a = await apiRead('site_settings', 'value', [['eq','key','shipping']]);
     if(!a) return; const v = a[0] && a[0].value;
-    if(v){ SHIP.free_over = Number(v.free_over) || 0; SHIP.fee = Number(v.fee) || 0; SHIP.pickup = v.pickup !== false; if(SHIP.free_over>0) SITE.freeShip = SHIP.free_over; }
+    if(v){ SHIP.free_over = Number(v.free_over) || 0; SHIP.free_over_list = Number(v.free_over_list) || 0; SHIP.fee = Number(v.fee) || 0; SHIP.pickup = v.pickup !== false; if(SHIP.free_over>0) SITE.freeShip = SHIP.free_over; }
     Cart.render(); if(window.__rerender) window.__rerender();
   }catch(e){}
 }
@@ -78,7 +88,7 @@ const Cart = {
     if(!this.items.length){ body.innerHTML='<div class="d-empty"><p style="font-size:2.4rem">🛒</p><p>העגלה ריקה</p><p style="margin-top:14px"><a class="btn btn-dark btn-sm" href="products">לקטלוג המוצרים</a></p></div>'; document.getElementById('d-foot').style.display='none'; return; }
     document.getElementById('d-foot').style.display='';
     body.innerHTML=this.items.map((i,k)=>{const p=byId(i.id);return `<div class="ci"><img src="${thumb(p.img)}" alt="" loading="lazy"><div><h4>${esc(p.name)}</h4>${i.v?`<small class="ci-v">הרכב: ${esc(i.v)}</small>`:''}<div class="q"><button aria-label="הפחת" data-q="${k}:-1">−</button><span>${i.q}</span><button aria-label="הוסף" data-q="${k}:1">+</button></div><button class="rm" data-q="${k}:rm">הסר</button></div><b>${money(p.price*i.q)}</b></div>`}).join('');
-    const t=this.total(); const left=SHIP.free_over-t;
+    const t=this.total(); const left=shipGap(t,t);
     document.getElementById('d-total').textContent=money(t);
     document.getElementById('d-ship').textContent= SHIP.free_over<=0 ? '' : left>0 ? `עוד ${money(left)} למשלוח חינם` : '🎉 המשלוח אצלנו!';
     paintPay();
