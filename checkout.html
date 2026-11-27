@@ -106,7 +106,7 @@ function paintCoupon() {
 let rq = 0;
 function requote() { if (!coupon) return; clearTimeout(rq); const c = coupon.code; rq = setTimeout(() => applyCoupon(c, true), 350); }
 function itemsHtml() {
-  return Cart.items.filter(i => byId(i.id)).map(i => { const p = byId(i.id); return `<div class="ck-item"><div class="ck-thumb"><img src="${p.img}" alt="" width="64" height="64"><i>${i.q}</i></div><div class="ck-iname"><span>${esc(p.name)}</span>${i.v ? `<small>הרכב: ${esc(i.v)}</small>` : ''}${p.brand ? `<small>${esc(p.brand)}</small>` : ''}</div><b>${money(p.price * i.q)}</b></div>`; }).join('');
+  return Cart.items.filter(i => byId(i.id)).map(i => { const p = byId(i.id); return `<div class="ck-item"><div class="ck-thumb"><img src="${thumb(p.img)}" alt="" width="64" height="64"><i>${i.q}</i></div><div class="ck-iname"><span>${esc(p.name)}</span>${i.v ? `<small>הרכב: ${esc(i.v)}</small>` : ''}${p.brand ? `<small>${esc(p.brand)}</small>` : ''}</div><b>${money(p.price * i.q)}</b></div>`; }).join('');
 }
 
 const step = (n, key, title, icon, body) => `<section class="ck-step${openStep === n ? ' open' : ''}" data-step="${n}" id="st-${key}">

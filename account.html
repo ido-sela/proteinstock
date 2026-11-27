@@ -82,7 +82,7 @@ function orderCard(o) {
   const pay = PAY[o.status] || [o.status, 'mute'];
   const ful = o.status === 'cancelled' ? 'cancelled' : (o.fulfillment || 'pending');
   const at = STEPS.indexOf(ful);
-  const items = (o.items || []).map(i => { const p = byId(i.id); return `<li>${p ? `<img src="${esc(p.img)}" alt="" width="48" height="48" loading="lazy">` : '<span class="acc-noimg"></span>'}<span class="acc-it">${p ? `<a href="${purl(p.id)}">${esc(i.title)}</a>` : esc(i.title)}<small>${i.q} × ${money(i.price)}</small></span></li>`; }).join('');
+  const items = (o.items || []).map(i => { const p = byId(i.id); return `<li>${p ? `<img src="${esc(thumb(p.img))}" alt="" width="48" height="48" loading="lazy">` : '<span class="acc-noimg"></span>'}<span class="acc-it">${p ? `<a href="${purl(p.id)}">${esc(i.title)}</a>` : esc(i.title)}<small>${i.q} × ${money(i.price)}</small></span></li>`; }).join('');
   const again = (o.items || []).some(i => { const p = byId(i.id); return p && !p.out; });
   return `<article class="acc-order">
     <header><div><b dir="ltr">${esc(o.number)}</b><span>${fmtDate(o.created_at)}</span></div><span class="acc-badge ${pay[1]}">${pay[0]}</span></header>

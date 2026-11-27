@@ -48,7 +48,7 @@ function draw() {
   const rows = items.map(i => {
     const p = byId(i.id);
     return `<div class="ct-row" data-id="${esc(p.id)}">
-      <a class="ct-img" href="${purl(p.id)}"><img src="${p.img}" alt="${esc(p.name)}" width="96" height="96" loading="lazy"></a>
+      <a class="ct-img" href="${purl(p.id)}"><img src="${thumb(p.img)}" alt="${esc(p.name)}" width="96" height="96" loading="lazy"></a>
       <div class="ct-info"><span class="pbrand">${esc(p.brand || '')}</span><a class="ct-name" href="${purl(p.id)}">${esc(p.name)}</a>${i.v ? `<span class="ct-v">הרכב המארז: ${esc(i.v)}</span>` : ''}
         <span class="ct-unit">${money(p.price)}${p.sale ? `<s>${money(p.old)}</s>` : ''}</span>
         ${p.out ? '<span class="ct-warn">המוצר אזל מהמלאי. יש להסיר אותו כדי להמשיך.</span>' : ''}</div>

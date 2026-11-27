@@ -77,7 +77,7 @@ const Cart = {
     if(!this.items.length&&this.stored.length&&!window.__liveReady){ body.innerHTML='<div class="d-empty"><p>טוען…</p></div>'; document.getElementById('d-foot').style.display='none'; return; }
     if(!this.items.length){ body.innerHTML='<div class="d-empty"><p style="font-size:2.4rem">🛒</p><p>העגלה ריקה</p><p style="margin-top:14px"><a class="btn btn-dark btn-sm" href="products">לקטלוג המוצרים</a></p></div>'; document.getElementById('d-foot').style.display='none'; return; }
     document.getElementById('d-foot').style.display='';
-    body.innerHTML=this.items.map((i,k)=>{const p=byId(i.id);return `<div class="ci"><img src="${p.img}" alt="" loading="lazy"><div><h4>${esc(p.name)}</h4>${i.v?`<small class="ci-v">הרכב: ${esc(i.v)}</small>`:''}<div class="q"><button aria-label="הפחת" data-q="${k}:-1">−</button><span>${i.q}</span><button aria-label="הוסף" data-q="${k}:1">+</button></div><button class="rm" data-q="${k}:rm">הסר</button></div><b>${money(p.price*i.q)}</b></div>`}).join('');
+    body.innerHTML=this.items.map((i,k)=>{const p=byId(i.id);return `<div class="ci"><img src="${thumb(p.img)}" alt="" loading="lazy"><div><h4>${esc(p.name)}</h4>${i.v?`<small class="ci-v">הרכב: ${esc(i.v)}</small>`:''}<div class="q"><button aria-label="הפחת" data-q="${k}:-1">−</button><span>${i.q}</span><button aria-label="הוסף" data-q="${k}:1">+</button></div><button class="rm" data-q="${k}:rm">הסר</button></div><b>${money(p.price*i.q)}</b></div>`}).join('');
     const t=this.total(); const left=SHIP.free_over-t;
     document.getElementById('d-total').textContent=money(t);
     document.getElementById('d-ship').textContent= SHIP.free_over<=0 ? '' : left>0 ? `עוד ${money(left)} למשלוח חינם` : '🎉 המשלוח אצלנו!';
@@ -93,7 +93,7 @@ function card(p){
   const tags=[]; if(p.out) tags.push('<span class="tag out">אזל מהמלאי</span>'); if(p.sale) tags.push(`<span class="tag sale">${p.pct}%- הנחה</span>`);
   p.tags.slice(0,2).forEach(t=>tags.push(`<span class="tag">${esc(t)}</span>`));
   const meta=p.protein?`${p.protein} גרם חלבון`:'';
-  return `<article class="pcard${p.out?' is-out':''}"><a class="pimg" href="${purl(p.id)}" aria-label="${esc(p.name)}"><img src="${p.img}" alt="${esc(p.name)}" loading="lazy" width="400" height="400"><div class="ptags">${tags.join('')}</div></a>
+  return `<article class="pcard${p.out?' is-out':''}"><a class="pimg" href="${purl(p.id)}" aria-label="${esc(p.name)}"><img src="${thumb(p.img)}" srcset="${thumb(p.img)} 400w, ${p.img} 800w" sizes="(max-width:600px) 46vw, 280px" alt="${esc(p.name)}" loading="lazy" decoding="async" width="400" height="400"><div class="ptags">${tags.join('')}</div></a>
   <div class="pbody"><span class="pbrand">${esc(p.brand)}</span><a class="pname" href="${purl(p.id)}">${esc(p.name)}</a><span class="pmeta">${meta}</span>
   <div class="pfoot"><span class="price">${money(p.price)}${p.sale?`<s>${money(p.old)}</s>`:''}</span>
   <button class="add" ${p.out?'disabled':''} data-add="${p.id}" aria-label="הוסף לעגלה: ${esc(p.name)}">${ICON.plus}</button></div></div></article>`;
@@ -609,7 +609,7 @@ function initSearchDD(){
     hits=PRODUCTS.filter(p=>{ const t=((p.title||p.name||'')+' '+(p.brand||'')+' '+catName(p.cat)+' '+(p.tags||[]).join(' ')).toLowerCase(); return words.every(w=>t.includes(w)); });
     act=-1;
     box.innerHTML = hits.length
-      ? hits.slice(0,6).map(p=>`<a class="sdd-i" role="option" href="${purl(p.id)}"><img src="${p.img}" alt="" width="40" height="40"><span class="sdd-t"><span class="n">${esc(p.title||p.name)}</span><small>${esc(p.brand||'')}</small></span><b>${money(p.price)}</b></a>`).join('') + (hits.length>6?`<a class="sdd-all" href="products?q=${encodeURIComponent(inp.value.trim())}">הצגת כל ${hits.length} התוצאות</a>`:'')
+      ? hits.slice(0,6).map(p=>`<a class="sdd-i" role="option" href="${purl(p.id)}"><img src="${thumb(p.img)}" alt="" width="40" height="40"><span class="sdd-t"><span class="n">${esc(p.title||p.name)}</span><small>${esc(p.brand||'')}</small></span><b>${money(p.price)}</b></a>`).join('') + (hits.length>6?`<a class="sdd-all" href="products?q=${encodeURIComponent(inp.value.trim())}">הצגת כל ${hits.length} התוצאות</a>`:'')
       : '<div class="sdd-none">לא נמצאו מוצרים. נסו מילה אחרת.</div>';
     box.hidden=false;
   };

@@ -26,6 +26,8 @@ const ZCATS = {"0zpa50":["protein-snacks"],"s5r79f":["protein-snacks","protein-h
 /* old store category addresses that have no category of their own here */
 const CAT_ALIAS = {'high-protein':'over-20g-protein','savory-protein-snacks':'protein-health-snacks','low-calorie-protein-powders':'protein-powders','weight-gain-supplement':'protein-powders'};
 const inCat = (p, id) => { const v=VCATS.find(c=>c.id===id); if(v) return v.test(p) || (p.cats||[]).includes(id); return p.cat===id || (p.cats||[]).includes(id); };
+/* 400px copy of a store photo (img/p/t/) for cards, cart and lists; photos uploaded later have none and are used as they are */
+const thumb = u => /^\/?img\/p\/[^/]+\.webp$/.test(u||'') ? String(u).replace(/^(\/?img\/p\/)/, '$1t/') : u;
 const catName = id => (SHOP_CATS.find(c=>c.id===id)||{}).name || '';
 
 const BRANDS = [
