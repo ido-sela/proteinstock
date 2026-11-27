@@ -8,6 +8,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="img/protein-stock-sports-nutrition-e-commerce-logo.webp">
 <link rel="stylesheet" href="css/style.css">
+<style>
+.sn-back{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:1000}
+.sn-box{position:relative;background:#fff;color:#111;border-radius:16px;max-width:620px;width:100%;max-height:90vh;overflow:auto;padding:22px 18px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.sn-box h2{margin:6px 0 6px;font-size:1.35rem}
+.sn-box p{margin:0 0 14px;color:#444}
+.sn-i{font-size:2.2rem}
+.sn-x{position:absolute;top:10px;left:12px;border:0;background:none;font-size:1.2rem;cursor:pointer;color:#555}
+.sn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:14px;text-align:right}
+.sn-act{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
+.sn-skip{border:0;background:none;text-decoration:underline;cursor:pointer;color:#555;font:inherit}
+</style>
 </head>
 <body>
 <main id="main"><div class="wrap ct" id="ct"></div></main>
@@ -45,8 +56,8 @@ function draw() {
       .finally(() => { window.__cartQBusy = false; draw(); });
   }
   const disc = qt ? qt.discount : 0, after = Cart.total() - disc;
-  const sub = Cart.total(), ship = shipCost(after), left = SHIP.free_over - after;
-  const pct = SHIP.free_over > 0 ? Math.min(100, Math.round(after / SHIP.free_over * 100)) : 100;
+  const sub = Cart.total(), ship = shipCost(after, sub), left = shipGap(after, sub);
+  const pct = SHIP.free_over > 0 ? Math.min(100, Math.round(after / (after + left) * 100)) : 100;
   const bar = SHIP.free_over > 0 ? `<div class="ct-ship"><p>${left > 0 ? `עוד <b>${money(left)}</b> ומקבלים משלוח חינם` : '🎉 מגיע לך משלוח חינם'}</p><div class="ct-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pct}%"></span></div></div>` : '';
   const rows = items.map(i => {
     const p = byId(i.id);
@@ -75,6 +86,35 @@ function draw() {
   ${rel.length ? `<section class="ct-rel"><h2>אולי יעניין אותך גם</h2><div class="grid">${rel.map(card).join('')}</div></section>` : ''}`;
   const note = document.getElementById('ct-note'); if (note) note.oninput = () => setNote(note.value);
   const go = host.querySelector('.ct-go.dis'); if (go) go.onclick = e => { e.preventDefault(); toast('יש להסיר מוצרים שאזלו מהמלאי'); };
+  if (!cp || qt) shipNudge(left, after, sub, items, disc);
+}
+/* close to free shipping: one popup per visit with products that close the gap */
+const NUDGE_MAX = 100;
+function shipNudge(left, after, sub, items, disc) {
+  if (!(SHIP.free_over > 0) || !(left > 0) || left > NUDGE_MAX || document.getElementById('sn')) return;
+  try { if (sessionStorage.getItem('ps_ship_nudge')) return; sessionStorage.setItem('ps_ship_nudge', '1'); } catch (e) { /* show anyway */ }
+  const ratio = sub > 0 ? after / sub : 1;
+  const pool = PRODUCTS.filter(x => !x.out && !items.some(i => i.id === x.id));
+  let sugg = pool.filter(x => x.price * ratio >= left).sort((a, b) => a.price - b.price).slice(0, 3);
+  if (!sugg.length) sugg = pool.sort((a, b) => b.price - a.price).slice(0, 3);
+  const box = document.createElement('div');
+  box.id = 'sn'; box.className = 'sn-back';
+  box.innerHTML = `<div class="sn-box" role="dialog" aria-modal="true" aria-labelledby="sn-t">
+    <button type="button" class="sn-x" aria-label="סגירה">✕</button>
+    <div class="sn-i" aria-hidden="true">🚚</div>
+    <h2 id="sn-t">רק עוד ${money(left)} ומקבלים משלוח חינם</h2>
+    <p>המשלוח עולה ${money(SHIP.fee)}. מוסיפים מוצר וחוסכים אותו${disc ? ' (הסכום נספר אחרי ההנחה)' : ''}.</p>
+    ${sugg.length ? `<div class="sn-grid">${sugg.map(card).join('')}</div>` : ''}
+    <div class="sn-act"><a class="btn btn-primary" href="products">לבחירת מוצרים</a><button type="button" class="sn-skip">להמשיך בלי</button></div></div>`;
+  document.body.appendChild(box);
+  const close = () => { box.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  box.addEventListener('click', e => {
+    if (e.target === box || e.target.closest('.sn-x, .sn-skip')) return close();
+    if (e.target.closest('[data-add]')) setTimeout(() => { close(); draw(); }, 0);
+  });
+  const x = box.querySelector('.sn-x'); if (x) x.focus();
 }
 draw(); window.__rerender = draw; if (window.__liveReady) draw();
 /* qty buttons are handled by the shared click handler in app.js; redraw after it runs */

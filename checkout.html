@@ -62,7 +62,7 @@ function mergedItems() { const m = new Map(); Cart.items.forEach(i => m.set(i.id
 function packNotes() { const l = Cart.items.filter(i => i.v).map(i => `${byId(i.id).name.slice(0, 40)} ×${i.q}: ${i.v}`); return l.length ? 'הרכב מארז — ' + l.join(' | ') + '\n' : ''; }
 function totals() {
   const sub = Cart.total(), disc = coupon ? Math.min(coupon.discount, sub) : 0;
-  const ship = method === 'pickup' ? 0 : shipCost(sub - disc), total = Math.round((sub - disc + ship) * 100) / 100;   // free shipping counts the total after the discount
+  const ship = method === 'pickup' ? 0 : shipCost(sub - disc, sub), total = Math.round((sub - disc + ship) * 100) / 100;   // free shipping counts the total after the discount (and the cart before it, when set)
   return { sub, disc, ship, total, vat: Math.round(total * VAT / (1 + VAT) * 100) / 100 };
 }
 
@@ -199,9 +199,9 @@ function setMethod(m, silent) {
   paintLines();
 }
 function paintShipLabels() {
-  const c = shipCost(totals().sub - totals().disc);
+  const c = shipCost(totals().sub - totals().disc, totals().sub);
   const row = document.getElementById('ck-shiprow'); if (row) row.textContent = c ? money(c) : 'חינם';
-  const nt = document.getElementById('ck-shipnote'); if (nt) nt.textContent = SHIP.free_over > 0 ? ('חינם בהזמנה מעל ' + money(SHIP.free_over) + ' · זמן האספקה יאושר בעת אישור ההזמנה') : 'זמן האספקה יאושר בעת אישור ההזמנה';
+  const nt = document.getElementById('ck-shipnote'); if (nt) nt.textContent = SHIP.free_over > 0 ? ((SHIP.free_over_list > 0 ? 'חינם בהזמנה מעל ' + money(SHIP.free_over_list) + ' ולפחות ' + money(SHIP.free_over) + ' אחרי הנחה' : 'חינם בהזמנה מעל ' + money(SHIP.free_over)) + ' · זמן האספקה יאושר בעת אישור ההזמנה') : 'זמן האספקה יאושר בעת אישור ההזמנה';
   const po = document.getElementById('ck-pickopt'); if (po) po.hidden = SHIP.pickup === false;
   if (SHIP.pickup === false && method === 'pickup') method = 'shipping';
 }
