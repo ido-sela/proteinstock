@@ -967,3 +967,10 @@ input[type=tel]:placeholder-shown,input[type=email]:placeholder-shown{direction:
 
 /* phones: a 900px hero (78KB instead of the 1920px one) */
 @media (max-width:700px){.hero-img,.campaign-img{background-image:url(../img/hero-900.webp)}}
+
+/* עמוד מוצר שאזל: הרשמה לעדכון כשיחזור */
+.soa-f{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;font-weight:400}
+.soa-f input[type=text]{flex:1 1 220px;min-width:0;padding:10px 12px;border:1px solid #e0b7b0;border-radius:var(--r);font:inherit;background:#fff;color:#222}
+.soa-f .soa-ok{flex:1 1 100%;display:flex;gap:6px;align-items:center;font-size:13px;color:#5a1a14}
+.soa-f .btn{flex:0 0 auto}
+#soa-m{font-weight:600;margin-top:6px}
