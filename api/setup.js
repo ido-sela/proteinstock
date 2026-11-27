@@ -1,12 +1,13 @@
 // One-time setup: creates the tables in PostgreSQL and (optionally) copies all data from the old Supabase project.
 // Protected by SETUP_TOKEN. Call:  POST /api/setup  with header  x-setup-token: <SETUP_TOKEN>
 // To copy data, also set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (remove them afterwards).
-// Safe to run more than once: existing rows are kept (on conflict do nothing).
+// Before go-live it can run any number of times: each copy replaces the new database's data with Supabase's current data.
+// {"action":"golive"} switches the site to this database (needs the PayPlus keys); after that copying is refused.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { db, q } from './_lib/db.js';
-import { json, handler } from './_lib/http.js';
+import { db, q, isLive } from './_lib/db.js';
+import { json, handler, rawBody } from './_lib/http.js';
 
 export const config = { maxDuration: 300 };
 
@@ -43,6 +44,17 @@ export default handler(['POST'], async (req, res) => {
     return json(res, { error: 'forbidden' }, 403);
   }
 
+  let body = {}; try { body = JSON.parse((await rawBody(req, 2000)) || '{}'); } catch { /* no body */ }
+  if (await isLive()) return json(res, { error: 'already_live', note: 'the site already runs on this database; copying again would overwrite new orders' }, 409);
+
+  if (body.action === 'golive') {
+    if (!(process.env.PAYPLUS_API_KEY && process.env.PAYPLUS_SECRET_KEY)) return json(res, { error: 'payplus_keys_missing' }, 400);
+    const n = (await q('select count(*)::int n from products'))[0].n;
+    if (!n) return json(res, { error: 'no_data_copied' }, 400);
+    await q(`insert into integrations (key, value) values ('db_live', jsonb_build_object('at', now())) on conflict (key) do nothing`);
+    return json(res, { ok: true, live: true });
+  }
+
   const schema = fs.readFileSync(path.join(process.cwd(), 'db', 'schema.sql'), 'utf8');
   await db().query(schema);
   const report = { schema: 'ok', copied: {} };
@@ -52,6 +64,8 @@ export default handler(['POST'], async (req, res) => {
     // no triggers while copying: rows arrive exactly as they were (no stock changes, no webhooks, no "recovered" carts)
     for (const t of TABLES) await q(`alter table "${t}" disable trigger user`);
     try {
+      // mirror: start from empty tables so rows changed or deleted on Supabase since the last copy are right too
+      await q(`truncate ${TABLES.map((t) => `"${t}"`).join(', ')}, order_webhook_queue, auth.users`);
       for (const table of TABLES) {
         const rows = await fetchAll(base, key, table);
         let n = 0;
@@ -96,4 +110,4 @@ export default handler(['POST'], async (req, res) => {
   counts['auth.users'] = (await q('select count(*)::int n from auth.users'))[0].n;
   report.rows = counts;
   return json(res, report);
-});
+}, { beforeLive: true });

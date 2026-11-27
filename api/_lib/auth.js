@@ -7,7 +7,8 @@ const COOKIE = 'ps_admin';
 const DAYS = 30;
 
 const secret = () => {
-  const s = process.env.SESSION_SECRET;
+  // SESSION_SECRET if set; otherwise a key derived from the (secret) database address, so nothing extra has to be configured
+  const s = process.env.SESSION_SECRET || (process.env.DATABASE_URL ? crypto.createHash('sha256').update('ps-session|' + process.env.DATABASE_URL).digest('hex') : '');
   if (!s || s.length < 24) { const e = new Error('SESSION_SECRET is not set'); e.code = 'not_configured'; throw e; }
   return s;
 };

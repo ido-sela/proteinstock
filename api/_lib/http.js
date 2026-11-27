@@ -1,4 +1,5 @@
 // Small helpers for Vercel Node functions.
+import { isLive } from './db.js';
 export const json = (res, body, status = 200) => {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -35,10 +36,11 @@ export const origin = (req) => {
   return host ? `${req.headers['x-forwarded-proto'] || 'https'}://${host}` : '';
 };
 
-// Wraps a handler: method check + uniform error output.
-export const handler = (methods, fn) => async (req, res) => {
+// Wraps a handler: method check + uniform error output. Unless opts.beforeLive, answers 503 until the new database is live.
+export const handler = (methods, fn, opts = {}) => async (req, res) => {
   if (!methods.includes(req.method)) return json(res, { error: 'method_not_allowed' }, 405);
   try {
+    if (!opts.beforeLive && !(await isLive())) return json(res, { error: 'not_configured' }, 503);
     await fn(req, res);
   } catch (e) {
     if (e?.code === 'not_configured') return json(res, { error: 'not_configured' }, 503);

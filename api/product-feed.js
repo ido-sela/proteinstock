@@ -3,6 +3,7 @@
 // Item ids and titles are the old store's (Zappy) where known, so Merchant Center / Meta / TikTok keep each product's history.
 // Reads the public product list (same data the storefront shows) and the product page addresses from js/data.js.
 import { HD } from './_lib/hd-images.js';
+import { q, isLive } from './_lib/db.js';
 const SITE = 'https://proteinstock.co.il';
 const SB = { url: 'https://yplzliqpohqehypllxdq.supabase.co', key: 'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };
 
@@ -25,6 +26,7 @@ async function slugs() {
 
 async function products() {
   const cols = 'id,title,description,price,old_price,out_of_stock,vendor,category,tags,image,sku,images,hidden,status,zappy_id,zappy_title';
+  if (await isLive()) return q(`select ${cols} from products order by id`);   // our own database after the move
   const get = (c) => fetch(`${SB.url}/rest/v1/products?select=${c}&order=id`, { headers: { apikey: SB.key } });
   let r = await get(cols);
   if (!r.ok) r = await get(cols.replace(',hidden,status,zappy_id,zappy_title', ''));   // older table without these columns

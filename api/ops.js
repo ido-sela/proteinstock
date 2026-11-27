@@ -6,13 +6,12 @@
 //   /api/dns-admin       DNS records of proteinstock.co.il (Cloudflare)          env CLOUDFLARE_API_TOKEN
 //   /api/v1/...          store API for external systems (API keys)
 // Until DATABASE_URL is set, /api/rpc and /api/v1 pass the request on to the old Supabase project, so the shop keeps working during the move.
-import { q, one, db } from './_lib/db.js';
+import { q, one, db, isLive } from './_lib/db.js';
 import { json, readJson } from './_lib/http.js';
 import { adminEmail, customerEmail, setSession, sha256 } from './_lib/auth.js';
 import { cfg, orderPayload, deliver } from './_lib/order-webhook.js';
 
 const SB = { url: 'https://yplzliqpohqehypllxdq.supabase.co', key: 'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB' };   // public key only
-const live = () => !!process.env.DATABASE_URL;
 // Which function and arguments: from the address itself (/api/rpc/<name>, /api/v1/<path>), or from the rewrite's ?fn=&name=&path=.
 function route(req) {
   const u = new URL(req.url, 'http://x'), qy = req.query || {};
@@ -50,7 +49,7 @@ async function rpc(req, res) {
   const fn = RPC[name];
   if (!fn) return json(res, { message: 'unknown function', code: 'PGRST202' }, 404);
   const body = await readJson(req, 50000);
-  if (!live()) {   // before the move: the old project answers (public functions only; the rest already talk to it directly)
+  if (!(await isLive())) {   // before the move: the old project answers (public functions only; the rest already talk to it directly)
     if (fn.who !== 'public') return json(res, { error: 'not_configured' }, 503);
     const r = await fetch(`${SB.url}/rest/v1/rpc/${name}`, { method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     res.statusCode = r.status; res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', 'no-store');
@@ -299,7 +298,7 @@ async function setStock(p, body) {
 }
 async function store(req, res) {
   const { path, sp: qsIn } = route(req);
-  if (!live()) {   // before the move: the old Supabase function answers
+  if (!(await isLive())) {   // before the move: the old Supabase function answers
     const qs = new URLSearchParams(qsIn); qs.delete('fn'); qs.delete('path');
     const body = ['POST', 'PATCH'].includes(req.method) ? JSON.stringify(await readJson(req, 300000)) : undefined;
     const r = await fetch(`${SB.url}/functions/v1/store-api/${path}${qs.toString() ? '?' + qs : ''}`, { method: req.method,
@@ -425,6 +424,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.statusCode = 204; res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Headers', 'x-api-key, authorization, content-type'); res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS'); return res.end(); }
   if (fn !== store && req.method !== 'POST') return json(res, { error: 'method_not_allowed' }, 405);
   try {
+    if (fn !== store && fn !== rpc && !(await isLive())) return json(res, { error: 'not_configured' }, 503);
     await fn(req, res);
   } catch (e) {
     if (e?.code === 'not_configured') return json(res, { error: 'not_configured' }, 503);
