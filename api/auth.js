@@ -1,10 +1,11 @@
 // Admin login with a 6-digit code sent by email (replaces Supabase Auth).
-// Env: SESSION_SECRET, RESEND_API_KEY, MAIL_FROM (e.g. "פרוטאין סטוק <admin@proteinstock.co.il>").
+// Env: SESSION_SECRET, BREVO_API_KEY (or RESEND_API_KEY), MAIL_FROM (e.g. "פרוטאין סטוק <admin@proteinstock.co.il>").
 // POST {action:'send', email} | {action:'verify', email, token} | {action:'logout'};  GET -> current session.
 // scope:'customer' (POST body, or ?scope=customer on GET): the same flow for store customers (/account), any email, own cookie.
 import crypto from 'node:crypto';
 import { q, one } from './_lib/db.js';
 import { json, readJson, handler } from './_lib/http.js';
+import { sendEmail, mailProvider } from './_lib/mail.js';
 import { adminEmail, setSession, clearSession, sha256, setCustomer, clearCustomer, customerEmail } from './_lib/auth.js';
 
 // customer accounts and admins' last sign-in (auth.users, as on Supabase)
@@ -14,26 +15,19 @@ const err = (res, code, message, status = 400) => json(res, { error: { code, mes
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function sendMail(to, code, customer) {
-  const key = process.env.RESEND_API_KEY;
-  const from = process.env.MAIL_FROM || 'Protein Stock <onboarding@resend.dev>';
-  if (!key) { const e = new Error('mail_not_configured'); e.code = 'mail_not_configured'; throw e; }
-  const r = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from, to: [to], subject: `קוד הכניסה שלך: ${code}`,
-      text: `${customer ? 'קוד הכניסה לחשבון שלך בפרוטאין סטוק' : 'קוד הכניסה לניהול פרוטאין סטוק'}: ${code}\nהקוד בתוקף ל-10 דקות. אם לא ביקשת אותו, אפשר להתעלם מהמייל.`,
-      html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px">${customer ? 'קוד הכניסה לחשבון שלך בפרוטאין סטוק' : 'קוד הכניסה לניהול פרוטאין סטוק'}:<div style="font-size:32px;font-weight:700;letter-spacing:6px;margin:14px 0">${code}</div>הקוד בתוקף ל-10 דקות. אם לא ביקשת אותו, אפשר להתעלם מהמייל.</div>`,
-    }),
+  const what = customer ? 'קוד הכניסה לחשבון שלך בפרוטאין סטוק' : 'קוד הכניסה לניהול פרוטאין סטוק';
+  await sendEmail({
+    to, subject: `קוד הכניסה שלך: ${code}`,
+    text: `${what}: ${code}\nהקוד בתוקף ל-10 דקות. אם לא ביקשת אותו, אפשר להתעלם מהמייל.`,
+    html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px">${what}:<div style="font-size:32px;font-weight:700;letter-spacing:6px;margin:14px 0">${code}</div>הקוד בתוקף ל-10 דקות. אם לא ביקשת אותו, אפשר להתעלם מהמייל.</div>`,
   });
-  if (!r.ok) { const t = await r.text().catch(() => ''); const e = new Error('mail_failed: ' + t.slice(0, 200)); e.code = 'mail_failed'; throw e; }
 }
 
-// Without RESEND_API_KEY the code is sent and checked by Supabase Auth (the store's Supabase project, which already
-// emails admin codes). Only the public (publishable) key is used; the admins list in our database still decides access.
+// Without a mail key (BREVO_API_KEY / RESEND_API_KEY) the code is sent and checked by Supabase Auth (the store's Supabase
+// project, which already emails admin codes). Only the public (publishable) key is used; the admins list in our database still decides access.
 const SB_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const SB_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_Gcr_7r00CovbMZj-tJin8g_Jp8B1JcB';
-const viaSupabase = () => !process.env.RESEND_API_KEY && !!SB_URL;
+const viaSupabase = () => !mailProvider() && !!SB_URL;
 async function sbAuth(path, body) {
   const r = await fetch(`${SB_URL}/auth/v1/${path}`, { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
@@ -78,7 +72,7 @@ export default handler(['GET', 'POST'], async (req, res) => {
     await q(`insert into admin_otps (email, code_hash, expires_at) values ($1, $2, now() + interval '10 minutes')`, [email, sha256(email + ':' + code)]);
     try { await sendMail(email, code, cust); } catch (e) {
       console.error(e);
-      return err(res, e.code || 'mail_failed', e.code === 'mail_not_configured' ? 'שליחת מיילים עדיין לא הוגדרה בשרת (RESEND_API_KEY).' : 'שליחת המייל נכשלה', 500);
+      return err(res, e.code || 'mail_failed', e.code === 'mail_not_configured' ? 'שליחת מיילים עדיין לא הוגדרה בשרת (BREVO_API_KEY).' : 'שליחת המייל נכשלה', 500);
     }
     await q(`delete from admin_otps where created_at < now() - interval '1 day'`);
     return json(res, { ok: true });

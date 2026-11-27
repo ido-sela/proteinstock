@@ -1,9 +1,19 @@
 // Health check: is the database reachable and which services are configured (no secret values are returned).
+// ?check=mail asks Brevo whether the key and sender are accepted (sends nothing).
 // ?check=payplus also asks PayPlus whether the saved keys are accepted (creates a 1 ILS payment link that nobody pays
 // and returns only ok/error, never the link), at most once a minute.
 import { q, one, isLive } from './_lib/db.js';
 import { json, handler } from './_lib/http.js';
 import { getProvider, webhookUrl } from './_lib/payplus.js';
+import { checkMail, mailProvider } from './_lib/mail.js';
+
+// mail key check, at most once a minute (calls Brevo)
+async function mailCheck() {
+  await q('create table if not exists mail_checks (at timestamptz not null default now())');
+  if ((await q(`select 1 from mail_checks where at > now() - interval '1 minute'`)).length) return { ok: null, error: 'too_soon' };
+  await q('insert into mail_checks default values');
+  return checkMail().catch((e) => ({ ok: false, error: String(e.message).slice(0, 100) }));
+}
 
 async function checkPayplus() {
   await q('create table if not exists payplus_checks (at timestamptz not null default now())');
@@ -33,12 +43,13 @@ export default handler(['GET'], async (req, res) => {
     configured: {
       database: !!process.env.DATABASE_URL,
       session_secret: !!(process.env.SESSION_SECRET || process.env.DATABASE_URL),
-      email: !!process.env.RESEND_API_KEY,
+      email: mailProvider(),
       payplus: !!(process.env.PAYPLUS_API_KEY && process.env.PAYPLUS_SECRET_KEY),
       ai: !!process.env.ANTHROPIC_API_KEY,
       images: !!process.env.BLOB_READ_WRITE_TOKEN,
       dns: !!process.env.CLOUDFLARE_API_TOKEN,
     },
     ...(check === 'payplus' && dbOk ? { payplus_check: await checkPayplus() } : {}),
+    ...(check === 'mail' && dbOk ? { mail_check: await mailCheck() } : {}),
   }, live ? 200 : 503);
 }, { beforeLive: true });

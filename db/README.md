@@ -34,8 +34,8 @@ Supabase project automatically (storefront, checkout, forms, admin, store API), 
    | `SESSION_SECRET` | a long random string (40+ characters) |
    | `SETUP_TOKEN` | another random string (20+), used once for step 5 |
    | `SITE_URL` | `https://proteinstock.co.il` |
-   | `RESEND_API_KEY` | from resend.com (sends the login codes for admins and customers) |
-   | `MAIL_FROM` | e.g. `פרוטאין סטוק <admin@proteinstock.co.il>` (domain verified in Resend) |
+   | `BREVO_API_KEY` | from Brevo → SMTP & API → API Keys (sends the login codes for admins and customers; `RESEND_API_KEY` also works) |
+   | `MAIL_FROM` | e.g. `פרוטאין סטוק <admin@proteinstock.co.il>` (sender or domain verified in Brevo) |
    | `PAYPLUS_API_KEY`, `PAYPLUS_SECRET_KEY` | from the PayPlus dashboard (Supabase does not show saved secrets again) |
    | `ANTHROPIC_API_KEY` | from console.anthropic.com |
    | `CLOUDFLARE_API_TOKEN` | Cloudflare token limited to Zone → DNS → Edit for proteinstock.co.il (for the DNS screen) |
