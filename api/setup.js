@@ -55,6 +55,7 @@ export default handler(['POST'], async (req, res) => {
     try {
       // mirror: start from empty tables so rows changed or deleted on Supabase since the last copy are right too
       await q(`truncate ${TABLES.map((t) => `"${t}"`).join(', ')}, order_webhook_queue, auth.users`);
+      await q('alter table coupons drop constraint if exists coupons_max_40');   // old coupons may be above 40% (the rule is for new ones)
       for (const table of TABLES) {
         const rows = await fetchAll(base, key, table);
         let n = 0;
@@ -72,6 +73,7 @@ export default handler(['POST'], async (req, res) => {
       }
     } finally {
       for (const t of TABLES) await q(`alter table "${t}" enable trigger user`);
+      await q(`alter table coupons add constraint coupons_max_40 check (type <> 'percentage' or value <= 40) not valid`).catch(() => {});
     }
     for (const t of IDENTITY) {
       await q(`select setval(pg_get_serial_sequence('${t}', 'id'), greatest(coalesce((select max(id) from "${t}"), 0), 1), (select count(*) > 0 from "${t}"))`);
