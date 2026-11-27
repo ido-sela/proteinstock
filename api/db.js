@@ -4,12 +4,13 @@
 import { q } from './_lib/db.js';
 import { json, readJson, handler } from './_lib/http.js';
 import { adminEmail } from './_lib/auth.js';
+import { flushWebhooks } from './_lib/order-webhook.js';
 
 const T = {
   products: {
     pk: 'id',
     cols: ['id', 'title', 'price', 'old_price', 'out_of_stock', 'hidden', 'description', 'vendor', 'category', 'tags', 'image', 'images', 'cats', 'quantity', 'low_stock_threshold', 'sku', 'status', 'created_at', 'updated_at'],
-    write: ['id', 'title', 'price', 'old_price', 'out_of_stock', 'hidden', 'description', 'vendor', 'category', 'tags', 'image', 'cats', 'quantity', 'low_stock_threshold', 'sku', 'status'],
+    write: ['id', 'title', 'price', 'old_price', 'out_of_stock', 'hidden', 'description', 'vendor', 'category', 'tags', 'image', 'images', 'cats', 'quantity', 'low_stock_threshold', 'sku', 'status'],
     ops: ['select', 'insert', 'update', 'delete', 'upsert'],
     pub: { cols: ['id', 'title', 'description', 'price', 'old_price', 'out_of_stock', 'vendor', 'category', 'tags', 'image', 'images', 'cats'], where: 'hidden = false' },
   },
@@ -35,6 +36,15 @@ const T = {
   admins: { pk: 'email', cols: ['email', 'added_at'], ops: ['select'] },
   payment_events: { pk: 'id', cols: ['id', 'provider', 'event_id', 'order_number', 'payload', 'received_at'], ops: ['select'] },
   admin_log: { pk: 'id', cols: ['id', 'at', 'admin_email', 'kind', 'detail'], ops: ['select'] },
+  leads: {
+    pk: 'id', cols: ['id', 'created_at', 'source', 'name', 'phone', 'email', 'business', 'business_type', 'city', 'products', 'message', 'page', 'status'],
+    write: ['status'], ops: ['select', 'update'],
+  },
+  newsletter_subscribers: { pk: 'id', cols: ['id', 'email', 'source', 'created_at'], ops: ['select'] },
+  abandoned_checkouts: {
+    pk: 'id', cols: ['id', 'name', 'phone', 'email', 'items', 'total', 'step', 'created_at', 'updated_at', 'recovered_order', 'recovered_at', 'contacted_at'],
+    write: ['contacted_at'], ops: ['select', 'update'],
+  },
 };
 
 const bad = (msg) => { const e = new Error(msg); e.bad = true; throw e; };
@@ -175,6 +185,7 @@ export default handler(['POST'], async (req, res) => {
       const where = whereSql(t, b.filters, params, t.cols);
       if (!where.length) bad('filter_required');
       const rows = await q(`update ${ident(b.table)} set ${sets.join(',')} where ${where.join(' and ')}${retSql}`, params);
+      if (b.table === 'orders') await flushWebhooks().catch((e) => console.error(e));   // an order marked paid goes to the stock system
       return json(res, { data: ret ? rows : null });
     }
 

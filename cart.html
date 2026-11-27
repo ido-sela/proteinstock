@@ -37,7 +37,10 @@ function draw() {
   const qt = window.__cartQ && window.__cartQ.key === qKey ? window.__cartQ : null;
   if (cp && !qt && !window.__cartQBusy) {
     window.__cartQBusy = true;
-    fetch(LEGACY_SB.url + '/functions/v1/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: LEGACY_SB.key }, body: JSON.stringify({ action: 'quote', coupon: cp, items: items.map(i => ({ id: i.id, qty: i.q })) }) })
+    const qb = JSON.stringify({ action: 'quote', coupon: cp, items: items.map(i => ({ id: i.id, qty: i.q })) });
+    fetch('/api/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: qb })
+      .then(r => (r.status === 404 || r.status === 503)   // new database not set up yet: legacy Supabase function (remove after the move)
+        ? fetch(LEGACY_SB.url + '/functions/v1/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: LEGACY_SB.key }, body: qb }) : r)
       .then(r => r.json()).then(j => { window.__cartQ = { key: qKey, discount: Number(j.discount) || 0, code: j.coupon || '' }; }).catch(() => { window.__cartQ = { key: qKey, discount: 0, code: '' }; })
       .finally(() => { window.__cartQBusy = false; draw(); });
   }

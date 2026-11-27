@@ -41,7 +41,7 @@ if (status === 'success') {
   };
   const report = o => { if (window.PSTrack && o) PSTrack.purchase({ number: o.number, total: o.total, shipping: o.shipping, coupon: o.coupon, items: o.items }); };
   box.innerHTML = '<div class="ty-wait"><span class="ty-spin" aria-hidden="true"></span><h1>מאשרים את התשלום…</h1><p>זה לוקח רק כמה שניות. אין צורך לרענן את הדף.</p></div>';
-  const ask = () => fetch(LEGACY_SB.url + '/rest/v1/rpc/ps_order_public', { method: 'POST', headers: { apikey: LEGACY_SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_number: order }) }).then(r => r.ok ? r.json() : Promise.reject(r.status));
+  const ask = () => fetch('/api/rpc/ps_order_public', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p_number: order }) }).then(r => r.ok ? r.json() : Promise.reject(r.status));
   let tries = 0;
   const check = () => ask().then(o => {
     if (o && o.paid) { paidView(o); report(o); return; }

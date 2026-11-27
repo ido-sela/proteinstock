@@ -2,6 +2,7 @@
 import { q, one } from './_lib/db.js';
 import { json, readJson, handler } from './_lib/http.js';
 import { adminEmail } from './_lib/auth.js';
+import { flushWebhooks } from './_lib/order-webhook.js';
 
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
 const STATUSES = ['pending', 'paid', 'failed', 'cancelled', 'refunded'];
@@ -133,6 +134,7 @@ async function runTool(name, input, email) {
       const rows = await q(`update orders set status = $1, fulfillment = case when $1 = 'cancelled' then 'cancelled' else fulfillment end where number = $2 returning number`, [input.status, number]);
       if (!rows.length) return { result: { error: 'order_not_found' } };
       await logRow(email, 'change', { tool: 'set_order_status', number, status: input.status });
+      if (input.status === 'paid') await flushWebhooks().catch((e) => console.error(e));
       return { result: { ok: true }, action: `הזמנה ${number} ← ${input.status}` };
     }
     case 'set_order_fulfillment': {

@@ -1,51 +1,62 @@
-# Database: PostgreSQL (moved off Supabase)
+# Database: PostgreSQL (moving off Supabase)
 
-The site no longer needs Supabase. Everything runs on Vercel:
+Everything runs on Vercel once the steps below are done. Until `/api/health` answers `"db": true`, the site keeps using the old
+Supabase project automatically (storefront, checkout, forms, admin, store API), so nothing breaks during the move.
 
 | What | Before (Supabase) | Now |
 |---|---|---|
 | Data | Supabase Postgres + REST | Any PostgreSQL (Neon via Vercel) + `api/db.js` |
+| Database functions (reports, leads, abandoned carts, API keys, admins…) | `/rest/v1/rpc/*` | same SQL functions, called through `/api/rpc/<name>` (`api/ops.js`) |
 | Checkout | Edge function `create-order` | `api/create-order.js` |
 | PayPlus callback | Edge function `payment-webhook` | `api/payment-webhook.js` |
 | PayPlus admin test | Edge function `payment-admin` | `api/payment-admin.js` |
 | AI assistant | Edge function `admin-assistant` | `api/admin-assistant.js` |
+| Paid orders → stock system | Edge function `order-webhook` + pg_net | `api/_lib/order-webhook.js` (queue table, sent right after payment) |
+| Store API for external systems | Edge function `store-api` | `/api/v1/*` → `api/ops.js` |
+| Face ID / Touch ID admin sign-in | Edge function `passkey` | `/api/passkey` → `api/ops.js` (same registered devices) |
+| DNS screen | Edge function `dns-admin` | `/api/dns-admin` → `api/ops.js` |
 | Admin login | Supabase Auth (email code) | `api/auth.js` (email code via Resend, HttpOnly cookie) |
-| Product photos | Supabase Storage | Vercel Blob (`api/upload.js`) |
+| Customer accounts (/account) | Supabase Auth | `api/auth.js` with `scope: "customer"` (own cookie); accounts copied to `auth.users` |
+| Gallery photos | Supabase Storage | shipped with the site (`img/p/g/`), links rewritten during the copy |
+| New photo uploads | Supabase Storage | Vercel Blob (`api/upload.js`) |
 
-The browser never talks to the database directly. `api/db.js` checks every request against a whitelist:
-the public can only read visible products and the `content`/`shipping` settings; everything else needs an admin session.
+`db/schema.sql` was generated from the live Supabase project (all tables, functions and triggers), plus a small `auth` shim
+(`auth.jwt()`, `auth.users`) so the same SQL functions work: the API sets the signed-in email per request.
 
-## One-time setup (in the Vercel project of proteinstock)
+## One-time setup (Vercel project of proteinstock)
 
-1. **Storage → Create → Neon (Postgres)** and connect it to the project. This adds `DATABASE_URL`.
-2. **Storage → Create → Blob** and connect it (adds `BLOB_READ_WRITE_TOKEN`) — needed only for uploading product photos.
+1. **Storage → Create Database → Neon (Postgres)**, connect it to the project (Production + Preview). This adds `DATABASE_URL`.
+2. **Storage → Create → Blob**, connect it (adds `BLOB_READ_WRITE_TOKEN`) — for uploading product photos.
 3. **Settings → Environment Variables** (Production):
 
    | Name | Value |
    |---|---|
    | `SESSION_SECRET` | a long random string (40+ characters) |
-   | `SETUP_TOKEN` | another random string, used once for step 5 |
+   | `SETUP_TOKEN` | another random string (20+), used once for step 5 |
    | `SITE_URL` | `https://proteinstock.co.il` |
-   | `RESEND_API_KEY` | from resend.com (sends the admin login code) |
+   | `RESEND_API_KEY` | from resend.com (sends the login codes for admins and customers) |
    | `MAIL_FROM` | e.g. `פרוטאין סטוק <admin@proteinstock.co.il>` (domain verified in Resend) |
-   | `PAYPLUS_API_KEY`, `PAYPLUS_SECRET_KEY` | copy from Supabase → Edge Functions → Secrets |
-   | `ANTHROPIC_API_KEY` | copy from Supabase → Edge Functions → Secrets |
+   | `PAYPLUS_API_KEY`, `PAYPLUS_SECRET_KEY` | from the PayPlus dashboard (Supabase does not show saved secrets again) |
+   | `ANTHROPIC_API_KEY` | from console.anthropic.com |
+   | `CLOUDFLARE_API_TOKEN` | Cloudflare token limited to Zone → DNS → Edit for proteinstock.co.il (for the DNS screen) |
    | `SUPABASE_URL` | `https://yplzliqpohqehypllxdq.supabase.co` (only for the copy in step 5) |
-   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API keys → service_role (only for step 5) |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API Keys → secret key (only for step 5) |
 
 4. Redeploy.
-5. Create the tables and copy all data (products, settings, orders, admins, payment log):
+5. Create the tables and copy all data (15 tables + customer accounts):
 
    ```
    curl -X POST https://proteinstock.co.il/api/setup -H "x-setup-token: <SETUP_TOKEN>"
    ```
 
    The answer lists how many rows were copied per table. Running it again is safe (nothing is duplicated).
-6. Check `https://proteinstock.co.il/api/health` → `"db": true`.
+   From this moment the site uses the new database: orders placed on Supabase after the copy are not moved,
+   so do it at a quiet time, and run it once more right before step 9 if needed.
+6. Check `https://proteinstock.co.il/api/health` → `"db": true` and every `configured` value `true`.
 7. Remove `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `SETUP_TOKEN`, then redeploy.
-8. Test: log in to `/admin`, place a small order, and (if PayPlus is on) pay it and check it turns "שולמה".
-9. Only then pause/delete the Supabase project, and remove `LEGACY_SB` from `js/app.js` and the fallback in `checkout.html`.
-
-Until step 6 passes, the storefront and checkout automatically fall back to the old Supabase project, so the shop keeps working during the move.
+8. Test: admin login (code by email, then Face ID), reports, a lead from /contact, /account login, a small order paid with PayPlus
+   (turns "שולמה" and reaches the stock system), the store API with an existing key, and the DNS screen.
+9. Only then pause the Supabase project (keep it a few weeks before deleting), and remove `LEGACY_SB` from `js/app.js`,
+   the fallbacks in `checkout.html`, `cart.html`, `account.html`, `js/db-client.js`, `js/admin-passkey.js`, and the pass-through in `api/ops.js`.
 
 `db/schema.sql` is plain PostgreSQL and also works on any other host (RDS, Railway, self-hosted): just set `DATABASE_URL`.

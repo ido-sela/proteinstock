@@ -23,6 +23,22 @@
 layout('account');
 const box = document.getElementById('acc');
 const sbc = window.supabase.createClient(LEGACY_SB.url, LEGACY_SB.key, { auth: { storageKey: 'ps-cust', persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
+/* Sign-in and orders: our own server (/api/auth with scope "customer", /api/rpc) once the new database is live, the old Supabase project until then. */
+const API = fetch('/api/health', { cache: 'no-store' }).then(r => r.ok, () => false);
+const call = async (url, body) => {
+  try {
+    const r = await fetch(url, { method: body ? 'POST' : 'GET', credentials: 'same-origin', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => null);
+    return r.ok ? { data: j, error: null } : { data: null, error: { message: (j && j.error && (j.error.code || j.error)) || 'http_' + r.status } };
+  } catch (e) { return { data: null, error: { message: 'network' } }; }
+};
+const C = {
+  send: async email => (await API) ? call('/api/auth', { action: 'send', scope: 'customer', email }) : sbc.auth.signInWithOtp({ email, options: { shouldCreateUser: true } }),
+  verify: async (email, token) => (await API) ? call('/api/auth', { action: 'verify', scope: 'customer', email, token }) : sbc.auth.verifyOtp({ email, token, type: 'email' }),
+  session: async () => (await API) ? ((await call('/api/auth?scope=customer')).data || {}).session : ((await sbc.auth.getSession()).data || {}).session,
+  account: async () => (await API) ? call('/api/rpc/ps_my_account', {}) : sbc.rpc('ps_my_account'),
+  signOut: async () => (await API) ? call('/api/auth', { action: 'logout', scope: 'customer' }) : sbc.auth.signOut(),
+};
 const PROFILE = 'ps_profile';
 const setProfile = p => { try { if (p) localStorage.setItem(PROFILE, JSON.stringify(p)); else localStorage.removeItem(PROFILE); } catch (e) { /* ignore */ } };
 const fmtDate = d => new Date(d).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -51,13 +67,13 @@ function loginView(email, sent) {
   if (sent) {
     document.getElementById('acc-back').onclick = () => loginView(email, false);
     const ci = document.getElementById('acc-code'); ci.focus();
-    ci.oninput = () => { ci.value = ci.value.replace(/\D/g, ''); if (ci.value.length === 8) f.requestSubmit(); };
+    ci.oninput = async () => { ci.value = ci.value.replace(/\D/g, ''); if (ci.value.length === ((await API) ? 6 : 8)) f.requestSubmit(); };
     f.onsubmit = async e => {
       e.preventDefault();
       const token = ci.value.replace(/\D/g, '');
       if (token.length < 6) return err('הקוד צריך להכיל 6-8 ספרות.');
       const b = f.querySelector('button'); b.disabled = true; m.className = 'acc-msg'; m.textContent = 'בודקים…';
-      const { error } = await sbc.auth.verifyOtp({ email, token, type: 'email' });
+      const { error } = await C.verify(email, token);
       b.disabled = false;
       if (error) return err(/expired|invalid/i.test(error.message) ? 'הקוד שגוי או שפג תוקפו. נסו שוב או בקשו קוד חדש.' : 'לא הצלחנו להיכנס. נסו שוב.');
       try { sessionStorage.removeItem('ps_acc_mail'); } catch (x) { /* ignore */ }
@@ -69,7 +85,7 @@ function loginView(email, sent) {
       const mail = document.getElementById('acc-mail').value.trim().toLowerCase();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return err('כתובת המייל לא תקינה.');
       const b = f.querySelector('button'); b.disabled = true; m.className = 'acc-msg'; m.textContent = 'שולחים…';
-      const { error } = await sbc.auth.signInWithOtp({ email: mail, options: { shouldCreateUser: true } });
+      const { error } = await C.send(mail);
       b.disabled = false;
       if (error) return err(/rate|security purposes|too many/i.test(error.message) ? 'נשלחו יותר מדי קודים בזמן קצר. נסו שוב בעוד כמה דקות, או פנו אלינו בוואטסאפ.' : 'לא הצלחנו לשלוח קוד. נסו שוב.');
       try { sessionStorage.setItem('ps_acc_mail', mail); } catch (x) { /* ignore */ }
@@ -97,7 +113,7 @@ function orderCard(o) {
 async function accountView(session) {
   document.title = 'החשבון שלי — פרוטאין סטוק';
   box.innerHTML = '<p class="acc-load">טוען את ההזמנות שלכם…</p>';
-  const { data, error } = await sbc.rpc('ps_my_account');
+  const { data, error } = await C.account();
   if (error || !data || data.error) { box.innerHTML = '<p class="acc-load">לא הצלחנו לטעון את החשבון. <button class="acc-link" onclick="location.reload()">נסו שוב</button></p>'; return; }
   const pr = data.profile || {}, orders = data.orders || [];
   setProfile({ name: pr.name || '', phone: pr.phone || '', email: data.email, address: pr.address || '' });
@@ -114,7 +130,7 @@ async function accountView(session) {
         ${orders.length ? orders.map(orderCard).join('') : `<div class="acc-card acc-empty"><p>עדיין אין הזמנות במייל הזה.</p><a class="btn btn-primary" href="products">לכל המוצרים</a></div>`}
       </section>
     </div>`;
-  document.getElementById('acc-out').onclick = async () => { await sbc.auth.signOut(); setProfile(null); loginView('', false); };
+  document.getElementById('acc-out').onclick = async () => { await C.signOut(); setProfile(null); loginView('', false); };
   box.querySelectorAll('.acc-again').forEach(b => b.onclick = () => {
     const o = orders.find(x => x.number === b.dataset.n); let n = 0;
     (o.items || []).forEach(i => { const p = byId(i.id); if (p && !p.out) { Cart.add(p.id, i.q); n++; } });
@@ -123,8 +139,8 @@ async function accountView(session) {
 }
 
 async function show() {
-  const { data } = await sbc.auth.getSession();
-  if (data && data.session) return accountView(data.session);
+  const session = await C.session();
+  if (session) return accountView(session);
   let mail = ''; try { mail = sessionStorage.getItem('ps_acc_mail') || ''; } catch (e) { /* ignore */ }
   loginView(mail, !!mail);
 }

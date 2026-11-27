@@ -14,6 +14,7 @@ export default handler(['GET'], async (req, res) => {
       payplus: !!(process.env.PAYPLUS_API_KEY && process.env.PAYPLUS_SECRET_KEY),
       ai: !!process.env.ANTHROPIC_API_KEY,
       images: !!process.env.BLOB_READ_WRITE_TOKEN,
+      dns: !!process.env.CLOUDFLARE_API_TOKEN,
     },
   }, dbOk ? 200 : 503);
 });

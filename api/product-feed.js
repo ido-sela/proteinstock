@@ -10,7 +10,7 @@ const x = (s) => String(s ?? '').replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>':
 const text = (html) => String(html || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
 const abs = (p) => (!p ? '' : /^https?:\/\//.test(p) ? p : SITE + '/' + String(p).replace(/^\/+/, ''));
 // 1600px copies of the product photos (img/p/hd, made for Google's high-resolution image check); photos without one go as they are
-const hd = (u) => { const n = String(u || '').split('/').pop(); if (/^\/?img\/p\/[^/]+$/.test(u || '') && HD.has(n)) return 'img/p/hd/' + n; if (/\/product-media\/gallery\//.test(u || '') && HD.has('g/' + n)) return 'img/p/hd/g/' + n; return u; };
+const hd = (u) => { const n = String(u || '').split('/').pop(); if (/^\/?img\/p\/[^/]+$/.test(u || '') && HD.has(n)) return 'img/p/hd/' + n; if ((/\/product-media\/gallery\//.test(u || '') || /^\/?img\/p\/g\/[^/]+$/.test(u || '')) && HD.has('g/' + n)) return 'img/p/hd/g/' + n; return u; };
 const money = (n) => Number(n).toFixed(2) + ' ILS';
 
 async function slugs() {

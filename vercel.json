@@ -3039,11 +3039,27 @@
   "rewrites": [
     {
       "source": "/api/v1",
-      "destination": "https://yplzliqpohqehypllxdq.supabase.co/functions/v1/store-api"
+      "destination": "/api/ops?fn=store"
     },
     {
       "source": "/api/v1/:path*",
-      "destination": "https://yplzliqpohqehypllxdq.supabase.co/functions/v1/store-api/:path*"
+      "destination": "/api/ops?fn=store&path=:path*"
+    },
+    {
+      "source": "/api/rpc/:name",
+      "destination": "/api/ops?fn=rpc&name=:name"
+    },
+    {
+      "source": "/api/order-webhook",
+      "destination": "/api/ops?fn=order-webhook"
+    },
+    {
+      "source": "/api/passkey",
+      "destination": "/api/ops?fn=passkey"
+    },
+    {
+      "source": "/api/dns-admin",
+      "destination": "/api/ops?fn=dns-admin"
     },
     {
       "source": "/product-feed.xml",

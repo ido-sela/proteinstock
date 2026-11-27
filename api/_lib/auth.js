@@ -47,3 +47,25 @@ export async function adminEmail(req) {
 }
 
 export const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
+
+// Customer sessions (the /account page): same signed cookie format, separate cookie, no admin rights.
+const CCOOKIE = 'ps_cust';
+export function setCustomer(res, email) {
+  const exp = Date.now() + 90 * 864e5;
+  const v = Buffer.from(JSON.stringify({ e: email, x: exp })).toString('base64url');
+  res.setHeader('Set-Cookie', `${CCOOKIE}=${v}.${sign(v)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${90 * 86400}`);
+}
+export function clearCustomer(res) {
+  res.setHeader('Set-Cookie', `${CCOOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+}
+export function customerEmail(req) {
+  const raw = String(req.headers.cookie ?? '');
+  let c = '';
+  for (const part of raw.split(/;\s*/)) { const i = part.indexOf('='); if (i > 0 && part.slice(0, i) === CCOOKIE) c = part.slice(i + 1); }
+  const dot = c.lastIndexOf('.');
+  if (dot < 1) return null;
+  const v = c.slice(0, dot), sig = c.slice(dot + 1), good = sign(v);
+  if (sig.length !== good.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(good))) return null;
+  let p; try { p = JSON.parse(Buffer.from(v, 'base64url').toString('utf8')); } catch { return null; }
+  return p?.e && p.x > Date.now() ? String(p.e).toLowerCase() : null;
+}

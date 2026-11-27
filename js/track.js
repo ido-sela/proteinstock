@@ -131,8 +131,7 @@
           try {
             let key = localStorage.getItem('ps_ck_key');
             if (!key) { key = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)); localStorage.setItem('ps_ck_key', key); }
-            const sb = window.LEGACY_SB || (typeof LEGACY_SB !== 'undefined' ? LEGACY_SB : null); if (!sb) return;
-            fetch(sb.url + '/rest/v1/rpc/ps_save_checkout', { method: 'POST', keepalive: true, headers: { apikey: sb.key, 'Content-Type': 'application/json' },
+            fetch('/api/rpc/ps_save_checkout', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ p: { key, name: d.name, phone: d.phone, email: d.email, items: d.items, total: d.total, step: d.step } }) })
               .then(r => log('draft_saved', r.status)).catch(() => {});
           } catch (e) { /* ignore */ }

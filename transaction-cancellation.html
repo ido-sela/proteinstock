@@ -39,7 +39,7 @@
     if (!v('cx-name') || !v('cx-phone')) { document.getElementById('cx-err').hidden = false; return; }
     document.getElementById('cx-err').hidden = true;
     var msg = 'הודעת ביטול עסקה\nשם: ' + v('cx-name') + '\nטלפון: ' + v('cx-phone') + (v('cx-order') ? '\nמספר הזמנה: ' + v('cx-order') : '') + (v('cx-why') ? '\nסיבה: ' + v('cx-why') : '');
-    fetch(LEGACY_SB.url + '/rest/v1/rpc/ps_save_lead', { method: 'POST', keepalive: true, headers: { apikey: LEGACY_SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p: { source: 'transaction-cancellation', name: v('cx-name'), phone: v('cx-phone'), message: (v('cx-order') ? 'מספר הזמנה: ' + v('cx-order') + ' · ' : '') + v('cx-why'), page: location.pathname } }) }).catch(function(){});
+    fetch('/api/rpc/ps_save_lead', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p: { source: 'transaction-cancellation', name: v('cx-name'), phone: v('cx-phone'), message: (v('cx-order') ? 'מספר הזמנה: ' + v('cx-order') + ' · ' : '') + v('cx-why'), page: location.pathname } }) }).catch(function(){});
     location.href = via === 'wa' ? 'https://wa.me/972556650400?text=' + encodeURIComponent(msg)
       : 'mailto:info@proteinstock.co.il?subject=' + encodeURIComponent('ביטול עסקה' + (v('cx-order') ? ' ' + v('cx-order') : '')) + '&body=' + encodeURIComponent(msg);
   };

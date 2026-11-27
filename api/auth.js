@@ -1,15 +1,19 @@
 // Admin login with a 6-digit code sent by email (replaces Supabase Auth).
 // Env: SESSION_SECRET, RESEND_API_KEY, MAIL_FROM (e.g. "פרוטאין סטוק <admin@proteinstock.co.il>").
 // POST {action:'send', email} | {action:'verify', email, token} | {action:'logout'};  GET -> current session.
+// scope:'customer' (POST body, or ?scope=customer on GET): the same flow for store customers (/account), any email, own cookie.
 import crypto from 'node:crypto';
 import { q, one } from './_lib/db.js';
 import { json, readJson, handler } from './_lib/http.js';
-import { adminEmail, setSession, clearSession, sha256 } from './_lib/auth.js';
+import { adminEmail, setSession, clearSession, sha256, setCustomer, clearCustomer, customerEmail } from './_lib/auth.js';
+
+// customer accounts and admins' last sign-in (auth.users, as on Supabase)
+const signedIn = (email) => q(`insert into auth.users (email, last_sign_in_at) values ($1, now()) on conflict (email) do update set last_sign_in_at = now()`, [email]).catch((e) => console.error(e));
 
 const err = (res, code, message, status = 400) => json(res, { error: { code, message, status } }, status);
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-async function sendMail(to, code) {
+async function sendMail(to, code, customer) {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.MAIL_FROM || 'Protein Stock <onboarding@resend.dev>';
   if (!key) { const e = new Error('mail_not_configured'); e.code = 'mail_not_configured'; throw e; }
@@ -18,8 +22,8 @@ async function sendMail(to, code) {
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from, to: [to], subject: `קוד הכניסה שלך: ${code}`,
-      text: `קוד הכניסה לניהול פרוטאין סטוק: ${code}\nהקוד בתוקף ל-10 דקות. אם לא ביקשת אותו, אפשר להתעלם מהמייל.`,
-      html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px">קוד הכניסה לניהול פרוטאין סטוק:<div style="font-size:32px;font-weight:700;letter-spacing:6px;margin:14px 0">${code}</div>הקוד בתוקף ל-10 דקות. אם לא ביקשת אותו, אפשר להתעלם מהמייל.</div>`,
+      text: `${customer ? 'קוד הכניסה לחשבון שלך בפרוטאין סטוק' : 'קוד הכניסה לניהול פרוטאין סטוק'}: ${code}\nהקוד בתוקף ל-10 דקות. אם לא ביקשת אותו, אפשר להתעלם מהמייל.`,
+      html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px">${customer ? 'קוד הכניסה לחשבון שלך בפרוטאין סטוק' : 'קוד הכניסה לניהול פרוטאין סטוק'}:<div style="font-size:32px;font-weight:700;letter-spacing:6px;margin:14px 0">${code}</div>הקוד בתוקף ל-10 דקות. אם לא ביקשת אותו, אפשר להתעלם מהמייל.</div>`,
     }),
   });
   if (!r.ok) { const t = await r.text().catch(() => ''); const e = new Error('mail_failed: ' + t.slice(0, 200)); e.code = 'mail_failed'; throw e; }
@@ -38,12 +42,17 @@ async function sbAuth(path, body) {
 
 export default handler(['GET', 'POST'], async (req, res) => {
   if (req.method === 'GET') {
+    if (new URL(req.url, 'http://x').searchParams.get('scope') === 'customer') {
+      const ce = customerEmail(req);
+      return json(res, { session: ce ? { user: { id: ce, email: ce } } : null });
+    }
     const email = await adminEmail(req);
     return json(res, { session: email ? { user: { id: email, email } } : null });
   }
   const b = await readJson(req, 5000);
 
-  if (b.action === 'logout') { clearSession(res); return json(res, { ok: true }); }
+  const cust = b.scope === 'customer';
+  if (b.action === 'logout') { if (cust) clearCustomer(res); else clearSession(res); return json(res, { ok: true }); }
 
   const email = String(b.email ?? '').trim().toLowerCase();
   if (!EMAIL.test(email) || email.length > 200) return err(res, 'invalid_email', 'כתובת אימייל לא תקינה');
@@ -53,7 +62,7 @@ export default handler(['GET', 'POST'], async (req, res) => {
     if (recent.n >= 6 || (recent.last && Date.now() - new Date(recent.last).getTime() < 40000)) {
       return err(res, 'over_email_send_rate_limit', 'rate limit', 429);
     }
-    const admin = await one('select email from admins where email = $1', [email]);
+    const admin = cust || await one('select email from admins where email = $1', [email]);
     // Same answer whether or not the address is an admin, so the list of admins can't be probed.
     if (!admin) return json(res, { ok: true });
     if (viaSupabase()) {
@@ -67,7 +76,7 @@ export default handler(['GET', 'POST'], async (req, res) => {
     }
     const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
     await q(`insert into admin_otps (email, code_hash, expires_at) values ($1, $2, now() + interval '10 minutes')`, [email, sha256(email + ':' + code)]);
-    try { await sendMail(email, code); } catch (e) {
+    try { await sendMail(email, code, cust); } catch (e) {
       console.error(e);
       return err(res, e.code || 'mail_failed', e.code === 'mail_not_configured' ? 'שליחת מיילים עדיין לא הוגדרה בשרת (RESEND_API_KEY).' : 'שליחת המייל נכשלה', 500);
     }
@@ -87,9 +96,10 @@ export default handler(['GET', 'POST'], async (req, res) => {
         await q(`insert into admin_otps (email, code_hash, expires_at) values ($1, 'supabase-fail', now())`, [email]);
         return err(res, 'otp_expired', 'invalid');
       }
+      if (cust) { setCustomer(res, email); await signedIn(email); return json(res, { session: { user: { id: email, email } } }); }
       const ok = await one('select email from admins where email = $1', [email]);
       if (!ok) return err(res, 'forbidden', 'not an admin', 403);
-      setSession(res, email);
+      setSession(res, email); await signedIn(email);
       return json(res, { session: { user: { id: email, email } } });
     }
     if (token.length !== 6) return err(res, 'otp_expired', 'invalid');
@@ -101,9 +111,10 @@ export default handler(['GET', 'POST'], async (req, res) => {
       return err(res, 'otp_expired', 'invalid');
     }
     await q('update admin_otps set used = true where id = $1', [row.id]);
+    if (cust) { setCustomer(res, email); await signedIn(email); return json(res, { session: { user: { id: email, email } } }); }
     const admin = await one('select email from admins where email = $1', [email]);
     if (!admin) return err(res, 'forbidden', 'not an admin', 403);
-    setSession(res, email);
+    setSession(res, email); await signedIn(email);
     return json(res, { session: { user: { id: email, email } } });
   }
   return err(res, 'bad_action', 'bad action');

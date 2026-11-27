@@ -142,7 +142,13 @@
   const via = (fn) => (...a) => mode().then(m => fn(m, ...a));
   const client = {
     from: t => new Lazy(m => (m === 'api' ? api.from(t) : sbc.from(t))),
-    rpc: via((m, name, args) => (m === 'sb' ? sbc.rpc(name, args) : { data: null, error: { message: 'rpc needs supabase' } })),
+    rpc: via(async (m, name, args) => {
+      if (m === 'sb') return sbc.rpc(name, args);
+      const r = await post('/api/rpc/' + encodeURIComponent(name), args || {});
+      if (r.error) return { data: null, error: r.error };
+      if (r.status >= 400) return { data: null, error: { message: (r.json && r.json.message) || 'שגיאת שרת (' + r.status + ')', code: r.json && r.json.code, status: r.status } };
+      return { data: r.json, error: null };
+    }),
     mode,
     auth: {
       getSession: via(m => (m === 'api' ? auth : sbc.auth).getSession()),

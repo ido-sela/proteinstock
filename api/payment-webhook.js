@@ -2,6 +2,7 @@
 import { q, one } from './_lib/db.js';
 import { json, rawBody, handler } from './_lib/http.js';
 import { getProvider } from './_lib/payplus.js';
+import { flushWebhooks } from './_lib/order-webhook.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -26,6 +27,7 @@ export default handler(['POST'], async (req, res) => {
     const r = await one('select mark_order_paid($1,$2,$3,$4,$5,$6::jsonb) r',
       [ev.orderNumber, name, ev.eventId, ev.ref ?? null, ev.amount, JSON.stringify(ev.raw ?? null)]);
     if (r.r === 'amount_mismatch' || r.r === 'order_not_found') { console.error('payment problem', r.r, ev.orderNumber); return json(res, { result: r.r }, 422); }
+    if (r.r === 'paid') await flushWebhooks().catch((e) => console.error(e));   // send the paid order to the stock system
     return json(res, { result: r.r });
   }
 
