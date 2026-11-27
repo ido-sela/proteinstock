@@ -140,6 +140,9 @@ function buildForm() {
       </div>
       <div id="ck-pick" class="ck-paybox" hidden><p><b>איסוף עצמי מהחנות</b></p><p>${esc(SITE.address)}</p><p class="ck-small">נעדכן אתכם כשההזמנה מוכנה לאיסוף. שעות פעילות: א׳–ה׳ 09:00–16:00.</p></div>
       <div class="ck-f"><label for="f-notes">הערות להזמנה</label><textarea id="f-notes" rows="3" maxlength="300" placeholder="למשל: להתקשר לפני ההגעה">${esc(note())}</textarea></div>
+      <div class="ck-f ck-inv"><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="f-inv" style="width:auto"> חשבונית על שם חברה / עוסק</label>
+        <div id="ck-invf" hidden style="display:grid;gap:8px;margin-top:8px"><input id="f-invname" maxlength="80" autocomplete="organization" placeholder="שם החברה / העסק כפי שיופיע בחשבונית">
+        <input id="f-invid" inputmode="numeric" maxlength="9" dir="ltr" placeholder="ח.פ / ע.מ — 9 ספרות"><span class="ck-err" id="e-inv" role="alert"></span></div></div>
       <button type="button" class="ck-next" data-next="2">הבא</button>`)}
     ${step(3, 'pay', 'תשלום', I.card, `
       <div class="ck-paybox"><p><b>🔒 תשלום מאובטח</b></p><p>לאחר לחיצה על "בצע הזמנה" תועברו לדף תשלום מוצפן של PayPlus (כרטיס אשראי ועוד). פרטי הכרטיס לא נשמרים באתר שלנו.</p><p class="ck-small">אם התשלום המקוון אינו זמין כרגע, ההזמנה תישמר ונחזור אליכם להשלמת התשלום.</p></div>
@@ -255,7 +258,11 @@ async function submit(e) {
   if (busy) return;
   if (!document.getElementById('f-terms').checked) { document.getElementById('e-terms').textContent = 'יש לאשר את התנאים כדי להמשיך'; return; }
   for (const n of [1, 2]) { if (!validate(n)) { openAt(n); return; } }
-  const body = { name: val('name'), phone: val('phone'), email: val('email'), delivery: method, address: method === 'pickup' ? '' : (val('address') + (val('apt') ? ' — ' + val('apt') : '')), notes: (packNotes() + val('notes')).slice(0, 300), items: mergedItems(), coupon: coupon ? coupon.code : undefined };
+  // חשבונית על שם חברה: 9 ספרות ושם — נכנס להזמנה (וגם לחשבונית ב-PayPlus כשהשרת תומך)
+  const inv = document.getElementById('f-inv').checked ? { company: val('invname'), vat: val('invid').replace(/\D/g, '') } : null;
+  if (inv && (inv.company.length < 2 || !/^\d{9}$/.test(inv.vat))) { document.getElementById('e-inv').textContent = 'נא להזין שם חברה ומספר ח.פ / ע.מ של 9 ספרות'; openAt(2); return; }
+  const invNote = inv ? `חשבונית על שם: ${inv.company} · ח.פ/ע.מ ${inv.vat}\n` : '';
+  const body = { name: val('name'), phone: val('phone'), email: val('email'), delivery: method, address: method === 'pickup' ? '' : (val('address') + (val('apt') ? ' — ' + val('apt') : '')), notes: (invNote + packNotes() + val('notes')).slice(0, 300), items: mergedItems(), coupon: coupon ? coupon.code : undefined, invoice_company: inv ? inv.company : undefined, invoice_vat_id: inv ? inv.vat : undefined };
   const btn = document.getElementById('ck-go'), t = document.getElementById('ck-go-t'), err = document.getElementById('ck-err');
   busy = true; btn.disabled = true; t.textContent = 'שולחים…'; err.hidden = true;
   let res, d = {};
@@ -288,6 +295,8 @@ window.addEventListener('pageshow', (ev) => {
   if (btn) btn.disabled = false;
   if (t) t.textContent = 'בצע הזמנה';
 });
+
+document.addEventListener('change', (e) => { if (e.target && e.target.id === 'f-inv') { document.getElementById('ck-invf').hidden = !e.target.checked; document.getElementById('e-inv').textContent = ''; } });
 
 Cart.load();
 buildForm();
