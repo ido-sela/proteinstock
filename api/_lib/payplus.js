@@ -33,7 +33,9 @@ const payplus = {
 
     const ret = (ctx.returnUrl || 'https://proteinstock.co.il').replace(/\/$/, '');
     const qs = (s) => `${ret}/?pay=${s}&order=${encodeURIComponent(order.number)}`;
-    const customer = { customer_name: order.customer_name, phone: order.phone };
+    // חשבונית על שם חברה: שם החברה ומספר ח.פ/ע.מ על המסמך
+    const customer = { customer_name: order.invoice_company || order.customer_name, phone: order.phone };
+    if (order.vat_id) customer.vat_number = order.vat_id;
     if (order.email) customer.email = order.email;
 
     const res = await fetch(`${ppBase(ctx.settings)}/PaymentPages/generateLink`, {

@@ -31,6 +31,9 @@ export default handler(['POST'], async (req, res) => {
   const pickup = body.delivery === 'pickup';
   const address = pickup ? 'איסוף עצמי' : clean(body.address, 220);
   const notes = clean(body.notes, 500);
+  // חשבונית על שם חברה (לא חובה): שם + ח.פ/ע.מ של 9 ספרות — עובר ל-PayPlus
+  const invVat = typeof body.invoice_vat_id === 'string' && /^\d{9}$/.test(body.invoice_vat_id) ? body.invoice_vat_id : null;
+  const invCompany = invVat ? clean(body.invoice_company, 80) : null;
   if (!quote) {
     if (name.length < 2) return json(res, { error: 'invalid_name' }, 400);
     if (!/^[0-9+\-\s()]{7,20}$/.test(phone)) return json(res, { error: 'invalid_phone' }, 400);
@@ -131,6 +134,7 @@ export default handler(['POST'], async (req, res) => {
       const base = process.env.SITE_URL || origin(req);
       const r = await provider.createPayment(
         { number: order.number, total: Number(order.total), currency: order.currency, customer_name: name, phone, email: email || null,
+          invoice_company: invCompany || null, vat_id: invVat || null,
           items: lines.map((l) => ({ title: l.title, qty: l.qty, unit_price: l.unit_price, line_total: (l.cents - (perLine.get(l.product_id) ?? 0)) / 100 })) },
         { returnUrl: req.headers.origin || base, webhookUrl: webhookUrl(base), settings },
       );
