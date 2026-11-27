@@ -36,16 +36,8 @@ export async function tx(fn) {
   }
 }
 
-// The site switches to this database only after the data was copied and someone ran "go live" (/api/setup, action golive):
-// until then every endpoint answers 503 and the pages keep using the old Supabase project.
-let liveCache = { v: false, at: 0 };
+// The site switches to this database only when DB_LIVE=1 is set in the hosting environment (after the data was copied with
+// /api/setup and checked). Until then every endpoint answers 503 and the pages keep using the old Supabase project.
 export async function isLive() {
-  if (!process.env.DATABASE_URL) return false;
-  if (Date.now() - liveCache.at < 20000) return liveCache.v;
-  let v = false;
-  try {
-    if ((await one(`select to_regclass('public.integrations') is not null ok`))?.ok) v = !!(await one(`select 1 from integrations where key = 'db_live'`));
-  } catch (e) { console.error('isLive', e.message); }
-  liveCache = { v, at: Date.now() };
-  return v;
+  return !!process.env.DATABASE_URL && process.env.DB_LIVE === '1';
 }

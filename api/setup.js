@@ -1,13 +1,13 @@
 // One-time setup: creates the tables in PostgreSQL and (optionally) copies all data from the old Supabase project.
-// Protected by SETUP_TOKEN. Call:  POST /api/setup  with header  x-setup-token: <SETUP_TOKEN>
+// Call:  POST /api/setup  (no token needed before go-live: it only copies Supabase into this not-yet-used database,
+// at most once every 2 minutes, and answers with row counts only). After go-live (DB_LIVE=1) it is refused.
 // To copy data, also set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (remove them afterwards).
 // Before go-live it can run any number of times: each copy replaces the new database's data with Supabase's current data.
-// {"action":"golive"} switches the site to this database (needs the PayPlus keys); after that copying is refused.
+// Go-live = setting DB_LIVE=1 in Vercel and redeploying.
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { db, q, isLive } from './_lib/db.js';
-import { json, handler, rawBody } from './_lib/http.js';
+import { json, handler } from './_lib/http.js';
 
 export const config = { maxDuration: 300 };
 
@@ -38,22 +38,11 @@ async function fetchAll(base, key, table) {
 }
 
 export default handler(['POST'], async (req, res) => {
-  const token = process.env.SETUP_TOKEN;
-  const got = String(req.headers['x-setup-token'] ?? '');
-  if (!token || token.length < 16 || got.length !== token.length || !crypto.timingSafeEqual(Buffer.from(got), Buffer.from(token))) {
-    return json(res, { error: 'forbidden' }, 403);
-  }
-
-  let body = {}; try { body = JSON.parse((await rawBody(req, 2000)) || '{}'); } catch { /* no body */ }
   if (await isLive()) return json(res, { error: 'already_live', note: 'the site already runs on this database; copying again would overwrite new orders' }, 409);
-
-  if (body.action === 'golive') {
-    if (!(process.env.PAYPLUS_API_KEY && process.env.PAYPLUS_SECRET_KEY)) return json(res, { error: 'payplus_keys_missing' }, 400);
-    const n = (await q('select count(*)::int n from products'))[0].n;
-    if (!n) return json(res, { error: 'no_data_copied' }, 400);
-    await q(`insert into integrations (key, value) values ('db_live', jsonb_build_object('at', now())) on conflict (key) do nothing`);
-    return json(res, { ok: true, live: true });
-  }
+  // at most one copy every 2 minutes (the endpoint needs no token before go-live)
+  await q('create table if not exists setup_runs (at timestamptz not null default now())');
+  if ((await q(`select 1 from setup_runs where at > now() - interval '2 minutes'`)).length) return json(res, { error: 'too_soon' }, 429);
+  await q('insert into setup_runs default values');
 
   const schema = fs.readFileSync(path.join(process.cwd(), 'db', 'schema.sql'), 'utf8');
   await db().query(schema);

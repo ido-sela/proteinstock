@@ -1,6 +1,6 @@
 # Database: PostgreSQL (moving off Supabase)
 
-Everything runs on Vercel once the steps below are done. Until `/api/health` answers `"db": true`, the site keeps using the old
+Everything runs on Vercel once the steps below are done. Until `DB_LIVE=1` is set (and `/api/health` answers `"db": true`), the site keeps using the old
 Supabase project automatically (storefront, checkout, forms, admin, store API), so nothing breaks during the move.
 
 | What | Before (Supabase) | Now |
@@ -43,16 +43,16 @@ Supabase project automatically (storefront, checkout, forms, admin, store API), 
    | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API Keys → secret key (only for step 5) |
 
 4. Redeploy.
-5. Create the tables and copy all data (15 tables + customer accounts):
+5. Create the tables and copy all data (15 tables + customer accounts) — no token needed before go-live:
 
    ```
-   curl -X POST https://proteinstock.co.il/api/setup -H "x-setup-token: <SETUP_TOKEN>"
+   curl -X POST https://proteinstock.co.il/api/setup
    ```
 
-   The answer lists how many rows were copied per table. Running it again is safe (nothing is duplicated).
-   From this moment the site uses the new database: orders placed on Supabase after the copy are not moved,
-   so do it at a quiet time, and run it once more right before step 9 if needed.
-6. Check `https://proteinstock.co.il/api/health` → `"db": true` and every `configured` value `true`.
+   The answer lists how many rows were copied per table. Each run replaces the new database's data with Supabase's current data
+   (at most once every 2 minutes), so run it once more right before going live.
+6. Go live: set `DB_LIVE` = `1` (Production) and redeploy. From then on the site uses the new database and /api/setup is refused.
+   Check `https://proteinstock.co.il/api/health` → `"db": true`.
 7. Remove `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `SETUP_TOKEN`, then redeploy.
 8. Test: admin login (code by email, then Face ID), reports, a lead from /contact, /account login, a small order paid with PayPlus
    (turns "שולמה" and reaches the stock system), the store API with an existing key, and the DNS screen.
